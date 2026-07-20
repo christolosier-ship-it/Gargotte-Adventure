@@ -1,0 +1,41 @@
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2022", "DOM", "DOM.Iterable", "WebWorker"],
+    "skipLibCheck": true,
+    "moduleResolution": "Bundler",
+    "allowImportingTsExtensions": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": {
+      "@gargotte/common": ["packages/common/src/index.ts"],
+      "@gargotte/engine": ["packages/engine/src/index.ts"],
+      "@gargotte/content-schema": ["packages/content-schema/src/index.ts"],
+      "@gargotte/renderer": ["packages/renderer/src/index.ts"],
+      "@gargotte/ui": ["packages/ui/src/index.ts"],
+      "@gargotte/save": ["packages/save/src/index.ts"],
+      "@gargotte/audio": ["packages/audio/src/index.ts"]
+    },
+    "types": ["vite/client", "node"]
+  },
+  "include": [
+    "apps/**/*.ts",
+    "packages/**/*.ts",
+    "tools/**/*.ts",
+    "tests/**/*.ts",
+    "vite.config.ts",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
+}
