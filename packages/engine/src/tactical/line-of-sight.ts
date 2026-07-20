@@ -60,8 +60,7 @@ export function hasLineOfSight(
   ignoreIds: string[] = [],
 ): boolean {
   const blockers = supercoverLine(from, to).filter(
-    (position) =>
-      !samePosition(position, from) && !samePosition(position, to),
+    (position) => !samePosition(position, from) && !samePosition(position, to),
   );
 
   return blockers.every(
