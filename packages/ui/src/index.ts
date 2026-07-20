@@ -60,9 +60,7 @@ export function createGameShell(
   const saveStatus = query<HTMLElement>("[data-save-status]");
   const eventLog = query<HTMLElement>("[data-events]");
   const continueButton = query<HTMLButtonElement>("[data-continue]");
-  const endActivationButton = query<HTMLButtonElement>(
-    "[data-end-activation]",
-  );
+  const endActivationButton = query<HTMLButtonElement>("[data-end-activation]");
   const endHeroesTurnButton = query<HTMLButtonElement>(
     "[data-end-heroes-turn]",
   );
@@ -114,8 +112,7 @@ export function createGameShell(
       const item = document.createElement("li");
       item.textContent = message;
       eventLog.prepend(item);
-      while (eventLog.children.length > 6)
-        eventLog.lastElementChild?.remove();
+      while (eventLog.children.length > 6) eventLog.lastElementChild?.remove();
     },
   };
 }
