@@ -142,9 +142,7 @@ function renderTacticalActions(): void {
     );
   }
 
-  const activeHero = room.heroes.find(
-    (hero) => hero.id === room?.activeHeroId,
-  );
+  const activeHero = room.heroes.find((hero) => hero.id === room?.activeHeroId);
   if (!activeHero) return;
 
   for (const position of reachablePositions(
