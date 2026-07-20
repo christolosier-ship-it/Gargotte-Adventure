@@ -1,8 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { attackTarget } from "./combat";
-import { runEnemyTurn } from "./enemy-ai";
+import { chooseEnemyDecision, runEnemyTurn } from "./enemy-ai";
 import { createRoomState } from "./room-state";
-import { endHeroActivation, finishEnemyTurn, selectHero } from "./turn-machine";
+import {
+  endHeroActivation,
+  endHeroesTurn,
+  finishEnemyTurn,
+  selectHero,
+} from "./turn-machine";
+
 const room = () =>
   createRoomState({
     scenarioId: "s",
@@ -54,99 +60,143 @@ const room = () =>
       },
     ],
   });
+
 describe("tours et ia", () => {
-  it("sélectionne ordre libre et interdit changement", () => {
-    const s = room();
-    const b = selectHero(s, "b");
-    expect(b.ok).toBe(true);
-    expect(b.ok && b.value.state.activeHeroId).toBe("b");
-    expect(b.ok && selectHero(b.value.state, "a").ok).toBe(false);
-  });
-  it("limite trois actions et fin anticipée", () => {
-    const s = selectHero(room(), "b");
-    const ended = endHeroActivation(s.ok ? s.value.state : room(), "b");
+  it("sélectionne dans un ordre libre et interdit le changement en activation", () => {
+    const selected = selectHero(room(), "b");
+    expect(selected.ok).toBe(true);
+    expect(selected.ok && selected.value.state.activeHeroId).toBe("b");
     expect(
-      ended.ok &&
-        ended.value.state.heroes.find((h) => h.id === "b")?.activationCompleted,
+      selected.ok && selectHero(selected.value.state, "a").ok,
+    ).toBe(false);
+  });
+
+  it("gère la fin anticipée et un héros déjà terminé", () => {
+    const selected = selectHero(room(), "b");
+    if (!selected.ok) throw new Error("sélection attendue");
+    const ended = endHeroActivation(selected.value.state, "b");
+    expect(ended.ok).toBe(true);
+    if (!ended.ok) throw new Error("fin attendue");
+    expect(
+      ended.value.state.heroes.find((hero) => hero.id === "b")
+        ?.activationCompleted,
     ).toBe(true);
-    expect(ended.ok && selectHero(ended.value.state, "b").ok).toBe(false);
+    expect(selectHero(ended.value.state, "b").ok).toBe(false);
   });
-  it("passe au tour ennemi et restaure", () => {
-    let s = room();
-    const sa = selectHero(s, "a");
-    expect(sa.ok).toBe(true);
-    if (!sa.ok) throw new Error("select a");
-    s = sa.value.state;
-    const ea = endHeroActivation(s, "a");
-    expect(ea.ok).toBe(true);
-    if (!ea.ok) throw new Error("end a");
-    s = ea.value.state;
-    const sb = selectHero(s, "b");
-    expect(sb.ok).toBe(true);
-    if (!sb.ok) throw new Error("select b");
-    s = sb.value.state;
-    const eb = endHeroActivation(s, "b");
-    expect(eb.ok).toBe(true);
-    if (!eb.ok) throw new Error("end b");
-    const e = eb.value.state;
-    expect(e.phase).toBe("enemy-turn");
-    const f = finishEnemyTurn(e).state;
-    expect(f.phase).toBe("heroes-turn");
-    expect(f.heroes[0]!.actionsRemaining).toBe(3);
+
+  it("refuse de résoudre les ennemis avant leur phase", () => {
+    const result = finishEnemyTurn(room());
+    expect(result.ok).toBe(false);
+    expect(!result.ok && result.error.code).toBe("not-enemy-turn");
   });
-  it("ia avance, attaque à distance, gère inaccessible et déterminisme", () => {
-    const s = room();
+
+  it("termine volontairement les héros puis restaure leurs actions", () => {
+    const ended = endHeroesTurn(room());
+    expect(ended.ok).toBe(true);
+    if (!ended.ok) throw new Error("fin du tour attendue");
+    expect(ended.value.state.phase).toBe("enemy-turn");
+    const resolved = finishEnemyTurn(ended.value.state);
+    expect(resolved.ok).toBe(true);
+    if (!resolved.ok) throw new Error("résolution attendue");
+    expect(resolved.value.state.phase).toBe("heroes-turn");
+    expect(resolved.value.state.turn).toBe(2);
     expect(
-      runEnemyTurn(s).events.some((e) => e.type === "combatant-moved"),
+      resolved.value.state.heroes.every(
+        (hero) => hero.actionsRemaining === 3 && !hero.activationCompleted,
+      ),
+    ).toBe(true);
+  });
+
+  it("fait avancer la mêlée et attaquer la distance", () => {
+    const current = room();
+    expect(
+      runEnemyTurn(current).events.some(
+        (event) => event.type === "combatant-moved",
+      ),
     ).toBe(true);
     const ranged = {
-      ...s,
-      enemies: [{ ...s.enemies[1]!, position: { column: 0, row: 1 } }],
+      ...current,
+      enemies: [
+        { ...current.enemies[1]!, position: { column: 0, row: 1 } },
+      ],
     };
     expect(
-      runEnemyTurn(ranged).events.some((e) => e.type === "combatant-attacked"),
+      runEnemyTurn(ranged).events.some(
+        (event) => event.type === "combatant-attacked",
+      ),
     ).toBe(true);
+  });
+
+  it("déplace un tireur lorsque la cible en portée est masquée", () => {
+    const current = {
+      ...room(),
+      obstacles: [{ column: 0, row: 1 }],
+      heroes: [room().heroes[0]!],
+      enemies: [
+        {
+          ...room().enemies[1]!,
+          position: { column: 0, row: 2 },
+          range: 3,
+        },
+      ],
+    };
+    const decision = chooseEnemyDecision(current, "e2");
+    expect(decision.action).toBe("move");
+    expect(decision.reason).toContain("visible");
+  });
+
+  it("gère une cible inaccessible et reste déterministe", () => {
+    const current = room();
     const blocked = {
-      ...s,
+      ...current,
       obstacles: [
         { column: 1, row: 0 },
         { column: 0, row: 1 },
       ],
-      enemies: [s.enemies[0]!],
-      heroes: [s.heroes[0]!],
+      enemies: [current.enemies[0]!],
+      heroes: [current.heroes[0]!],
     };
     expect(
-      runEnemyTurn(blocked).events.find((e) => e.type === "enemy-decision")
-        ?.explanation.reason,
+      runEnemyTurn(blocked).events.find(
+        (event) => event.type === "enemy-decision",
+      )?.explanation.reason,
     ).toContain("inaccessible");
-    expect(JSON.stringify(runEnemyTurn(s))).toBe(
-      JSON.stringify(runEnemyTurn(s)),
-    );
+    expect(runEnemyTurn(current)).toEqual(runEnemyTurn(current));
   });
-  it("victoire et défaite", () => {
-    let s = room();
-    const sel = selectHero(s, "b");
-    expect(sel.ok).toBe(true);
-    if (!sel.ok) throw new Error("select b");
-    s = sel.value.state;
-    const a = attackTarget(
+
+  it("déclenche exactement la victoire et la défaite", () => {
+    const selected = selectHero(room(), "b");
+    if (!selected.ok) throw new Error("sélection attendue");
+    const victory = attackTarget(
       {
-        ...s,
-        heroes: [{ ...s.heroes[1]!, atk: 9, range: 8 }],
-        enemies: [s.enemies[0]!],
+        ...selected.value.state,
+        heroes: [
+          {
+            ...selected.value.state.heroes[1]!,
+            atk: 9,
+            range: 8,
+          },
+        ],
+        enemies: [selected.value.state.enemies[0]!],
       },
       "b",
       "e1",
     );
-    expect(a.ok && a.value.state.enemies[0]!.alive).toBe(false);
-    const d = finishEnemyTurn({
+    expect(victory.ok).toBe(true);
+    if (!victory.ok) throw new Error("victoire attendue");
+    expect(victory.value.state.phase).toBe("victory");
+
+    const defeatInput = {
       ...room(),
       heroes: [{ ...room().heroes[0]!, hp: 1 }],
       enemies: [
         { ...room().enemies[0]!, position: { column: 1, row: 0 }, atk: 9 },
       ],
-      phase: "enemy-turn",
-    }).state;
-    expect(["defeat", "heroes-turn"]).toContain(d.phase);
+      phase: "enemy-turn" as const,
+    };
+    const defeat = finishEnemyTurn(defeatInput);
+    expect(defeat.ok).toBe(true);
+    if (!defeat.ok) throw new Error("défaite attendue");
+    expect(defeat.value.state.phase).toBe("defeat");
   });
 });
