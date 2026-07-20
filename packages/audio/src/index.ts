@@ -5,7 +5,7 @@ export interface AudioSettings {
 
 export const defaultAudioSettings: AudioSettings = {
   masterVolume: 0.7,
-  muted: false
+  muted: false,
 };
 
 export class AudioDirector {
@@ -19,7 +19,10 @@ export class AudioDirector {
     this.#settings = {
       ...this.#settings,
       ...next,
-      masterVolume: Math.min(1, Math.max(0, next.masterVolume ?? this.#settings.masterVolume))
+      masterVolume: Math.min(
+        1,
+        Math.max(0, next.masterVolume ?? this.#settings.masterVolume),
+      ),
     };
   }
 }

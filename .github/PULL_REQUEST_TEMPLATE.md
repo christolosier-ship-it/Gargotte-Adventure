@@ -4,7 +4,7 @@ Décrire le problème résolu ou la fonctionnalité apportée.
 
 ## Changements
 
-- 
+-
 
 ## Vérification
 

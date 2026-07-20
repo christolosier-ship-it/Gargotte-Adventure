@@ -1,20 +1,20 @@
-import 'virtual:pwa-register';
-import './styles.css';
-import { APP_VERSION } from '@gargotte/common';
+import "virtual:pwa-register";
+import "./styles.css";
+import { APP_VERSION } from "@gargotte/common";
 import {
   EventBus,
   createEvent,
   createInitialGameState,
   reduceGameState,
-  type GameState
-} from '@gargotte/engine';
-import { createTabletopRenderer } from '@gargotte/renderer';
-import { createGameShell } from '@gargotte/ui';
-import { loadGameState, saveGameState } from '@gargotte/save';
-import dungeon from '../../../content/bastognac/dungeon.json';
+  type GameState,
+} from "@gargotte/engine";
+import { createTabletopRenderer } from "@gargotte/renderer";
+import { createGameShell } from "@gargotte/ui";
+import { loadGameState, saveGameState } from "@gargotte/save";
+import dungeon from "../../../content/bastognac/dungeon.json";
 
-const root = document.querySelector<HTMLElement>('#app');
-if (!root) throw new Error('Point de montage #app introuvable.');
+const root = document.querySelector<HTMLElement>("#app");
+if (!root) throw new Error("Point de montage #app introuvable.");
 
 const shell = createGameShell(root);
 const renderer = await createTabletopRenderer(shell.boardHost);
@@ -24,21 +24,21 @@ let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
 
 const stored = await loadGameState();
 if (stored) state = stored;
-state = reduceGameState(state, createEvent('app/ready'));
+state = reduceGameState(state, createEvent("app/ready"));
 
-const render = (saveText = stored ? 'Sauvegarde restaurée' : 'Prête') => {
+const render = (saveText = stored ? "Sauvegarde restaurée" : "Prête") => {
   shell.update({
     phase: state.phase,
     expeditionNumber: state.expeditionNumber,
     canContinue: state.expeditionNumber > 0,
-    saveText
+    saveText,
   });
-  renderer.setExpeditionActive(state.phase === 'expedition');
+  renderer.setExpeditionActive(state.phase === "expedition");
 };
 
 const persist = async () => {
   await saveGameState(state);
-  render('Enregistrée sur cet appareil');
+  render("Enregistrée sur cet appareil");
 };
 
 events.subscribe((event) => {
@@ -47,31 +47,31 @@ events.subscribe((event) => {
   void persist();
 });
 
-shell.startButton.addEventListener('click', () => {
+shell.startButton.addEventListener("click", () => {
   const seed = 10_000 + state.expeditionNumber * 137 + 1;
-  events.publish(createEvent('expedition/started', { seed }));
+  events.publish(createEvent("expedition/started", { seed }));
 });
 
-shell.continueButton.addEventListener('click', () => {
+shell.continueButton.addEventListener("click", () => {
   shell.appendEvent(`Retour sur la table, graine ${state.seed}.`);
   renderer.setExpeditionActive(true);
 });
 
-window.addEventListener('beforeinstallprompt', (event) => {
+window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
   deferredInstallPrompt = event as BeforeInstallPromptEvent;
   shell.installButton.hidden = false;
 });
 
-shell.installButton.addEventListener('click', async () => {
+shell.installButton.addEventListener("click", async () => {
   if (!deferredInstallPrompt) return;
   await deferredInstallPrompt.prompt();
   deferredInstallPrompt = null;
   shell.installButton.hidden = true;
 });
 
-window.addEventListener('appinstalled', () => {
-  shell.appendEvent('Gargotte Adventure est installé sur l’appareil.');
+window.addEventListener("appinstalled", () => {
+  shell.appendEvent("Gargotte Adventure est installé sur l’appareil.");
 });
 
 render();
@@ -79,18 +79,21 @@ shell.appendEvent(`${dungeon.name} chargé · ${APP_VERSION}.`);
 
 function eventMessage(type: string): string {
   switch (type) {
-    case 'expedition/started':
-      return 'Une nouvelle expédition quitte La Chope Qui Colle.';
-    case 'expedition/returned-to-menu':
-      return 'Les héros reviennent compter leurs bosses.';
+    case "expedition/started":
+      return "Une nouvelle expédition quitte La Chope Qui Colle.";
+    case "expedition/returned-to-menu":
+      return "Les héros reviennent compter leurs bosses.";
     default:
-      return 'Le moteur de jeu est prêt.';
+      return "Le moteur de jeu est prêt.";
   }
 }
 
 declare global {
   interface BeforeInstallPromptEvent extends Event {
     prompt(): Promise<void>;
-    userChoice: Promise<{ outcome: 'accepted' | 'dismissed'; platform: string }>;
+    userChoice: Promise<{
+      outcome: "accepted" | "dismissed";
+      platform: string;
+    }>;
   }
 }

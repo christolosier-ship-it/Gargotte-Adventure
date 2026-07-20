@@ -26,8 +26,8 @@ jobs:
         with:
           node-version: 24
 
-      - name: Install dependencies and create lockfile
-        run: npm install --no-audit --no-fund
+      - name: Install dependencies from lockfile
+        run: npm ci
 
       - name: Validate content, types, tests and build
         run: npm run check

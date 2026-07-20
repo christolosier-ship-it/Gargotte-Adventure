@@ -8,6 +8,15 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+IGNORED_DIRECTORIES = {
+    '.git',
+    'node_modules',
+    'dist',
+    'build',
+    'coverage',
+    'playwright-report',
+    'test-results',
+}
 
 REQUIRED_FILES = (
     "README.md",
@@ -52,7 +61,7 @@ TEXT_SUFFIXES = {
 def iter_text_files() -> list[Path]:
     files: list[Path] = []
     for path in ROOT.rglob("*"):
-        if not path.is_file() or ".git" in path.parts or "node_modules" in path.parts:
+        if not path.is_file() or IGNORED_DIRECTORIES.intersection(path.relative_to(ROOT).parts):
             continue
         if path.suffix.lower() in TEXT_SUFFIXES or path.name.startswith(".env"):
             files.append(path)

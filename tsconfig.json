@@ -17,15 +17,14 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noEmit": true,
-    "baseUrl": ".",
     "paths": {
-      "@gargotte/common": ["packages/common/src/index.ts"],
-      "@gargotte/engine": ["packages/engine/src/index.ts"],
-      "@gargotte/content-schema": ["packages/content-schema/src/index.ts"],
-      "@gargotte/renderer": ["packages/renderer/src/index.ts"],
-      "@gargotte/ui": ["packages/ui/src/index.ts"],
-      "@gargotte/save": ["packages/save/src/index.ts"],
-      "@gargotte/audio": ["packages/audio/src/index.ts"]
+      "@gargotte/common": ["./packages/common/src/index.ts"],
+      "@gargotte/engine": ["./packages/engine/src/index.ts"],
+      "@gargotte/content-schema": ["./packages/content-schema/src/index.ts"],
+      "@gargotte/renderer": ["./packages/renderer/src/index.ts"],
+      "@gargotte/ui": ["./packages/ui/src/index.ts"],
+      "@gargotte/save": ["./packages/save/src/index.ts"],
+      "@gargotte/audio": ["./packages/audio/src/index.ts"]
     },
     "types": ["vite/client", "node"]
   },

@@ -57,14 +57,14 @@ Créer un environnement de développement fiable pour Gargotte Adventure, sans e
 
 ## Risques suivis
 
-| Risque | Réponse |
-|---|---|
-| Duplication des données Gargottex | Paquets de contenu générés et versionnés |
-| Fuite de clé API | Aucun secret côté client, contrôle CI |
-| Architecture trop lourde | Dossiers créés seulement lorsqu’ils sont utiles |
-| Mauvaise expérience mobile | Mobile-first et tests sur appareils réels |
-| Règles ambiguës | Moteur déterministe et ADR de règles |
-| Assets trop volumineux | Pipeline d’optimisation dédié |
+| Risque                            | Réponse                                         |
+| --------------------------------- | ----------------------------------------------- |
+| Duplication des données Gargottex | Paquets de contenu générés et versionnés        |
+| Fuite de clé API                  | Aucun secret côté client, contrôle CI           |
+| Architecture trop lourde          | Dossiers créés seulement lorsqu’ils sont utiles |
+| Mauvaise expérience mobile        | Mobile-first et tests sur appareils réels       |
+| Règles ambiguës                   | Moteur déterministe et ADR de règles            |
+| Assets trop volumineux            | Pipeline d’optimisation dédié                   |
 
 ## Sortie des phases 1 et 2
 
