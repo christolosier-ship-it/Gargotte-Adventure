@@ -41,19 +41,6 @@ const readCanvasState = async (page: Page) => {
   }));
 };
 
-const clickCell = async (page: Page, column: number, row: number) => {
-  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
-  const box = await canvas.boundingBox();
-  if (!box) throw new Error("Canvas PixiJS introuvable");
-  const scale = Math.min(box.width / 760, box.height / 430);
-  const offsetX = Math.max(0, (box.width - 760 * scale) / 2);
-  const offsetY = Math.max(0, (box.height - 430 * scale) / 2);
-  await page.mouse.click(
-    box.x + offsetX + (55 + column * 82 + 41) * scale,
-    box.y + offsetY + (48 + row * 82 + 41) * scale,
-  );
-};
-
 test("sélectionne les héros officiels et lance la salle PixiJS", async ({
   page,
 }) => {
@@ -71,15 +58,19 @@ test("sélectionne les héros officiels et lance la salle PixiJS", async ({
     page.getByRole("img", { name: /Plateau tactique PixiJS/i }),
   ).toBeVisible();
   await expect(page.getByText("Salle en cours")).toBeVisible();
-  await expect.poll(() => getRoomSave(page)).not.toBeNull();
+  await expect.poll(async () => Boolean(await getRoomSave(page))).toBe(true);
 });
 
 test("joue un déplacement, verrouille les phases et restaure la salle", async ({
   page,
 }) => {
   await page.goto("./");
+  await page.getByLabel("Aelion Trois-Gorgées").check();
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await clickCell(page, 0, 0);
+
+  await page
+    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+    .click();
   await expect
     .poll(async () => (await readCanvasState(page)).activeHero)
     .toBe("brunhilda");
@@ -87,7 +78,11 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
     page.getByText(/Héros actif: Brünhilda la Torgnole/),
   ).toBeVisible();
 
-  await clickCell(page, 1, 0);
+  await page
+    .getByRole("button", {
+      name: "Se déplacer en colonne 2, ligne 1",
+    })
+    .click();
   await expect
     .poll(async () => {
       const state = await readCanvasState(page);
@@ -129,7 +124,7 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
 test("atteint une victoire reproductible", async ({ page }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await expect.poll(() => getRoomSave(page)).not.toBeNull();
+  await expect.poll(async () => Boolean(await getRoomSave(page))).toBe(true);
 
   await page.evaluate(async () => {
     const request = indexedDB.open("gargotte-adventure");
@@ -140,7 +135,17 @@ test("atteint une victoire reproductible", async ({ page }) => {
     const transaction = database.transaction("saves", "readwrite");
     const store = transaction.objectStore("saves");
     const read = store.get("room-autosave");
-    const save = await new Promise<any>((resolve, reject) => {
+    const save = await new Promise<{
+      state: {
+        room: {
+          heroes: Record<string, unknown>[];
+          enemies: Record<string, unknown>[];
+          [key: string]: unknown;
+        };
+        selectedHeroIds: string[];
+      };
+      [key: string]: unknown;
+    }>((resolve, reject) => {
       read.onerror = () => reject(read.error);
       read.onsuccess = () => resolve(read.result);
     });
@@ -167,7 +172,7 @@ test("atteint une victoire reproductible", async ({ page }) => {
       activeHeroId: null,
       phase: "heroes-turn",
     };
-    save.state.selectedHeroIds = [hero.id];
+    save.state.selectedHeroIds = ["brunhilda"];
     store.put(save);
     await new Promise<void>((resolve, reject) => {
       transaction.oncomplete = () => resolve();
@@ -178,12 +183,17 @@ test("atteint une victoire reproductible", async ({ page }) => {
 
   await page.reload();
   await page.getByRole("button", { name: "Reprendre" }).click();
-  await clickCell(page, 6, 0);
-  await clickCell(page, 7, 0);
+  await page
+    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+    .click();
+  await page
+    .getByRole("button", { name: "Attaquer Gobelin Bricoleur" })
+    .click();
   await expect
     .poll(async () => (await readCanvasState(page)).phase)
     .toBe("victory");
   await expect(page.getByText("Victoire")).toBeVisible();
+  await expect(page.getByText("Salle nettoyée !")).toBeVisible();
 });
 
 test("expose le manifeste PWA français et le service worker", async ({
