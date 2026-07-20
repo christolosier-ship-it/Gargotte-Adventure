@@ -32,6 +32,20 @@ jobs:
       - name: Check formatting
         run: npm run format:check
 
+      - name: Generate Prettier repair patch
+        if: failure()
+        run: |
+          npm run format
+          git diff --binary > prettier.patch
+
+      - name: Upload Prettier repair patch
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: prettier-repair-patch
+          path: prettier.patch
+          if-no-files-found: error
+
       - name: Validate content
         run: npm run validate:content
 
