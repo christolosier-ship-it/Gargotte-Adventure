@@ -1,99 +1,21 @@
 import "virtual:pwa-register";
 import "./styles.css";
 import { APP_VERSION } from "@gargotte/common";
-import {
-  EventBus,
-  createEvent,
-  createInitialGameState,
-  reduceGameState,
-  type GameState,
-} from "@gargotte/engine";
-import { createTabletopRenderer } from "@gargotte/renderer";
-import { createGameShell } from "@gargotte/ui";
-import { loadGameState, saveGameState } from "@gargotte/save";
+import { applyPlayerIntent, attackableTargets, createInitialGameState, createRoomState, reachableCells, type GameState, type PlayerIntent } from "@gargotte/engine";
+import { loadGameState, saveGameState, clearGameState } from "@gargotte/save";
 import dungeon from "../../../content/bastognac/dungeon.json";
-
-const root = document.querySelector<HTMLElement>("#app");
-if (!root) throw new Error("Point de montage #app introuvable.");
-
-const shell = createGameShell(root);
-const renderer = await createTabletopRenderer(shell.boardHost);
-const events = new EventBus();
-let state: GameState = createInitialGameState(1);
-let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
-
-const stored = await loadGameState();
-if (stored) state = stored;
-state = reduceGameState(state, createEvent("app/ready"));
-
-const render = (saveText = stored ? "Sauvegarde restaurée" : "Prête") => {
-  shell.update({
-    phase: state.phase,
-    expeditionNumber: state.expeditionNumber,
-    canContinue: state.expeditionNumber > 0,
-    saveText,
-  });
-  renderer.setExpeditionActive(state.phase === "expedition");
-};
-
-const persist = async () => {
-  await saveGameState(state);
-  render("Enregistrée sur cet appareil");
-};
-
-events.subscribe((event) => {
-  state = reduceGameState(state, event);
-  shell.appendEvent(eventMessage(event.type));
-  void persist();
-});
-
-shell.startButton.addEventListener("click", () => {
-  const seed = 10_000 + state.expeditionNumber * 137 + 1;
-  events.publish(createEvent("expedition/started", { seed }));
-});
-
-shell.continueButton.addEventListener("click", () => {
-  shell.appendEvent(`Retour sur la table, graine ${state.seed}.`);
-  renderer.setExpeditionActive(true);
-});
-
-window.addEventListener("beforeinstallprompt", (event) => {
-  event.preventDefault();
-  deferredInstallPrompt = event as BeforeInstallPromptEvent;
-  shell.installButton.hidden = false;
-});
-
-shell.installButton.addEventListener("click", async () => {
-  if (!deferredInstallPrompt) return;
-  await deferredInstallPrompt.prompt();
-  deferredInstallPrompt = null;
-  shell.installButton.hidden = true;
-});
-
-window.addEventListener("appinstalled", () => {
-  shell.appendEvent("Gargotte Adventure est installé sur l’appareil.");
-});
-
+const root=document.querySelector<HTMLElement>("#app"); if(!root) throw new Error("Point de montage #app introuvable.");
+let state:GameState=(await loadGameState())??createInitialGameState(1); state={...state,phase:"menu"}; const scenario=dungeon.sprint1Scenario;
+function persist(){void saveGameState(state)}
+function dispatch(intent:PlayerIntent){ if(!state.room) return; const result=applyPlayerIntent(state.room,intent); if(result.ok){state={...state,room:result.state,phase:"expedition"}; persist(); render()} else showToast(result.error.message)}
+function start(ids:string[]){state={...state,phase:"expedition",expeditionNumber:state.expeditionNumber+1,selectedHeroIds:ids,room:createRoomState(scenario,ids)}; persist(); render()}
+function menu(){state={...state,phase:"menu"}; persist(); render()}
+function replay(){clearGameState().catch(()=>undefined); state=createInitialGameState(1); state.phase="menu"; render()}
+function render(){ if(state.phase!=="expedition"||!state.room){renderSelect(); return} renderRoom() }
+function renderSelect(){root.innerHTML=`<main class="app-shell"><header class="topbar"><div><p class="eyebrow">SPRINT 1 · ${APP_VERSION}</p><h1>Gargotte Adventure</h1></div><button class="button button-secondary" data-continue ${state.room?"":"disabled"}>Reprendre</button></header><section class="selection"><h2>Choisis de 1 à 4 héros</h2><p>Statistiques provisoires de démonstration, non définitives.</p><div class="hero-list">${scenario.heroes.map(h=>`<label class="choice"><input type="checkbox" value="${h.id}"><strong>${h.name}</strong><span>${h.role} · PV ${h.maxHp} · ATK ${h.atk} · DEF ${h.def} · Portée ${h.range}</span></label>`).join("")}</div><button class="button button-primary" data-launch disabled>Lancer la salle</button></section></main>`; const boxes=[...root.querySelectorAll<HTMLInputElement>('input[type="checkbox"]')]; const launch=root.querySelector<HTMLButtonElement>("[data-launch]")!; boxes.forEach(b=>b.addEventListener("change",()=>{const checked=boxes.filter(x=>x.checked); if(checked.length>4)b.checked=false; launch.disabled=boxes.filter(x=>x.checked).length===0})); launch.addEventListener("click",()=>start(boxes.filter(b=>b.checked).map(b=>b.value))); root.querySelector("[data-continue]")?.addEventListener("click",()=>{state.phase="expedition";render()}); }
+function renderRoom(){const r=state.room!; const active=r.heroes.find(h=>h.id===r.selectedHeroId); const reachable=active?reachableCells(r,active.position,active.actionsRemaining,active.id).map(p=>`${p.column},${p.row}`):[]; const targets=active?attackableTargets(r,active.id):[]; root.innerHTML=`<main class="app-shell tactical"><section class="board" aria-label="Salle tactique">${Array.from({length:r.height},(_,row)=>Array.from({length:r.width},(_,column)=>cell(column,row,reachable)).join("")).join("")}</section><aside class="hud"><p class="eyebrow">${r.phase==="enemy-turn"?"Tour ennemi":"Tour des héros"} · Tour ${r.turn}</p><h2>${active?active.name:"Sélectionne un héros"}</h2>${active?`<p>PV ${active.hp}/${active.maxHp} · ATK ${active.atk} · DEF ${active.def} · Portée ${active.range}</p><div class="ap">${[0,1,2].map(i=>`<span class="pip ${i<active.actionsRemaining?"on":""}"></span>`).join("")}</div>`:""}<div class="roster">${r.heroes.map(h=>`<button data-hero="${h.id}" class="token hero ${h.id===r.selectedHeroId?"sel":""}" ${!h.alive||r.completedHeroIds.includes(h.id)?"disabled":""}>${h.name[0]} ${h.hp}/${h.maxHp}</button>`).join("")}</div><button class="button" data-end ${active?"":"disabled"}>Terminer l’activation</button><button class="button button-secondary" data-turn>Terminer le tour</button><button class="button button-ghost" data-menu>Retour au menu</button><ol>${r.log.slice(0,5).map(e=>`<li>${e.type}</li>`).join("")}</ol></aside>${overlay(r)}</main>`; r.heroes.forEach(h=>place(h,"hero")); r.enemies.forEach(e=>place(e,"enemy",targets.includes(e.id))); root.querySelectorAll<HTMLButtonElement>("[data-hero]").forEach(b=>b.addEventListener("click",()=>dispatch({type:"hero/select",heroId:b.dataset.hero!}))); root.querySelectorAll<HTMLButtonElement>("[data-cell]").forEach(b=>b.addEventListener("click",()=>active&&dispatch({type:"hero/move",heroId:active.id,destination:{column:Number(b.dataset.c),row:Number(b.dataset.r)}}))); root.querySelectorAll<HTMLButtonElement>("[data-enemy]").forEach(b=>b.addEventListener("click",()=>active&&dispatch({type:"hero/attack",heroId:active.id,targetId:b.dataset.enemy!}))); root.querySelector("[data-end]")?.addEventListener("click",()=>active&&dispatch({type:"hero/end-activation",heroId:active.id})); root.querySelector("[data-turn]")?.addEventListener("click",()=>dispatch({type:"heroes/end-turn"})); root.querySelector("[data-menu]")?.addEventListener("click",menu); root.querySelectorAll("[data-replay]").forEach(b=>b.addEventListener("click",replay));}
+function cell(c:number,row:number,reachable:string[]){const obstacle=state.room!.obstacles.some(o=>o.column===c&&o.row===row); return `<button class="cell ${obstacle?"obstacle":""} ${reachable.includes(`${c},${row}`)?"reachable":""}" data-cell data-c="${c}" data-r="${row}" aria-label="Case ${c},${row}">${obstacle?"▰":""}</button>`}
+function place(e:any,kind:string,attack=false){const el=root.querySelector<HTMLElement>(`[data-c="${e.position.column}"][data-r="${e.position.row}"]`); if(el) el.innerHTML=`<button class="piece ${kind} ${attack?"attackable":""}" ${kind==="enemy"?`data-enemy="${e.id}"`:""}>${e.name[0]}<small>${e.hp}</small></button>`}
+function overlay(r:any){if(r.phase==="victory") return `<div class="overlay"><h2>Salle nettoyée !</h2><p>${r.turn} tours · ${r.heroes.filter((h:any)=>h.alive).length} héros debout</p><button data-replay class="button button-primary">Rejouer la salle</button></div>`; if(r.phase==="defeat") return `<div class="overlay"><h2>L’expédition a tourné au vinaigre</h2><p>${r.turn} tours</p><button data-replay class="button button-primary">Recommencer</button></div>`; return ""}
+function showToast(message:string){const live=document.createElement("p"); live.className="toast"; live.textContent=message; root.append(live); setTimeout(()=>live.remove(),1600)}
 render();
-shell.appendEvent(`${dungeon.name} chargé · ${APP_VERSION}.`);
-
-function eventMessage(type: string): string {
-  switch (type) {
-    case "expedition/started":
-      return "Une nouvelle expédition quitte La Chope Qui Colle.";
-    case "expedition/returned-to-menu":
-      return "Les héros reviennent compter leurs bosses.";
-    default:
-      return "Le moteur de jeu est prêt.";
-  }
-}
-
-declare global {
-  interface BeforeInstallPromptEvent extends Event {
-    prompt(): Promise<void>;
-    userChoice: Promise<{
-      outcome: "accepted" | "dismissed";
-      platform: string;
-    }>;
-  }
-}

@@ -1,9 +1,22 @@
 {
-  "schemaVersion": 1,
+  "schemaVersion": 2,
   "id": "chateau-de-bastognac",
   "name": "Le Château de Bastognac",
   "subtitle": "Le château où le mobilier attaque avant les gardes",
-  "floorBudgets": [3, 5, 7, 9, 11],
-  "bossId": "baron-pas-tres-terrifiant",
-  "status": "foundation-placeholder"
+  "status": "playable",
+  "sprint1Scenario": {
+    "id": "sprint-1-room-loop",
+    "rulesNote": "Statistiques provisoires de Sprint 1, sans équilibrage définitif.",
+    "room": { "width": 8, "height": 4, "obstacles": [{ "column": 4, "row": 1 }, { "column": 4, "row": 2 }] },
+    "heroes": [
+      { "id": "brunhilda", "name": "Brünhilda la Torgnole", "role": "Mêlée", "position": { "column": 0, "row": 1 }, "maxHp": 10, "atk": 4, "def": 1, "range": 1 },
+      { "id": "aelion", "name": "Aelion Trois-Gorgées", "role": "Soutien", "position": { "column": 0, "row": 2 }, "maxHp": 8, "atk": 3, "def": 1, "range": 3 },
+      { "id": "magdalena", "name": "Magdalena Coquinelle", "role": "Distance", "position": { "column": 1, "row": 0 }, "maxHp": 7, "atk": 3, "def": 0, "range": 4 },
+      { "id": "grompif", "name": "Grompif Arcabidon", "role": "Gardien", "position": { "column": 1, "row": 3 }, "maxHp": 12, "atk": 3, "def": 2, "range": 1 }
+    ],
+    "enemies": [
+      { "id": "gobelin-bricoleur-1", "name": "Gobelin Bricoleur", "position": { "column": 6, "row": 1 }, "maxHp": 5, "atk": 3, "def": 1, "range": 1 },
+      { "id": "gobelin-lance-tout-1", "name": "Gobelin Lance-Tout", "position": { "column": 7, "row": 2 }, "maxHp": 4, "atk": 2, "def": 0, "range": 3 }
+    ]
+  }
 }

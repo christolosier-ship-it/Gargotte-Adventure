@@ -1,17 +1,5 @@
 import "fake-indexeddb/auto";
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { createInitialGameState } from "@gargotte/engine";
 import { clearGameState, loadGameState, saveGameState } from "./index";
-
-describe("sauvegarde locale", () => {
-  beforeEach(async () => {
-    await clearGameState();
-  });
-
-  it("restaure un état versionné", async () => {
-    const state = { ...createInitialGameState(12), phase: "menu" as const };
-    await saveGameState(state);
-
-    await expect(loadGameState()).resolves.toEqual(state);
-  });
-});
+describe("save",()=>{it("serializes, restores and clears v2 saves",async()=>{const s=createInitialGameState(7); await saveGameState(s); await expect(loadGameState()).resolves.toEqual(s); await clearGameState(); await expect(loadGameState()).resolves.toBeNull();});});

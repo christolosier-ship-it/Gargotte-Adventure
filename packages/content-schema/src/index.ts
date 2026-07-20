@@ -1,41 +1,8 @@
 import { z } from "zod";
-
-export const contentManifestSchema = z.object({
-  schemaVersion: z.literal(1),
-  packId: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  title: z.string().min(1),
-  source: z.object({
-    kind: z.enum(["gargottex-export", "hand-authored"]),
-    reference: z.string().min(1),
-  }),
-  generatedAt: z.iso.datetime(),
-  contentHash: z.string().min(8),
-  files: z.array(z.string().min(1)).min(1),
-});
-
-export const dungeonSchema = z.object({
-  schemaVersion: z.literal(1),
-  id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  name: z.string().min(1),
-  subtitle: z.string().min(1),
-  floorBudgets: z.tuple([
-    z.number().int().positive(),
-    z.number().int().positive(),
-    z.number().int().positive(),
-    z.number().int().positive(),
-    z.number().int().positive(),
-  ]),
-  bossId: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
-  status: z.enum(["foundation-placeholder", "playable"]),
-});
-
-export type ContentManifest = z.infer<typeof contentManifestSchema>;
-export type DungeonDefinition = z.infer<typeof dungeonSchema>;
-
-export function parseContentManifest(value: unknown): ContentManifest {
-  return contentManifestSchema.parse(value);
-}
-
-export function parseDungeon(value: unknown): DungeonDefinition {
-  return dungeonSchema.parse(value);
-}
+const pos = z.object({ column: z.number().int().nonnegative(), row: z.number().int().nonnegative() });
+const actor = z.object({ id: z.string().min(1), name: z.string().min(1), role: z.string().optional(), position: pos, maxHp: z.number().int().positive(), atk: z.number().int().nonnegative(), def: z.number().int().nonnegative(), range: z.number().int().positive() });
+export const contentManifestSchema = z.object({ schemaVersion: z.literal(1), packId: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), title: z.string().min(1), source: z.object({ kind: z.enum(["gargottex-export", "hand-authored"]), reference: z.string().min(1) }), generatedAt: z.iso.datetime(), contentHash: z.string().min(8), files: z.array(z.string().min(1)).min(1) });
+export const dungeonSchema = z.object({ schemaVersion: z.literal(2), id: z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/), name: z.string().min(1), subtitle: z.string().min(1), status: z.enum(["foundation-placeholder", "playable"]), sprint1Scenario: z.object({ id: z.string().min(1), rulesNote: z.string().min(1), room: z.object({ width: z.literal(8), height: z.literal(4), obstacles: z.array(pos) }), heroes: z.array(actor.extend({ role: z.string().min(1) })).min(4), enemies: z.array(actor).min(2) }) });
+export type ContentManifest = z.infer<typeof contentManifestSchema>; export type DungeonDefinition = z.infer<typeof dungeonSchema>;
+export function parseContentManifest(value: unknown): ContentManifest { return contentManifestSchema.parse(value) }
+export function parseDungeon(value: unknown): DungeonDefinition { return dungeonSchema.parse(value) }

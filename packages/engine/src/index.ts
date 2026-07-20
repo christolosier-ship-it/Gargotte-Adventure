@@ -1,101 +1,43 @@
-import { createId } from "@gargotte/common";
-
-export type GamePhase = "boot" | "menu" | "expedition";
-
-export interface GameState {
-  version: 1;
-  phase: GamePhase;
-  seed: number;
-  expeditionNumber: number;
-  lastEventId: string | null;
-}
-
-export type DomainEvent =
-  | {
-      id: string;
-      type: "app/ready";
-      occurredAt: string;
-    }
-  | {
-      id: string;
-      type: "expedition/started";
-      occurredAt: string;
-      payload: { seed: number };
-    }
-  | {
-      id: string;
-      type: "expedition/returned-to-menu";
-      occurredAt: string;
-    };
-
-export function createInitialGameState(seed = 1): GameState {
-  return {
-    version: 1,
-    phase: "boot",
-    seed,
-    expeditionNumber: 0,
-    lastEventId: null,
-  };
-}
-
-export function reduceGameState(
-  state: GameState,
-  event: DomainEvent,
-): GameState {
-  switch (event.type) {
-    case "app/ready":
-      return { ...state, phase: "menu", lastEventId: event.id };
-    case "expedition/started":
-      return {
-        ...state,
-        phase: "expedition",
-        seed: event.payload.seed,
-        expeditionNumber: state.expeditionNumber + 1,
-        lastEventId: event.id,
-      };
-    case "expedition/returned-to-menu":
-      return { ...state, phase: "menu", lastEventId: event.id };
-  }
-}
-
-export function createEvent<T extends DomainEvent["type"]>(
-  type: T,
-  payload?: Extract<DomainEvent, { type: T }> extends { payload: infer P }
-    ? P
-    : never,
-): Extract<DomainEvent, { type: T }> {
-  const event = {
-    id: createId(),
-    type,
-    occurredAt: new Date().toISOString(),
-    ...(payload === undefined ? {} : { payload }),
-  };
-
-  return event as Extract<DomainEvent, { type: T }>;
-}
-
-export type EventListener = (event: DomainEvent) => void;
-
-export class EventBus {
-  readonly #listeners = new Set<EventListener>();
-
-  subscribe(listener: EventListener): () => void {
-    this.#listeners.add(listener);
-    return () => this.#listeners.delete(listener);
-  }
-
-  publish(event: DomainEvent): void {
-    for (const listener of this.#listeners) listener(event);
-  }
-}
-
-export function createDeterministicRandom(seed: number): () => number {
-  let value = seed >>> 0;
-  return () => {
-    value += 0x6d2b79f5;
-    let result = value;
-    result = Math.imul(result ^ (result >>> 15), result | 1);
-    result ^= result + Math.imul(result ^ (result >>> 7), result | 61);
-    return ((result ^ (result >>> 14)) >>> 0) / 4_294_967_296;
-  };
-}
+export type RoomPhase = "hero-selection" | "heroes-turn" | "enemy-turn" | "victory" | "defeat";
+export interface GridPosition { column: number; row: number }
+export interface Stats { maxHp: number; atk: number; def: number; range: number }
+export interface Entity extends Stats { id: string; name: string; kind: "hero"|"enemy"; role?: string; position: GridPosition; hp: number; alive: boolean; actionsRemaining: number; blocking: boolean }
+export interface RoomState { version: 2; scenarioId: string; width: number; height: number; obstacles: GridPosition[]; heroes: Entity[]; enemies: Entity[]; selectedHeroId: string|null; completedHeroIds: string[]; phase: RoomPhase; turn: number; log: RoomEvent[] }
+export type RoomEvent = { type:"hero/selected"; heroId:string }|{ type:"entity/moved"; entityId:string; from:GridPosition; to:GridPosition }|{ type:"entity/attacked"; attackerId:string; targetId:string }|{ type:"entity/damaged"; entityId:string; amount:number; remainingHp:number }|{ type:"entity/defeated"; entityId:string }|{ type:"enemy-turn/started" }|{ type:"enemy-turn/completed" }|{ type:"room/victory" }|{ type:"room/defeat" };
+export type PlayerIntent = { type:"hero/select"; heroId:string }|{ type:"hero/move"; heroId:string; destination:GridPosition }|{ type:"hero/attack"; heroId:string; targetId:string }|{ type:"hero/end-activation"; heroId:string }|{ type:"heroes/end-turn" };
+export type IntentErrorCode = "ROOM_FINISHED"|"INVALID_PHASE"|"UNKNOWN_ENTITY"|"HERO_DEFEATED"|"HERO_ALREADY_DONE"|"HERO_NOT_ACTIVE"|"NO_ACTIONS"|"OUT_OF_BOUNDS"|"BLOCKED_CELL"|"OCCUPIED_CELL"|"UNREACHABLE"|"TARGET_INVALID"|"OUT_OF_RANGE"|"LINE_OF_SIGHT_BLOCKED";
+export interface IntentError { code: IntentErrorCode; message: string }
+export type IntentResult = { ok:true; state:RoomState; events:RoomEvent[] }|{ ok:false; state:RoomState; error:IntentError; events:[] };
+export interface EnemyDecisionExplanation { enemyId:string; targetId:string|null; reason:"nearest-reachable-target"|"target-already-in-range"|"moved-toward-target"|"no-reachable-target" }
+const dirs: GridPosition[] = [{column:0,row:-1},{column:-1,row:0},{column:1,row:0},{column:0,row:1}];
+export const samePos=(a:GridPosition,b:GridPosition)=>a.column===b.column&&a.row===b.row;
+export const posKey=(p:GridPosition)=>`${p.column},${p.row}`;
+export const manhattan=(a:GridPosition,b:GridPosition)=>Math.abs(a.column-b.column)+Math.abs(a.row-b.row);
+export function inBounds(s:Pick<RoomState,"width"|"height">,p:GridPosition){return p.column>=0&&p.row>=0&&p.column<s.width&&p.row<s.height}
+export function orthogonalNeighbors(s:Pick<RoomState,"width"|"height">,p:GridPosition){return dirs.map(d=>({column:p.column+d.column,row:p.row+d.row})).filter(n=>inBounds(s,n)).sort(comparePos)}
+export function comparePos(a:GridPosition,b:GridPosition){return a.row-b.row||a.column-b.column}
+export function allEntities(s:RoomState){return [...s.heroes,...s.enemies]}
+export function isObstacle(s:RoomState,p:GridPosition){return s.obstacles.some(o=>samePos(o,p))}
+export function occupant(s:RoomState,p:GridPosition, ignoreId?:string){return allEntities(s).find(e=>e.id!==ignoreId&&e.alive&&e.blocking&&samePos(e.position,p))}
+export function isBlocked(s:RoomState,p:GridPosition, ignoreId?:string){return !inBounds(s,p)||isObstacle(s,p)||!!occupant(s,p,ignoreId)}
+export function reachableCells(s:RoomState, from:GridPosition, max:number, ignoreId?:string){const seen=new Map<string,number>([[posKey(from),0]]); const q=[from]; for(let i=0;i<q.length;i++){const p=q[i]!; const d=seen.get(posKey(p))!; if(d===max) continue; for(const n of orthogonalNeighbors(s,p)){if(isBlocked(s,n,ignoreId)) continue; const k=posKey(n); if(!seen.has(k)){seen.set(k,d+1); q.push(n)}}} return [...seen.keys()].map(k=>{const [c,r]=k.split(',').map(Number); return {column:c!,row:r!}}).sort(comparePos)}
+export function shortestPath(s:RoomState, from:GridPosition, to:GridPosition, ignoreId?:string){if(samePos(from,to)) return [from]; if(isBlocked(s,to,ignoreId)) return null; const prev=new Map<string,string|null>([[posKey(from),null]]); const q=[from]; for(let i=0;i<q.length;i++){const p=q[i]!; for(const n of orthogonalNeighbors(s,p)){if(isBlocked(s,n,ignoreId)) continue; const k=posKey(n); if(prev.has(k)) continue; prev.set(k,posKey(p)); if(samePos(n,to)){const path=[to]; let cur=posKey(p); while(cur){const [c,r]=cur.split(',').map(Number); path.push({column:c!,row:r!}); cur=prev.get(cur)??null} return path.reverse()} q.push(n)}} return null}
+export function lineCells(a:GridPosition,b:GridPosition){const dx=b.column-a.column, dy=b.row-a.row; const steps=Math.max(Math.abs(dx),Math.abs(dy)); const cells:GridPosition[]=[]; for(let i=1;i<steps;i++){cells.push({column:Math.round(a.column+dx*i/steps),row:Math.round(a.row+dy*i/steps)})} return cells.filter((p,i,arr)=>arr.findIndex(x=>samePos(x,p))===i)}
+export function hasLineOfSight(s:RoomState,a:GridPosition,b:GridPosition, ignore:string[]=[]){return lineCells(a,b).every(p=>!isObstacle(s,p)&&!allEntities(s).some(e=>e.alive&&e.blocking&&!ignore.includes(e.id)&&samePos(e.position,p)))}
+export function canAttack(s:RoomState, attacker:Entity, target:Entity){return attacker.alive&&target.alive&&manhattan(attacker.position,target.position)<=attacker.range&&hasLineOfSight(s,attacker.position,target.position,[attacker.id,target.id])}
+export function attackableTargets(s:RoomState, attackerId:string){const a=allEntities(s).find(e=>e.id===attackerId); if(!a) return []; const targets=a.kind==="hero"?s.enemies:s.heroes; return targets.filter(t=>canAttack(s,a,t)).map(t=>t.id).sort()}
+export function createRoomState(scenario:any, heroIds:string[]):RoomState{const heroes=scenario.heroes.filter((h:any)=>heroIds.includes(h.id)).map((h:any):Entity=>({...h, kind:"hero", hp:h.maxHp, alive:true, actionsRemaining:3, blocking:true})); const enemies=scenario.enemies.map((e:any):Entity=>({...e, kind:"enemy", hp:e.maxHp, alive:true, actionsRemaining:1, blocking:true})); return {version:2, scenarioId:scenario.id, width:scenario.room.width, height:scenario.room.height, obstacles:scenario.room.obstacles, heroes, enemies, selectedHeroId:null, completedHeroIds:[], phase:"hero-selection", turn:1, log:[]}}
+function clone(s:RoomState):RoomState{return structuredClone(s) as RoomState}
+const err=(state:RoomState,code:IntentErrorCode,message=code):IntentResult=>({ok:false,state,error:{code,message},events:[]});
+function finish(state:RoomState,events:RoomEvent[]){if(state.enemies.every(e=>!e.alive)){state.phase="victory"; events.push({type:"room/victory"})} if(state.heroes.every(h=>!h.alive)){state.phase="defeat"; events.push({type:"room/defeat"})} state.log=[...events,...state.log].slice(0,50)}
+export function applyPlayerIntent(state:RoomState,intent:PlayerIntent):IntentResult{if(state.phase==="victory"||state.phase==="defeat") return err(state,"ROOM_FINISHED"); const s=clone(state); const events:RoomEvent[]=[]; const hero=s.heroes.find(h=>h.id===("heroId" in intent?intent.heroId:"")); if(intent.type!=="heroes/end-turn"&&!hero) return err(state,"UNKNOWN_ENTITY"); if(hero&&(!hero.alive)) return err(state,"HERO_DEFEATED"); if(hero&&s.completedHeroIds.includes(hero.id)) return err(state,"HERO_ALREADY_DONE"); if(intent.type==="hero/select"){s.phase="heroes-turn"; s.selectedHeroId=hero!.id; events.push({type:"hero/selected",heroId:hero!.id})}
+ else if(intent.type==="hero/move"){if(s.selectedHeroId!==hero!.id) return err(state,"HERO_NOT_ACTIVE"); if(hero!.actionsRemaining<1) return err(state,"NO_ACTIONS"); if(!inBounds(s,intent.destination)) return err(state,"OUT_OF_BOUNDS"); if(isObstacle(s,intent.destination)) return err(state,"BLOCKED_CELL"); if(occupant(s,intent.destination,hero!.id)) return err(state,"OCCUPIED_CELL"); const path=shortestPath(s,hero!.position,intent.destination,hero!.id); if(!path||path.length-1>hero!.actionsRemaining) return err(state,"UNREACHABLE"); const from=hero!.position; hero!.position=intent.destination; hero!.actionsRemaining-=path.length-1; events.push({type:"entity/moved",entityId:hero!.id,from,to:intent.destination})}
+ else if(intent.type==="hero/attack"){if(s.selectedHeroId!==hero!.id) return err(state,"HERO_NOT_ACTIVE"); if(hero!.actionsRemaining<1) return err(state,"NO_ACTIONS"); const target=s.enemies.find(e=>e.id===intent.targetId); if(!target||!target.alive) return err(state,"TARGET_INVALID"); if(manhattan(hero!.position,target.position)>hero!.range) return err(state,"OUT_OF_RANGE"); if(!hasLineOfSight(s,hero!.position,target.position,[hero!.id,target.id])) return err(state,"LINE_OF_SIGHT_BLOCKED"); doAttack(hero!,target,events); finish(s,events)}
+ else if(intent.type==="hero/end-activation"){s.completedHeroIds.push(hero!.id); hero!.actionsRemaining=0; s.selectedHeroId=null}
+ else if(intent.type==="heroes/end-turn"){for(const h of s.heroes.filter(h=>h.alive&&!s.completedHeroIds.includes(h.id))) s.completedHeroIds.push(h.id)}
+ if(s.phase!=="victory"&&s.phase!=="defeat"&&s.heroes.filter(h=>h.alive).every(h=>s.completedHeroIds.includes(h.id))) return runEnemyTurn(s,events); finish(s,events); return {ok:true,state:s,events}}
+function doAttack(a:Entity,t:Entity,events:RoomEvent[]){a.actionsRemaining-=1; const amount=Math.max(1,a.atk-t.def); t.hp=Math.max(0,t.hp-amount); events.push({type:"entity/attacked",attackerId:a.id,targetId:t.id},{type:"entity/damaged",entityId:t.id,amount,remainingHp:t.hp}); if(t.hp===0){t.alive=false; events.push({type:"entity/defeated",entityId:t.id})}}
+export function explainEnemyDecision(s:RoomState, enemy:Entity):EnemyDecisionExplanation{const targets=s.heroes.filter(h=>h.alive).map(h=>({h,path:shortestPath(s,enemy.position,h.position,enemy.id)})).filter(x=>x.path).sort((a,b)=>a.path!.length-b.path!.length||comparePos(a.h.position,b.h.position)||a.h.id.localeCompare(b.h.id)); const best=targets[0]; if(!best) return {enemyId:enemy.id,targetId:null,reason:"no-reachable-target"}; return {enemyId:enemy.id,targetId:best.h.id,reason:canAttack(s,enemy,best.h)?"target-already-in-range":"nearest-reachable-target"}}
+export function runEnemyTurn(state:RoomState, prior:RoomEvent[]=[]):IntentResult{const s=clone(state); const events=[...prior,{type:"enemy-turn/started"} as RoomEvent]; s.phase="enemy-turn"; for(const e of [...s.enemies].filter(e=>e.alive).sort((a,b)=>a.id.localeCompare(b.id))){let candidates=s.heroes.filter(h=>h.alive).map(h=>({h,path:shortestPath(s,e.position,h.position,e.id)})).filter(x=>x.path).sort((a,b)=>a.path!.length-b.path!.length||comparePos(a.h.position,b.h.position)||a.h.id.localeCompare(b.h.id)); const best=candidates[0]; if(!best) continue; if(!canAttack(s,e,best.h)&&best.path!.length>2){const from=e.position; e.position=best.path![1]!; events.push({type:"entity/moved",entityId:e.id,from,to:e.position})} if(canAttack(s,e,best.h)) doAttack(e,best.h,events); finish(s,events); if(s.phase==="defeat") break} if(s.phase!=="defeat"&&s.phase!=="victory"){s.phase="heroes-turn"; s.completedHeroIds=[]; s.selectedHeroId=null; s.turn+=1; for(const h of s.heroes) h.actionsRemaining=h.alive?3:0; events.push({type:"enemy-turn/completed"})} finish(s,events); return {ok:true,state:s,events}}
+export type GamePhase = "boot"|"menu"|"expedition"; export interface GameState{version:2; phase:GamePhase; seed:number; expeditionNumber:number; room:RoomState|null; selectedHeroIds:string[]}
+export function createInitialGameState(seed=1):GameState{return {version:2,phase:"boot",seed,expeditionNumber:0,room:null,selectedHeroIds:[]}}

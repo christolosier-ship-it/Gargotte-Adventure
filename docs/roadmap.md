@@ -87,3 +87,8 @@ Objectif : jouer une salle tactique complète avec des représentations temporai
 4. données versionnées avant automatisation massive ;
 5. mesures de performance avant WebAssembly ;
 6. aucune dépendance à l’API OpenAI pour lancer ou terminer une partie.
+
+
+## Sprint 1 — Boucle de salle
+
+Livraison ciblée : salle déterministe jouable, sans Brouhaha, loot, progression, boss ni contenu définitif.

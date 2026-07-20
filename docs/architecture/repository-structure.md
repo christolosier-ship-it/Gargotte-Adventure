@@ -130,3 +130,8 @@ Chaque dossier généré doit contenir un manifeste indiquant :
 - outil et version utilisés.
 
 Les sources humaines ne sont jamais écrasées par le pipeline.
+
+
+## Ajouts Sprint 1
+
+`packages/engine` contient la grille, la ligne de vue, le combat, la machine de tour et l’IA. `content/bastognac/dungeon.json` contient le scénario temporaire versionné.

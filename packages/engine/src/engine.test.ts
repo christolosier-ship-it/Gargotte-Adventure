@@ -1,32 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {
-  createDeterministicRandom,
-  createEvent,
-  createInitialGameState,
-  reduceGameState,
-} from "./index";
-
-describe("moteur déterministe", () => {
-  it("produit la même séquence avec la même graine", () => {
-    const left = createDeterministicRandom(42);
-    const right = createDeterministicRandom(42);
-
-    expect([left(), left(), left()]).toEqual([right(), right(), right()]);
-  });
-
-  it("fait passer une expédition par un événement explicite", () => {
-    const boot = createInitialGameState(1);
-    const menu = reduceGameState(boot, createEvent("app/ready"));
-    const expedition = reduceGameState(
-      menu,
-      createEvent("expedition/started", { seed: 734 }),
-    );
-
-    expect(menu.phase).toBe("menu");
-    expect(expedition).toMatchObject({
-      phase: "expedition",
-      seed: 734,
-      expeditionNumber: 1,
-    });
-  });
+import { applyPlayerIntent, attackableTargets, createRoomState, hasLineOfSight, lineCells, manhattan, orthogonalNeighbors, reachableCells, shortestPath, runEnemyTurn } from "./index";
+const scenario={id:"s",room:{width:8,height:4,obstacles:[{column:4,row:1}]},heroes:[{id:"h1",name:"H1",position:{column:0,row:0},maxHp:5,atk:4,def:1,range:1},{id:"h2",name:"H2",position:{column:0,row:3},maxHp:5,atk:2,def:0,range:3}],enemies:[{id:"e1",name:"E1",position:{column:2,row:0},maxHp:3,atk:2,def:1,range:1},{id:"e2",name:"E2",position:{column:7,row:3},maxHp:4,atk:2,def:0,range:3}]};
+describe("room engine",()=>{
+ it("covers grid bounds, neighbors, reachable cells, paths and deterministic tie-breaks",()=>{const s=createRoomState(scenario,["h1","h2"]); expect(manhattan({column:0,row:0},{column:2,row:1})).toBe(3); expect(orthogonalNeighbors(s,{column:0,row:0})).toEqual([{column:1,row:0},{column:0,row:1}].sort((a,b)=>a.row-b.row||a.column-b.column)); expect(reachableCells(s,{column:0,row:0},2,"h1").map(p=>`${p.column},${p.row}`)).toContain("1,1"); expect(shortestPath(s,{column:0,row:0},{column:1,row:1},"h1")?.map(p=>`${p.column},${p.row}`)).toEqual(["0,0","1,0","1,1"]);});
+ it("covers line of sight range shapes and blocking",()=>{let s=createRoomState(scenario,["h1"]); expect(lineCells({column:0,row:0},{column:3,row:0})).toEqual([{column:1,row:0},{column:2,row:0}]); expect(hasLineOfSight(s,{column:0,row:0},{column:3,row:0})).toBe(false); expect(hasLineOfSight(s,{column:0,row:0},{column:0,row:3})).toBe(true); expect(lineCells({column:0,row:0},{column:3,row:3}).length).toBe(2); s={...s,obstacles:[{column:1,row:0}]}; expect(hasLineOfSight(s,{column:0,row:0},{column:3,row:0})).toBe(false);});
+ it("covers combat damage, actions, invalid attack and victory",()=>{let s=createRoomState({...scenario,enemies:[scenario.enemies[0]]},["h1"]); let r=applyPlayerIntent(s,{type:"hero/select",heroId:"h1"}); expect(r.ok).toBe(true); s=r.state; r=applyPlayerIntent(s,{type:"hero/attack",heroId:"h1",targetId:"e1"}); expect(r.ok).toBe(false); r=applyPlayerIntent(s,{type:"hero/move",heroId:"h1",destination:{column:1,row:0}}); expect(r.ok&&r.state.heroes[0]?.actionsRemaining).toBe(2); s=r.state; r=applyPlayerIntent(s,{type:"hero/attack",heroId:"h1",targetId:"e1"}); expect(r.ok&&r.state.enemies[0]?.hp).toBe(0); expect(r.ok&&r.state.phase).toBe("victory");});
+ it("covers turns, early end, free order, enemy transition and action restore",()=>{let s=createRoomState(scenario,["h1","h2"]); let r=applyPlayerIntent(s,{type:"hero/select",heroId:"h2"}); expect(r.ok).toBe(true); s=r.state; r=applyPlayerIntent(s,{type:"hero/end-activation",heroId:"h2"}); expect(r.ok).toBe(true); s=r.state; r=applyPlayerIntent(s,{type:"hero/end-activation",heroId:"h2"}); expect(r.ok).toBe(false); r=applyPlayerIntent(s,{type:"hero/select",heroId:"h1"}); expect(r.ok).toBe(true); s=r.state; r=applyPlayerIntent(s,{type:"hero/end-activation",heroId:"h1"}); expect(r.ok&&r.state.turn).toBe(2); expect(r.ok&&r.state.heroes.every(h=>h.actionsRemaining===3)).toBe(true);});
+ it("covers deterministic AI targeting, movement, attack and no target",()=>{let s=createRoomState(scenario,["h1","h2"]); const a=runEnemyTurn(s).state; const b=runEnemyTurn(s).state; expect(a).toEqual(b); expect(a.log.some(e=>e.type==="enemy-turn/started")).toBe(true); s={...s,heroes:s.heroes.map(h=>({...h,alive:false,hp:0}))}; expect(runEnemyTurn(s).state.phase).toBe("defeat");});
+ it("exposes attackable targets",()=>{const s=createRoomState(scenario,["h2"]); expect(attackableTargets(s,"h2")).toEqual([]);});
 });

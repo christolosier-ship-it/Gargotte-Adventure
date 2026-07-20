@@ -110,3 +110,8 @@ WebAssembly n’est pas introduit au Sprint 0. Il sera évalué uniquement si un
 ## Diagramme
 
 Le diagramme éditable de référence est disponible dans [FigJam](https://www.figma.com/board/wscHfycwhhvJRWQqelY4f9).
+
+
+## Moteur tactique
+
+Le Sprint 1 sépare le moteur pur de salle, le contenu Bastognac validé, la sauvegarde IndexedDB v2 et l’interface tactile.

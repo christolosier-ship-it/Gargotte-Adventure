@@ -72,3 +72,8 @@ Les changements passent par une Pull Request et les contrôles automatisés avan
 ## Licence
 
 Aucune licence open source n’est accordée pour le moment. Les droits sur le code, l’univers, les textes et les ressources restent réservés à leur auteur.
+
+
+## Sprint 1 jouable
+
+La branche Sprint 1 ajoute une salle tactique jouable : sélection de 1 à 4 héros, grille 8 × 4, déplacements, attaques, IA ennemie déterministe, victoire, défaite et sauvegarde locale v2. Les statistiques et jetons sont provisoires.
