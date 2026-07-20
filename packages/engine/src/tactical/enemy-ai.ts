@@ -116,9 +116,7 @@ export function chooseEnemyDecision(
           enemy.range
         )
           continue;
-        if (
-          !hasLineOfSight(state, cell, hero.position, [enemy.id, hero.id])
-        )
+        if (!hasLineOfSight(state, cell, hero.position, [enemy.id, hero.id]))
           continue;
 
         const path = shortestPath(state, enemy.position, cell, enemy.id);
