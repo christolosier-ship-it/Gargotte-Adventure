@@ -1,0 +1,61 @@
+name: Signaler un bug
+description: Décrire un comportement incorrect ou une régression
+title: "bug: "
+body:
+  - type: markdown
+    attributes:
+      value: Merci de fournir un cas reproductible sans inclure de secret ni de donnée personnelle.
+  - type: textarea
+    id: observed
+    attributes:
+      label: Comportement observé
+      description: Que se passe-t-il ?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Comportement attendu
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Étapes de reproduction
+      placeholder: |
+        1. Ouvrir…
+        2. Toucher…
+        3. Observer…
+    validations:
+      required: true
+  - type: dropdown
+    id: device
+    attributes:
+      label: Appareil principal
+      options:
+        - iPhone
+        - iPad
+        - Android
+        - Ordinateur
+        - Plusieurs appareils
+        - Non applicable
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Navigateur et version
+  - type: textarea
+    id: context
+    attributes:
+      label: Contexte complémentaire
+      description: Sauvegarde concernée, étage, héros, créature, Brouhaha, captures, etc.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Vérifications
+      options:
+        - label: Je n’ai inclus aucun secret ni clé API.
+          required: true
+        - label: J’ai vérifié qu’une issue identique n’existe pas déjà.
+          required: true
