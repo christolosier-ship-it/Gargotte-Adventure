@@ -9,9 +9,7 @@ const getRoomSave = async (page: Page) =>
     });
     try {
       const transaction = database.transaction("saves", "readonly");
-      const saveRequest = transaction
-        .objectStore("saves")
-        .get("room-autosave");
+      const saveRequest = transaction.objectStore("saves").get("room-autosave");
       return await new Promise<unknown>((resolve, reject) => {
         saveRequest.onerror = () => reject(saveRequest.error);
         saveRequest.onsuccess = () => resolve(saveRequest.result);
@@ -82,16 +80,20 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
   await page.goto("./");
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
   await clickCell(page, 0, 0);
-  await expect.poll(async () => (await readCanvasState(page)).activeHero).toBe(
-    "brunhilda",
-  );
-  await expect(page.getByText(/Héros actif: Brünhilda la Torgnole/)).toBeVisible();
+  await expect
+    .poll(async () => (await readCanvasState(page)).activeHero)
+    .toBe("brunhilda");
+  await expect(
+    page.getByText(/Héros actif: Brünhilda la Torgnole/),
+  ).toBeVisible();
 
   await clickCell(page, 1, 0);
   await expect
     .poll(async () => {
       const state = await readCanvasState(page);
-      const hero = state.heroes.find((candidate) => candidate.id === "brunhilda");
+      const hero = state.heroes.find(
+        (candidate) => candidate.id === "brunhilda",
+      );
       return {
         position: hero?.position,
         actions: hero?.actionsRemaining,
@@ -106,24 +108,22 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
   await page
     .getByRole("button", { name: "Terminer le tour des héros" })
     .click();
-  await expect.poll(async () => (await readCanvasState(page)).phase).toBe(
-    "enemy-turn",
-  );
+  await expect
+    .poll(async () => (await readCanvasState(page)).phase)
+    .toBe("enemy-turn");
   await expect(
     page.getByRole("button", { name: "Résoudre le tour ennemi" }),
   ).toBeEnabled();
-  await page
-    .getByRole("button", { name: "Résoudre le tour ennemi" })
-    .click();
+  await page.getByRole("button", { name: "Résoudre le tour ennemi" }).click();
   await expect.poll(async () => (await readCanvasState(page)).turn).toBe(2);
 
   const beforeReload = await readCanvasState(page);
   await page.reload();
   await expect(page.getByRole("button", { name: "Reprendre" })).toBeEnabled();
   await page.getByRole("button", { name: "Reprendre" }).click();
-  await expect.poll(async () => await readCanvasState(page)).toEqual(
-    beforeReload,
-  );
+  await expect
+    .poll(async () => await readCanvasState(page))
+    .toEqual(beforeReload);
 });
 
 test("atteint une victoire reproductible", async ({ page }) => {
@@ -180,9 +180,9 @@ test("atteint une victoire reproductible", async ({ page }) => {
   await page.getByRole("button", { name: "Reprendre" }).click();
   await clickCell(page, 6, 0);
   await clickCell(page, 7, 0);
-  await expect.poll(async () => (await readCanvasState(page)).phase).toBe(
-    "victory",
-  );
+  await expect
+    .poll(async () => (await readCanvasState(page)).phase)
+    .toBe("victory");
   await expect(page.getByText("Victoire")).toBeVisible();
 });
 
