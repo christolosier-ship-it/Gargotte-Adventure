@@ -1,0 +1,7 @@
+# Default owner
+* @christolosier-ship-it
+
+# Sensitive project configuration
+/.github/ @christolosier-ship-it
+/docs/adr/ @christolosier-ship-it
+/docs/security/ @christolosier-ship-it
