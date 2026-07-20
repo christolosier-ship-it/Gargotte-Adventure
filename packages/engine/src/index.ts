@@ -1,6 +1,6 @@
-import { createId } from '@gargotte/common';
+import { createId } from "@gargotte/common";
 
-export type GamePhase = 'boot' | 'menu' | 'expedition';
+export type GamePhase = "boot" | "menu" | "expedition";
 
 export interface GameState {
   version: 1;
@@ -13,57 +13,62 @@ export interface GameState {
 export type DomainEvent =
   | {
       id: string;
-      type: 'app/ready';
+      type: "app/ready";
       occurredAt: string;
     }
   | {
       id: string;
-      type: 'expedition/started';
+      type: "expedition/started";
       occurredAt: string;
       payload: { seed: number };
     }
   | {
       id: string;
-      type: 'expedition/returned-to-menu';
+      type: "expedition/returned-to-menu";
       occurredAt: string;
     };
 
 export function createInitialGameState(seed = 1): GameState {
   return {
     version: 1,
-    phase: 'boot',
+    phase: "boot",
     seed,
     expeditionNumber: 0,
-    lastEventId: null
+    lastEventId: null,
   };
 }
 
-export function reduceGameState(state: GameState, event: DomainEvent): GameState {
+export function reduceGameState(
+  state: GameState,
+  event: DomainEvent,
+): GameState {
   switch (event.type) {
-    case 'app/ready':
-      return { ...state, phase: 'menu', lastEventId: event.id };
-    case 'expedition/started':
+    case "app/ready":
+      return { ...state, phase: "menu", lastEventId: event.id };
+    case "expedition/started":
       return {
         ...state,
-        phase: 'expedition',
+        phase: "expedition",
         seed: event.payload.seed,
         expeditionNumber: state.expeditionNumber + 1,
-        lastEventId: event.id
+        lastEventId: event.id,
       };
-    case 'expedition/returned-to-menu':
-      return { ...state, phase: 'menu', lastEventId: event.id };
+    case "expedition/returned-to-menu":
+      return { ...state, phase: "menu", lastEventId: event.id };
   }
 }
 
-export function createEvent<T extends DomainEvent['type']>(
+export function createEvent<T extends DomainEvent["type"]>(
   type: T,
-  payload?: Extract<DomainEvent, { type: T }> extends { payload: infer P } ? P : never
+  payload?: Extract<DomainEvent, { type: T }> extends { payload: infer P }
+    ? P
+    : never,
 ): Extract<DomainEvent, { type: T }> {
   const event = {
     id: createId(),
     type,
     occurredAt: new Date().toISOString(),
-    ...(payload === undefined ? {} : { payload })
+    ...(payload === undefined ? {} : { payload }),
   };
 
   return event as Extract<DomainEvent, { type: T }>;

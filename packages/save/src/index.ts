@@ -1,5 +1,5 @@
-import { openDB, type DBSchema } from 'idb';
-import type { GameState } from '@gargotte/engine';
+import { openDB, type DBSchema } from "idb";
+import type { GameState } from "@gargotte/engine";
 
 interface GargotteDatabase extends DBSchema {
   saves: {
@@ -17,39 +17,39 @@ interface GargotteDatabase extends DBSchema {
   };
 }
 
-const databaseName = 'gargotte-adventure';
+const databaseName = "gargotte-adventure";
 const databaseVersion = 1;
 
 async function getDatabase() {
   return openDB<GargotteDatabase>(databaseName, databaseVersion, {
     upgrade(database) {
-      if (!database.objectStoreNames.contains('saves')) {
-        database.createObjectStore('saves', { keyPath: 'id' });
+      if (!database.objectStoreNames.contains("saves")) {
+        database.createObjectStore("saves", { keyPath: "id" });
       }
-      if (!database.objectStoreNames.contains('settings')) {
-        database.createObjectStore('settings');
+      if (!database.objectStoreNames.contains("settings")) {
+        database.createObjectStore("settings");
       }
-    }
+    },
   });
 }
 
 export async function saveGameState(state: GameState): Promise<void> {
   const database = await getDatabase();
-  await database.put('saves', {
-    id: 'autosave',
+  await database.put("saves", {
+    id: "autosave",
     schemaVersion: 1,
     updatedAt: new Date().toISOString(),
-    state
+    state,
   });
 }
 
 export async function loadGameState(): Promise<GameState | null> {
   const database = await getDatabase();
-  const save = await database.get('saves', 'autosave');
+  const save = await database.get("saves", "autosave");
   return save?.state ?? null;
 }
 
 export async function clearGameState(): Promise<void> {
   const database = await getDatabase();
-  await database.delete('saves', 'autosave');
+  await database.delete("saves", "autosave");
 }

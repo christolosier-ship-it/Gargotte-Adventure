@@ -85,13 +85,13 @@ export function createGameShell(root: HTMLElement): GameShell {
     </div>
   `;
 
-  const boardHost = required<HTMLElement>(root, '[data-board]');
-  const status = required<HTMLElement>(root, '[data-status]');
-  const saveStatus = required<HTMLElement>(root, '[data-save-status]');
-  const eventLog = required<HTMLElement>(root, '[data-events]');
-  const startButton = required<HTMLButtonElement>(root, '[data-start]');
-  const continueButton = required<HTMLButtonElement>(root, '[data-continue]');
-  const installButton = required<HTMLButtonElement>(root, '[data-install]');
+  const boardHost = required<HTMLElement>(root, "[data-board]");
+  const status = required<HTMLElement>(root, "[data-status]");
+  const saveStatus = required<HTMLElement>(root, "[data-save-status]");
+  const eventLog = required<HTMLElement>(root, "[data-events]");
+  const startButton = required<HTMLButtonElement>(root, "[data-start]");
+  const continueButton = required<HTMLButtonElement>(root, "[data-continue]");
+  const installButton = required<HTMLButtonElement>(root, "[data-install]");
 
   return {
     boardHost,
@@ -102,20 +102,21 @@ export function createGameShell(root: HTMLElement): GameShell {
     continueButton,
     installButton,
     update(next) {
-      status.textContent = next.phase === 'expedition' ? 'Expédition en cours' : 'Préparation';
-      status.dataset.active = String(next.phase === 'expedition');
+      status.textContent =
+        next.phase === "expedition" ? "Expédition en cours" : "Préparation";
+      status.dataset.active = String(next.phase === "expedition");
       continueButton.disabled = !next.canContinue;
       continueButton.textContent = next.expeditionNumber
         ? `Continuer l'expédition ${next.expeditionNumber}`
-        : 'Continuer';
+        : "Continuer";
       saveStatus.textContent = next.saveText;
     },
     appendEvent(message) {
-      const item = document.createElement('li');
+      const item = document.createElement("li");
       item.textContent = message;
       eventLog.prepend(item);
       while (eventLog.children.length > 4) eventLog.lastElementChild?.remove();
-    }
+    },
   };
 }
 

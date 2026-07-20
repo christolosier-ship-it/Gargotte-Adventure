@@ -30,11 +30,13 @@ Créer une règle de protection ou un ruleset avec :
 
 ## GitHub Actions
 
+- le workflow applicatif `Validate foundations` doit se déclencher sur les Pull Requests vers `main` et vers `sprint-0/foundations` afin de valider les PR empilées, notamment la PR #3 avant la PR #2 ;
 - permissions par défaut en lecture seule ;
 - autoriser l’écriture uniquement dans les workflows qui en ont besoin ;
 - ne jamais enregistrer une clé dans un fichier du dépôt ;
 - utiliser les secrets GitHub pour les futurs outils privés ;
-- limiter les workflows OpenAI aux branches ou déclenchements nécessaires.
+- limiter les workflows OpenAI aux branches ou déclenchements nécessaires ;
+- les tests Playwright doivent servir le build de production avec Vite Preview, pas le serveur de développement Vite.
 
 ## Pages
 
