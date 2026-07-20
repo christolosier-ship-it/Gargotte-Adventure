@@ -49,7 +49,8 @@ export async function createTabletopRenderer(
   };
 
   function clearStage(): void {
-    for (const child of stage.removeChildren()) child.destroy({ children: true });
+    for (const child of stage.removeChildren())
+      child.destroy({ children: true });
   }
 
   function drawToken(
@@ -57,8 +58,7 @@ export async function createTabletopRenderer(
     active: boolean,
     attackable: boolean,
   ): void {
-    const x =
-      originX + combatant.position.column * cellSize + cellSize / 2;
+    const x = originX + combatant.position.column * cellSize + cellSize / 2;
     const y = originY + combatant.position.row * cellSize + cellSize / 2;
     const token = new Container();
     token.eventMode = "static";
@@ -141,8 +141,7 @@ export async function createTabletopRenderer(
       for (let column = 0; column < state.width; column += 1) {
         const position = { column, row };
         const reachable = highlights.reachable.some(
-          (candidate) =>
-            candidate.column === column && candidate.row === row,
+          (candidate) => candidate.column === column && candidate.row === row,
         );
         const cell = new Graphics()
           .rect(
