@@ -1,9 +1,5 @@
 import { describe, expect, it } from "vitest";
-import {
-  attackTarget,
-  calculateDamage,
-  getAttackableTargets,
-} from "./combat";
+import { attackTarget, calculateDamage, getAttackableTargets } from "./combat";
 import { hasLineOfSight, supercoverLine } from "./line-of-sight";
 import type { RoomState } from "./types";
 
@@ -72,10 +68,7 @@ describe("portée ligne de vue combat", () => {
   });
 
   it("inclut les deux cases touchées lors du passage exact par un coin", () => {
-    const line = supercoverLine(
-      { column: 0, row: 0 },
-      { column: 2, row: 2 },
-    );
+    const line = supercoverLine({ column: 0, row: 0 }, { column: 2, row: 2 });
     expect(line).toContainEqual({ column: 1, row: 0 });
     expect(line).toContainEqual({ column: 0, row: 1 });
     expect(line).toContainEqual({ column: 1, row: 1 });
@@ -114,20 +107,14 @@ describe("portée ligne de vue combat", () => {
     const current = state();
     expect(calculateDamage(current.heroes[0]!, current.enemies[0]!)).toBe(3);
     expect(
-      calculateDamage(
-        { ...current.heroes[0]!, atk: 1 },
-        current.enemies[0]!,
-      ),
+      calculateDamage({ ...current.heroes[0]!, atk: 1 }, current.enemies[0]!),
     ).toBe(1);
   });
 
   it("retourne uniquement les vraies cibles attaquables", () => {
     expect(getAttackableTargets(state(), "h")).toEqual(["e"]);
     expect(
-      getAttackableTargets(
-        state({ obstacles: [{ column: 0, row: 0 }] }),
-        "h",
-      ),
+      getAttackableTargets(state({ obstacles: [{ column: 0, row: 0 }] }), "h"),
     ).toEqual(["e"]);
     expect(
       getAttackableTargets(
@@ -162,9 +149,7 @@ describe("portée ligne de vue combat", () => {
 
   it("ne consomme aucune action lors d'une attaque invalide", () => {
     const current = state({
-      enemies: [
-        { ...state().enemies[0]!, position: { column: 7, row: 0 } },
-      ],
+      enemies: [{ ...state().enemies[0]!, position: { column: 7, row: 0 } }],
     });
     const result = attackTarget(current, "h", "e");
     expect(result.ok).toBe(false);
