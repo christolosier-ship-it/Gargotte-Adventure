@@ -1,0 +1,49 @@
+name: Proposer une évolution
+description: Décrire une fonctionnalité ou une amélioration du jeu
+title: "feat: "
+body:
+  - type: textarea
+    id: need
+    attributes:
+      label: Besoin joueur
+      description: Quel problème ou quelle envie cette évolution adresse-t-elle ?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposition
+      description: Décrire l’expérience souhaitée sans imposer inutilement la solution technique.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Domaine principal
+      options:
+        - Gameplay et règles
+        - Interface et accessibilité
+        - Donjon et contenu
+        - Animation et effets
+        - Audio
+        - Sauvegarde et progression
+        - Performances et compatibilité
+        - Outillage et import Gargottex
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: acceptance
+    attributes:
+      label: Critères d’acceptation
+      placeholder: |
+        - Le joueur peut…
+        - Le système affiche…
+        - Le comportement reste déterministe lorsque…
+    validations:
+      required: true
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risques et dépendances
+      description: Données Gargottex, sauvegardes, mobile, performance, règles, assets, etc.

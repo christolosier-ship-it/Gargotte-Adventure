@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "packId": "chateau-de-bastognac",
+  "title": "Le Château de Bastognac",
+  "source": {
+    "kind": "gargottex-export",
+    "reference": "gargottex_export_2026-05-21.xlsx"
+  },
+  "generatedAt": "2026-07-20T00:00:00.000Z",
+  "contentHash": "sprint0-bastognac-foundation",
+  "files": ["dungeon.json"]
+}

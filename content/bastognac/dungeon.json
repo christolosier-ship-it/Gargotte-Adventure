@@ -1,0 +1,9 @@
+{
+  "schemaVersion": 1,
+  "id": "chateau-de-bastognac",
+  "name": "Le Château de Bastognac",
+  "subtitle": "Le château où le mobilier attaque avant les gardes",
+  "floorBudgets": [3, 5, 7, 9, 11],
+  "bossId": "baron-pas-tres-terrifiant",
+  "status": "foundation-placeholder"
+}
