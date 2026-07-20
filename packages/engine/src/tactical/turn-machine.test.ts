@@ -66,9 +66,7 @@ describe("tours et ia", () => {
     const selected = selectHero(room(), "b");
     expect(selected.ok).toBe(true);
     expect(selected.ok && selected.value.state.activeHeroId).toBe("b");
-    expect(
-      selected.ok && selectHero(selected.value.state, "a").ok,
-    ).toBe(false);
+    expect(selected.ok && selectHero(selected.value.state, "a").ok).toBe(false);
   });
 
   it("gère la fin anticipée et un héros déjà terminé", () => {
@@ -116,9 +114,7 @@ describe("tours et ia", () => {
     ).toBe(true);
     const ranged = {
       ...current,
-      enemies: [
-        { ...current.enemies[1]!, position: { column: 0, row: 1 } },
-      ],
+      enemies: [{ ...current.enemies[1]!, position: { column: 0, row: 1 } }],
     };
     expect(
       runEnemyTurn(ranged).events.some(
