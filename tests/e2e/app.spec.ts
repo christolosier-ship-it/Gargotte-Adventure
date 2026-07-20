@@ -1,6 +1,5 @@
 import { expect, test } from "@playwright/test";
-
-const getAutosaveExists = async (page: import("@playwright/test").Page) =>
+const getRoomSave = async (page: import("@playwright/test").Page) =>
   page.evaluate(async () => {
     const request = indexedDB.open("gargotte-adventure");
     const database = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -8,59 +7,55 @@ const getAutosaveExists = async (page: import("@playwright/test").Page) =>
       request.onsuccess = () => resolve(request.result);
     });
     try {
-      const transaction = database.transaction("saves", "readonly");
-      const store = transaction.objectStore("saves");
-      const saveRequest = store.get("autosave");
-      return await new Promise<boolean>((resolve, reject) => {
-        saveRequest.onerror = () => reject(saveRequest.error);
-        saveRequest.onsuccess = () => resolve(Boolean(saveRequest.result));
+      const tx = database.transaction("saves", "readonly");
+      const req = tx.objectStore("saves").get("room-autosave");
+      return await new Promise<unknown>((resolve, reject) => {
+        req.onerror = () => reject(req.error);
+        req.onsuccess = () => resolve(req.result);
       });
     } finally {
       database.close();
     }
   });
-
-test("affiche le socle jouable du Sprint 0", async ({ page }) => {
+test("charge, sélectionne des héros et lance la salle PixiJS", async ({
+  page,
+}) => {
   await page.goto("./");
-
   await expect(
     page.getByRole("heading", { name: "Gargotte Adventure" }),
   ).toBeVisible();
   await expect(
-    page.getByRole("heading", { name: "Le Château de Bastognac" }),
+    page.getByRole("img", { name: /Plateau tactique PixiJS/i }),
   ).toBeVisible();
-  await expect(
-    page.getByRole("img", { name: /plateau de Bastognac/i }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Nouvelle expédition" }),
-  ).toBeEnabled();
+  await page.getByLabel("azeline").check();
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await expect(page.getByText("Salle en cours")).toBeVisible();
+  await expect.poll(() => getRoomSave(page)).not.toBeNull();
 });
-
-test("crée et restaure une sauvegarde locale", async ({ page }) => {
+test("joue déplacement, activation, tour ennemi et restauration", async ({
+  page,
+}) => {
   await page.goto("./");
-  await page.getByRole("button", { name: "Nouvelle expédition" }).click();
-
-  await expect(page.getByText("Expédition en cours")).toBeVisible();
-  await expect(page.getByText("Enregistrée sur cet appareil")).toBeVisible();
-  await expect.poll(() => getAutosaveExists(page)).toBe(true);
-
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("img", { name: /Plateau tactique PixiJS/i })
+    .click({ position: { x: 95, y: 90 } });
+  await expect(page.getByText(/Héros actif:/)).toBeVisible();
+  await page.getByRole("button", { name: "Terminer l'activation" }).click();
   await page.reload();
-  await expect(
-    page.getByRole("button", { name: /Continuer l'expédition 1/ }),
-  ).toBeEnabled();
+  await expect(page.getByRole("button", { name: "Reprendre" })).toBeEnabled();
+  await page.getByRole("button", { name: "Reprendre" }).click();
+  await expect(page.getByText(/Salle restaurée|Enregistrée/)).toBeVisible();
 });
-
-test("expose les artefacts PWA du build de production", async ({ page }) => {
+test("expose manifeste PWA français et service worker", async ({ page }) => {
   const manifestResponse = await page.goto("./manifest.webmanifest");
   expect(manifestResponse?.ok()).toBe(true);
   const manifest = await page.evaluate(() =>
     JSON.parse(document.body.innerText),
   );
   expect(manifest.name).toBe("Gargotte Adventure");
-  expect(manifest.display).toBe("standalone");
+  expect(manifest.lang).toBe("fr");
   expect(manifest.orientation).toBe("landscape");
-
   const serviceWorkerResponse = await page.request.get("./sw.js");
   expect(serviceWorkerResponse.ok()).toBe(true);
   await expect(serviceWorkerResponse.text()).resolves.toContain("precache");

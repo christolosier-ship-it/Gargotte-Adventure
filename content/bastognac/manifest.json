@@ -8,5 +8,5 @@
   },
   "generatedAt": "2026-07-20T00:00:00.000Z",
   "contentHash": "sprint0-bastognac-foundation",
-  "files": ["dungeon.json"]
+  "files": ["dungeon.json", "sprint-1-room.json"]
 }

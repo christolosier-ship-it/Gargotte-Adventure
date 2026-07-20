@@ -1,0 +1,86 @@
+import { describe, expect, it } from "vitest";
+import { getOrthogonalNeighbors, isBlocked, isWithinBounds } from "./grid";
+import { moveCombatant, reachablePositions, shortestPath } from "./movement";
+import type { RoomState } from "./types";
+const room = (): RoomState => ({
+  version: 1,
+  scenarioId: "t",
+  width: 4,
+  height: 4,
+  obstacles: [{ column: 1, row: 1 }],
+  heroes: [
+    {
+      id: "h",
+      name: "H",
+      kind: "hero",
+      position: { column: 0, row: 0 },
+      hp: 5,
+      maxHp: 5,
+      atk: 2,
+      def: 0,
+      range: 1,
+      alive: true,
+      blocksMovement: true,
+      actionsRemaining: 3,
+      activationCompleted: false,
+    },
+  ],
+  enemies: [
+    {
+      id: "e",
+      name: "E",
+      kind: "enemy",
+      position: { column: 2, row: 0 },
+      hp: 3,
+      maxHp: 3,
+      atk: 1,
+      def: 0,
+      range: 1,
+      alive: true,
+      blocksMovement: true,
+    },
+  ],
+  activeHeroId: "h",
+  phase: "heroes-turn",
+  turn: 1,
+});
+describe("grille tactique", () => {
+  it("rejette sortie obstacle et occupation", () => {
+    const s = room();
+    expect(isWithinBounds({ column: -1, row: 0 }, 4, 4)).toBe(false);
+    expect(isBlocked(s, { column: 1, row: 1 })).toBe(true);
+    expect(isBlocked(s, { column: 2, row: 0 })).toBe(true);
+  });
+  it("liste voisins dans un coin", () => {
+    expect(getOrthogonalNeighbors({ column: 0, row: 0 }, 4, 4)).toEqual([
+      { column: 1, row: 0 },
+      { column: 0, row: 1 },
+    ]);
+  });
+  it("calcule atteignables et chemin impossible", () => {
+    const s = room();
+    expect(reachablePositions(s, s.heroes[0]!.position, 2, "h")).toContainEqual(
+      { column: 0, row: 2 },
+    );
+    expect(
+      shortestPath(s, s.heroes[0]!.position, { column: 2, row: 0 }, "h"),
+    ).toBeNull();
+  });
+  it("départage les chemins équivalents", () => {
+    const s = { ...room(), obstacles: [], enemies: [] };
+    expect(
+      shortestPath(s, { column: 0, row: 0 }, { column: 1, row: 1 }, "h"),
+    ).toEqual([
+      { column: 1, row: 0 },
+      { column: 1, row: 1 },
+    ]);
+  });
+  it("déplace une ou plusieurs cases avec un événement par action", () => {
+    const s = { ...room(), obstacles: [], enemies: [] };
+    const one = moveCombatant(s, "h", { column: 1, row: 0 });
+    expect(one.ok && one.value.events).toHaveLength(1);
+    const many = moveCombatant(s, "h", { column: 0, row: 3 });
+    expect(many.ok && many.value.events).toHaveLength(3);
+    expect(many.ok && many.value.state.heroes[0]!.actionsRemaining).toBe(0);
+  });
+});

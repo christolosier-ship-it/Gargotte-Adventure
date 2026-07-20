@@ -27,6 +27,7 @@ export default defineConfig({
       manifest: {
         name: "Gargotte Adventure",
         short_name: "Gargotte",
+        lang: "fr",
         description:
           "Dungeon crawler de plateau coopératif, tactile et déterministe.",
         theme_color: "#1c1310",

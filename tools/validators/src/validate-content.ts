@@ -1,6 +1,10 @@
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
-import { parseContentManifest, parseDungeon } from "@gargotte/content-schema";
+import {
+  parseContentManifest,
+  parseDungeon,
+  parseTacticalRoom,
+} from "@gargotte/content-schema";
 
 const packDirectory = resolve("content/bastognac");
 const manifest = parseContentManifest(
@@ -8,6 +12,11 @@ const manifest = parseContentManifest(
 );
 const dungeon = parseDungeon(
   JSON.parse(await readFile(resolve(packDirectory, "dungeon.json"), "utf8")),
+);
+const room = parseTacticalRoom(
+  JSON.parse(
+    await readFile(resolve(packDirectory, "sprint-1-room.json"), "utf8"),
+  ),
 );
 
 if (!manifest.files.includes("dungeon.json")) {
@@ -19,5 +28,5 @@ if (manifest.packId !== dungeon.id) {
 }
 
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · budgets ${dungeon.floorBudgets.join("/")}`,
+  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · budgets ${dungeon.floorBudgets.join("/")} · salle ${room.grid.width}x${room.grid.height}`,
 );

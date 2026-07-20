@@ -1,0 +1,75 @@
+{
+  "schemaVersion": 1,
+  "id": "bastognac-sprint-1-room",
+  "name": "Salle d'essai de Bastognac",
+  "grid": { "width": 8, "height": 4 },
+  "obstacles": [
+    { "column": 3, "row": 1 },
+    { "column": 4, "row": 2 }
+  ],
+  "heroes": [
+    {
+      "id": "berthold",
+      "name": "Berthold",
+      "position": { "column": 0, "row": 0 },
+      "hp": 12,
+      "maxHp": 12,
+      "atk": 4,
+      "def": 1,
+      "range": 1
+    },
+    {
+      "id": "azeline",
+      "name": "Azeline",
+      "position": { "column": 0, "row": 1 },
+      "hp": 9,
+      "maxHp": 9,
+      "atk": 3,
+      "def": 0,
+      "range": 3
+    },
+    {
+      "id": "mirepoix",
+      "name": "Mirepoix",
+      "position": { "column": 0, "row": 2 },
+      "hp": 10,
+      "maxHp": 10,
+      "atk": 3,
+      "def": 1,
+      "range": 2
+    },
+    {
+      "id": "guillemette",
+      "name": "Guillemette",
+      "position": { "column": 0, "row": 3 },
+      "hp": 11,
+      "maxHp": 11,
+      "atk": 5,
+      "def": 1,
+      "range": 1
+    }
+  ],
+  "enemies": [
+    {
+      "id": "gobelin-bricoleur",
+      "name": "Gobelin Bricoleur",
+      "position": { "column": 7, "row": 0 },
+      "hp": 6,
+      "maxHp": 6,
+      "atk": 2,
+      "def": 0,
+      "range": 1
+    },
+    {
+      "id": "gobelin-lance-tout",
+      "name": "Gobelin Lance-Tout",
+      "position": { "column": 7, "row": 3 },
+      "hp": 5,
+      "maxHp": 5,
+      "atk": 2,
+      "def": 0,
+      "range": 3
+    }
+  ],
+  "notes": "Statistiques provisoires Sprint 1."
+}
