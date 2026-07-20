@@ -16,6 +16,7 @@ import {
   reduceGameState,
   selectHero,
   type GameState,
+  type GridPosition,
   type RoomState,
 } from "@gargotte/engine";
 import { createTabletopRenderer } from "@gargotte/renderer";
@@ -96,6 +97,79 @@ function highlights() {
   };
 }
 
+function createActionButton(
+  label: string,
+  onClick: () => void,
+  disabled = false,
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "button button-ghost";
+  button.textContent = label;
+  button.disabled = disabled;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderTacticalActions(): void {
+  shell.tacticalActions.replaceChildren();
+  if (!room) return;
+
+  if (room.phase === "victory" || room.phase === "defeat") {
+    const message = document.createElement("strong");
+    message.textContent =
+      room.phase === "victory" ? "Salle nettoyée !" : "Expédition vaincue.";
+    shell.tacticalActions.append(message);
+    return;
+  }
+
+  if (room.phase !== "heroes-turn") {
+    const message = document.createElement("span");
+    message.textContent = "Les ennemis préparent leur mauvais coup.";
+    shell.tacticalActions.append(message);
+    return;
+  }
+
+  for (const hero of room.heroes.filter(
+    (candidate) => candidate.alive && !candidate.activationCompleted,
+  )) {
+    shell.tacticalActions.append(
+      createActionButton(
+        `Activer ${hero.name}`,
+        () => handleHeroSelection(hero.id),
+        Boolean(room.activeHeroId && room.activeHeroId !== hero.id),
+      ),
+    );
+  }
+
+  const activeHero = room.heroes.find(
+    (hero) => hero.id === room?.activeHeroId,
+  );
+  if (!activeHero) return;
+
+  for (const position of reachablePositions(
+    room,
+    activeHero.position,
+    activeHero.actionsRemaining,
+    activeHero.id,
+  )) {
+    shell.tacticalActions.append(
+      createActionButton(
+        `Se déplacer en colonne ${position.column + 1}, ligne ${position.row + 1}`,
+        () => handleMove(position),
+      ),
+    );
+  }
+
+  for (const enemyId of getAttackableTargets(room, activeHero.id)) {
+    const enemy = room.enemies.find((candidate) => candidate.id === enemyId);
+    if (!enemy) continue;
+    shell.tacticalActions.append(
+      createActionButton(`Attaquer ${enemy.name}`, () => handleAttack(enemyId)),
+    );
+  }
+}
+
 const render = (
   saveText = storedRoom && storedRoom !== "legacy"
     ? "Salle restaurée"
@@ -112,6 +186,7 @@ const render = (
     activeHero: active?.name ?? null,
     selectedHeroIds,
   });
+  renderTacticalActions();
   if (room) renderer.renderRoom(room, highlights());
   else renderer.setExpeditionActive(false);
 };
@@ -127,6 +202,36 @@ const persist = async () => {
   await saveGameState(state);
   render("Enregistrée sur cet appareil");
 };
+
+function handleHeroSelection(heroId: string): void {
+  if (!room) return;
+  const result = selectHero(room, heroId);
+  if (result.ok) {
+    room = result.value.state;
+    shell.appendEvent(`Héros sélectionné: ${heroId}.`);
+    void persist();
+  } else shell.appendEvent(result.error.message);
+}
+
+function handleMove(position: GridPosition): void {
+  if (!room?.activeHeroId) return;
+  const result = moveCombatant(room, room.activeHeroId, position);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach(() => shell.appendEvent("Déplacement."));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+}
+
+function handleAttack(enemyId: string): void {
+  if (!room?.activeHeroId) return;
+  const result = attackTarget(room, room.activeHeroId, enemyId);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach((event) => shell.appendEvent(event.type));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+}
 
 events.subscribe((event) => {
   state = reduceGameState(state, event);
@@ -193,35 +298,9 @@ shell.resolveEnemyTurnButton.addEventListener("click", () => {
   } else shell.appendEvent(result.error.message);
 });
 
-renderer.onHeroSelected((heroId) => {
-  if (!room) return;
-  const result = selectHero(room, heroId);
-  if (result.ok) {
-    room = result.value.state;
-    shell.appendEvent(`Héros sélectionné: ${heroId}.`);
-    void persist();
-  } else shell.appendEvent(result.error.message);
-});
-
-renderer.onCellSelected((position) => {
-  if (!room?.activeHeroId) return;
-  const result = moveCombatant(room, room.activeHeroId, position);
-  if (result.ok) {
-    room = result.value.state;
-    result.value.events.forEach(() => shell.appendEvent("Déplacement."));
-    void persist();
-  } else shell.appendEvent(result.error.message);
-});
-
-renderer.onEnemySelected((enemyId) => {
-  if (!room?.activeHeroId) return;
-  const result = attackTarget(room, room.activeHeroId, enemyId);
-  if (result.ok) {
-    room = result.value.state;
-    result.value.events.forEach((event) => shell.appendEvent(event.type));
-    void persist();
-  } else shell.appendEvent(result.error.message);
-});
+renderer.onHeroSelected(handleHeroSelection);
+renderer.onCellSelected(handleMove);
+renderer.onEnemySelected(handleAttack);
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
