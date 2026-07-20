@@ -34,9 +34,7 @@ describe("contenu tactique", () => {
       parseTacticalRoom({
         ...room,
         heroes: room.heroes.map((hero, index) =>
-          index === 0
-            ? { ...hero, position: { column: 99, row: 0 } }
-            : hero,
+          index === 0 ? { ...hero, position: { column: 99, row: 0 } } : hero,
         ),
       }),
     ).toThrow();
