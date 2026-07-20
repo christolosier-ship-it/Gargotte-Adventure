@@ -51,7 +51,7 @@ outil privé ou GitHub Action
                 dépôt ou paquet de contenu
 ```
 
-Le jeu publié ne connaît ni la clé ni l’existence du secret.
+Le jeu publié ne connaît ni la clé ni l’existence du secret. Le Sprint 0 ne réalise aucun appel OpenAI côté client : la PWA, le service worker et les manifestes générés doivent rester dépourvus de clé, jeton ou secret.
 
 ## Rotation
 
