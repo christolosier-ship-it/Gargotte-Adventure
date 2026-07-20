@@ -5,10 +5,12 @@ import type {
   HeroState,
   RoomState,
 } from "@gargotte/engine";
+
 export interface TacticalHighlights {
   reachable: GridPosition[];
   attackable: string[];
 }
+
 export interface TabletopRenderer {
   destroy(): void;
   setExpeditionActive(active: boolean): void;
@@ -17,9 +19,11 @@ export interface TabletopRenderer {
   onHeroSelected(listener: (heroId: string) => void): void;
   onEnemySelected(listener: (enemyId: string) => void): void;
 }
-const cell = 82,
-  ox = 55,
-  oy = 48;
+
+const cellSize = 82;
+const originX = 55;
+const originY = 48;
+
 export async function createTabletopRenderer(
   host: HTMLElement,
 ): Promise<TabletopRenderer> {
@@ -35,55 +39,86 @@ export async function createTabletopRenderer(
   app.canvas.setAttribute("role", "img");
   app.canvas.tabIndex = 0;
   host.replaceChildren(app.canvas);
+
   const stage = new Container();
   app.stage.addChild(stage);
   const listeners = {
-    cell: [] as ((p: GridPosition) => void)[],
+    cell: [] as ((position: GridPosition) => void)[],
     hero: [] as ((id: string) => void)[],
     enemy: [] as ((id: string) => void)[],
   };
+
+  function clearStage(): void {
+    for (const child of stage.removeChildren()) child.destroy({ children: true });
+  }
+
   function drawToken(
-    c: Combatant | HeroState,
+    combatant: Combatant | HeroState,
     active: boolean,
     attackable: boolean,
-  ) {
-    const x = ox + c.position.column * cell + cell / 2,
-      y = oy + c.position.row * cell + cell / 2;
+  ): void {
+    const x =
+      originX + combatant.position.column * cellSize + cellSize / 2;
+    const y = originY + combatant.position.row * cellSize + cellSize / 2;
     const token = new Container();
     token.eventMode = "static";
     token.cursor = "pointer";
+    token.label = `${combatant.kind}:${combatant.id}`;
     token.on("pointertap", () =>
-      c.kind === "hero"
-        ? listeners.hero.forEach((l) => l(c.id))
-        : listeners.enemy.forEach((l) => l(c.id)),
+      combatant.kind === "hero"
+        ? listeners.hero.forEach((listener) => listener(combatant.id))
+        : listeners.enemy.forEach((listener) => listener(combatant.id)),
     );
-    const g = new Graphics()
+
+    const tokenBody = new Graphics()
       .circle(0, 0, 27)
-      .fill({ color: c.kind === "hero" ? 0xd7b568 : 0x637f37 })
+      .fill({ color: combatant.kind === "hero" ? 0xd7b568 : 0x637f37 })
       .stroke({
         color: active ? 0xf1c86f : attackable ? 0xd45f57 : 0xf8ecd2,
         width: 4,
       });
     const label = new Text({
-      text: c.name.slice(0, 2).toUpperCase(),
+      text: combatant.name.slice(0, 2).toUpperCase(),
       style: { fill: 0x20140f, fontSize: 16, fontWeight: "700" },
     });
     label.anchor.set(0.5);
     const hp = new Text({
-      text: `${c.hp}/${c.maxHp}`,
+      text: `${combatant.hp}/${combatant.maxHp}`,
       style: { fill: 0xf8ecd2, fontSize: 12, fontWeight: "700" },
     });
     hp.anchor.set(0.5);
     hp.position.set(0, 34);
-    token.addChild(g, label, hp);
+    token.addChild(tokenBody, label, hp);
     token.position.set(x, y);
     stage.addChild(token);
   }
+
   function renderRoom(
     state: RoomState,
     highlights: TacticalHighlights = { reachable: [], attackable: [] },
-  ) {
-    stage.removeChildren();
+  ): void {
+    clearStage();
+    app.canvas.dataset.phase = state.phase;
+    app.canvas.dataset.turn = String(state.turn);
+    app.canvas.dataset.activeHero = state.activeHeroId ?? "";
+    app.canvas.dataset.heroes = JSON.stringify(
+      state.heroes.map((hero) => ({
+        id: hero.id,
+        position: hero.position,
+        hp: hero.hp,
+        actionsRemaining: hero.actionsRemaining,
+        activationCompleted: hero.activationCompleted,
+      })),
+    );
+    app.canvas.dataset.enemies = JSON.stringify(
+      state.enemies.map((enemy) => ({
+        id: enemy.id,
+        position: enemy.position,
+        hp: enemy.hp,
+        alive: enemy.alive,
+      })),
+    );
+
     stage.addChild(
       new Graphics()
         .roundRect(0, 0, 760, 430, 28)
@@ -101,27 +136,42 @@ export async function createTabletopRenderer(
     });
     title.position.set(56, 13);
     stage.addChild(title);
-    for (let r = 0; r < state.height; r++)
-      for (let c = 0; c < state.width; c++) {
-        const p = { column: c, row: r };
-        const h = highlights.reachable.some(
-          (q) => q.column === c && q.row === r,
+
+    for (let row = 0; row < state.height; row += 1) {
+      for (let column = 0; column < state.width; column += 1) {
+        const position = { column, row };
+        const reachable = highlights.reachable.some(
+          (candidate) =>
+            candidate.column === column && candidate.row === row,
         );
-        const g = new Graphics()
-          .rect(ox + c * cell, oy + r * cell, cell, cell)
-          .fill({ color: h ? 0x315c35 : 0x241914, alpha: h ? 0.85 : 0.25 })
+        const cell = new Graphics()
+          .rect(
+            originX + column * cellSize,
+            originY + row * cellSize,
+            cellSize,
+            cellSize,
+          )
+          .fill({
+            color: reachable ? 0x315c35 : 0x241914,
+            alpha: reachable ? 0.85 : 0.25,
+          })
           .stroke({ color: 0x6a4b38, width: 2 });
-        g.eventMode = "static";
-        g.cursor = "pointer";
-        g.on("pointertap", () => listeners.cell.forEach((l) => l(p)));
-        stage.addChild(g);
+        cell.eventMode = "static";
+        cell.cursor = "pointer";
+        cell.label = `cell:${column},${row}`;
+        cell.on("pointertap", () =>
+          listeners.cell.forEach((listener) => listener(position)),
+        );
+        stage.addChild(cell);
       }
-    for (const o of state.obstacles)
+    }
+
+    for (const obstacle of state.obstacles) {
       stage.addChild(
         new Graphics()
           .roundRect(
-            ox + o.column * cell + 16,
-            oy + o.row * cell + 16,
+            originX + obstacle.column * cellSize + 16,
+            originY + obstacle.row * cellSize + 16,
             50,
             50,
             10,
@@ -129,13 +179,17 @@ export async function createTabletopRenderer(
           .fill({ color: 0x8b5a2b })
           .stroke({ color: 0xd7a257, width: 4 }),
       );
-    for (const h of state.heroes.filter((h) => h.alive))
-      drawToken(h, h.id === state.activeHeroId, false);
-    for (const e of state.enemies.filter((e) => e.alive))
-      drawToken(e, false, highlights.attackable.includes(e.id));
+    }
+    for (const hero of state.heroes.filter((candidate) => candidate.alive))
+      drawToken(hero, hero.id === state.activeHeroId, false);
+    for (const enemy of state.enemies.filter((candidate) => candidate.alive))
+      drawToken(enemy, false, highlights.attackable.includes(enemy.id));
+
+    host.dataset.displayObjects = String(stage.children.length);
     resize();
   }
-  function resize() {
+
+  function resize(): void {
     const scale = Math.min(host.clientWidth / 760, host.clientHeight / 430);
     stage.scale.set(scale);
     stage.position.set(
@@ -143,23 +197,26 @@ export async function createTabletopRenderer(
       Math.max(0, (host.clientHeight - 430 * scale) / 2),
     );
   }
+
   const observer = new ResizeObserver(resize);
   observer.observe(host);
+
   return {
     destroy() {
       observer.disconnect();
+      clearStage();
       app.destroy(true, { children: true });
     },
     setExpeditionActive() {},
     renderRoom,
-    onCellSelected(l) {
-      listeners.cell.push(l);
+    onCellSelected(listener) {
+      listeners.cell.push(listener);
     },
-    onHeroSelected(l) {
-      listeners.hero.push(l);
+    onHeroSelected(listener) {
+      listeners.hero.push(listener);
     },
-    onEnemySelected(l) {
-      listeners.enemy.push(l);
+    onEnemySelected(listener) {
+      listeners.enemy.push(listener);
     },
   };
 }
