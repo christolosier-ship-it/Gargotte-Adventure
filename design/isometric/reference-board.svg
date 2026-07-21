@@ -1,0 +1,93 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="900" viewBox="0 0 1440 900" role="img" aria-labelledby="title desc">
+  <title id="title">Planche de référence isométrique Gargotte Adventure</title>
+  <desc id="desc">Grille 8 par 4 avec murs, états tactiques, Brünhilda et un gobelin représentés par des marqueurs.</desc>
+  <defs>
+    <polygon id="tile" points="64,0 128,32 64,64 0,32" />
+    <style>
+      .label { font-family: Inter, sans-serif; fill: #cdbda3; }
+      .heading { font-family: Georgia, serif; fill: #f8ecd2; font-weight: 700; }
+      .tile { fill: #3a312c; stroke: #674936; stroke-width: 2; }
+      .tile-alt { fill: #66574c; stroke: #674936; stroke-width: 2; }
+      .reachable { fill: #7fbd76; fill-opacity: .68; stroke: #f1c86f; stroke-width: 3; }
+      .selected { fill: #f1c86f; fill-opacity: .84; stroke: #f8ecd2; stroke-width: 4; }
+      .attackable { fill: #d45f57; fill-opacity: .76; stroke: #f8ecd2; stroke-width: 4; }
+    </style>
+  </defs>
+  <rect width="1440" height="900" fill="#17100d" />
+  <text x="70" y="72" fill="#f1c86f" font-family="Inter, sans-serif" font-size="14" font-weight="700" letter-spacing="3">GARGOTTE ADVENTURE · SPRINT 2</text>
+  <text x="70" y="140" class="heading" font-size="54">Planche de référence isométrique</text>
+  <text x="72" y="178" class="label" font-size="17">Grille logique 8 × 4 · tuile 128 × 64 · renderer PixiJS</text>
+
+  <rect x="70" y="250" width="360" height="480" rx="24" fill="#30221b" stroke="#674936" />
+  <text x="105" y="310" class="heading" font-size="32">Contrat visuel</text>
+  <text x="105" y="360" fill="#f1c86f" font-family="Inter, sans-serif" font-size="16" font-weight="700">PROJECTION</text>
+  <text x="105" y="392" class="label" font-size="16">x = originX + (col − row) × 64</text>
+  <text x="105" y="420" class="label" font-size="16">y = originY + (col + row) × 32</text>
+  <text x="105" y="475" fill="#f1c86f" font-family="Inter, sans-serif" font-size="16" font-weight="700">ANCRAGE</text>
+  <text x="105" y="507" class="label" font-size="16">Pieds au centre logique de la case</text>
+  <text x="105" y="562" fill="#f1c86f" font-family="Inter, sans-serif" font-size="16" font-weight="700">PROFONDEUR</text>
+  <text x="105" y="594" class="label" font-size="16">Tri stable par y projeté, puis id</text>
+  <text x="105" y="649" fill="#f1c86f" font-family="Inter, sans-serif" font-size="16" font-weight="700">PERSONNAGES</text>
+  <text x="105" y="681" class="label" font-size="16">Sources Drive à détourer avant runtime</text>
+
+  <g transform="translate(700 220)">
+    <use href="#tile" x="0" y="0" class="tile" />
+    <use href="#tile" x="64" y="32" class="tile-alt" />
+    <use href="#tile" x="128" y="64" class="tile" />
+    <use href="#tile" x="192" y="96" class="tile-alt" />
+    <use href="#tile" x="256" y="128" class="tile" />
+    <use href="#tile" x="320" y="160" class="tile-alt" />
+    <use href="#tile" x="384" y="192" class="tile" />
+    <use href="#tile" x="448" y="224" class="tile-alt" />
+
+    <use href="#tile" x="-64" y="32" class="tile-alt" />
+    <use href="#tile" x="0" y="64" class="reachable" />
+    <use href="#tile" x="64" y="96" class="reachable" />
+    <use href="#tile" x="128" y="128" class="selected" />
+    <use href="#tile" x="192" y="160" class="tile-alt" />
+    <use href="#tile" x="256" y="192" class="tile" />
+    <use href="#tile" x="320" y="224" class="tile-alt" />
+    <use href="#tile" x="384" y="256" class="tile" />
+
+    <use href="#tile" x="-128" y="64" class="tile" />
+    <use href="#tile" x="-64" y="96" class="tile-alt" />
+    <use href="#tile" x="0" y="128" class="tile" />
+    <use href="#tile" x="64" y="160" class="tile-alt" />
+    <use href="#tile" x="128" y="192" class="tile" />
+    <use href="#tile" x="192" y="224" class="attackable" />
+    <use href="#tile" x="256" y="256" class="tile" />
+    <use href="#tile" x="320" y="288" class="tile-alt" />
+
+    <use href="#tile" x="-192" y="96" class="tile-alt" />
+    <use href="#tile" x="-128" y="128" class="tile" />
+    <use href="#tile" x="-64" y="160" class="tile-alt" />
+    <use href="#tile" x="0" y="192" class="tile" />
+    <use href="#tile" x="64" y="224" class="tile-alt" />
+    <use href="#tile" x="128" y="256" class="tile" />
+    <use href="#tile" x="192" y="288" class="tile-alt" />
+    <use href="#tile" x="256" y="320" class="tile" />
+
+    <polygon points="0,32 64,64 64,-32 0,-64" fill="#5a3823" stroke="#674936" stroke-width="2" />
+    <polygon points="64,64 128,32 128,-64 64,-32" fill="#684228" stroke="#674936" stroke-width="2" />
+
+    <ellipse cx="192" cy="205" rx="34" ry="12" fill="#000" opacity=".35" />
+    <rect x="168" y="130" width="48" height="66" rx="12" fill="#8b5a2b" stroke="#f1c86f" stroke-width="3" />
+    <ellipse cx="192" cy="130" rx="24" ry="10" fill="#b66b35" stroke="#f1c86f" stroke-width="3" />
+
+    <ellipse cx="192" cy="188" rx="42" ry="14" fill="#000" opacity=".35" />
+    <circle cx="192" cy="112" r="58" fill="#17100d" stroke="#f1c86f" stroke-width="5" />
+    <text x="192" y="128" text-anchor="middle" class="heading" font-size="42">B</text>
+
+    <ellipse cx="320" cy="285" rx="36" ry="12" fill="#000" opacity=".35" />
+    <circle cx="320" cy="224" r="48" fill="#17100d" stroke="#f1c86f" stroke-width="4" />
+    <text x="320" y="239" text-anchor="middle" class="heading" font-size="36">G</text>
+  </g>
+
+  <g transform="translate(560 790)">
+    <rect width="22" height="22" rx="5" fill="#3a312c" /><text x="32" y="17" class="label" font-size="14">Base</text>
+    <rect x="170" width="22" height="22" rx="5" fill="#66574c" /><text x="202" y="17" class="label" font-size="14">Alternée</text>
+    <rect x="340" width="22" height="22" rx="5" fill="#7fbd76" /><text x="372" y="17" class="label" font-size="14">Atteignable</text>
+    <rect x="510" width="22" height="22" rx="5" fill="#f1c86f" /><text x="542" y="17" class="label" font-size="14">Sélectionnée</text>
+    <rect x="700" width="22" height="22" rx="5" fill="#d45f57" /><text x="732" y="17" class="label" font-size="14">Attaquable</text>
+  </g>
+</svg>
