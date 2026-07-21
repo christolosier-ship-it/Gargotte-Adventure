@@ -69,14 +69,14 @@ La boucle tactique a depuis été livrée au Sprint 1.
 
 ## Risques suivis
 
-| Risque | Réponse |
-| --- | --- |
-| Duplication des données Gargottex | Paquets de contenu générés et versionnés |
-| Fuite de clé API | Aucun secret côté client et contrôle CI |
-| Architecture trop lourde | Dossiers créés seulement lorsqu’ils sont utiles |
-| Mauvaise expérience mobile | Mobile-first et tests desktop/mobile paysage |
-| Règles ambiguës | Moteur déterministe, tests et ADR |
-| Assets trop volumineux | Pipeline d’optimisation prévu lorsqu’il devient utile |
+| Risque                            | Réponse                                               |
+| --------------------------------- | ----------------------------------------------------- |
+| Duplication des données Gargottex | Paquets de contenu générés et versionnés              |
+| Fuite de clé API                  | Aucun secret côté client et contrôle CI               |
+| Architecture trop lourde          | Dossiers créés seulement lorsqu’ils sont utiles       |
+| Mauvaise expérience mobile        | Mobile-first et tests desktop/mobile paysage          |
+| Règles ambiguës                   | Moteur déterministe, tests et ADR                     |
+| Assets trop volumineux            | Pipeline d’optimisation prévu lorsqu’il devient utile |
 
 ## Résultat
 
