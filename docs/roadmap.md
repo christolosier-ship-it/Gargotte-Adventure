@@ -2,52 +2,79 @@
 
 La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. Chaque sprint doit réduire le risque principal du projet et laisser une base démontrable.
 
-## Sprint 0 — Fondations
+## État d’avancement
 
-Objectif : rendre le projet développable, testable et documenté sans commencer par une montagne de fonctionnalités.
+| Sprint | Statut | Résultat principal |
+| --- | --- | --- |
+| Sprint 0 — Fondations | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
+| Sprint 1 — Boucle de salle | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise |
+| Sprint 2 — Brouhaha et décor | Prochain | Le plateau devient un système vivant et explicable |
+| Sprint 3 — Héros et créatures | À venir | Rôles, compétences et comportements définitifs de Bastognac |
+| Sprint 4 — Donjon complet | À venir | Cinq étages, loot, progression et boss |
+| Sprint 5 — Direction artistique et confort | À venir | Médias définitifs, audio, accessibilité et performances |
 
-- gouvernance GitHub ;
+## Sprint 0 — Fondations ✅
+
+Objectif atteint : rendre le projet développable, testable, déployable et documenté avant d’empiler les fonctionnalités.
+
+Livré :
+
+- gouvernance GitHub et stratégie de branches ;
 - documentation produit et architecture ;
 - sécurité des secrets ;
-- choix technologiques formalisés ;
-- design system initial ;
-- squelette TypeScript/PWA ;
-- pipeline qualité, build et déploiement ;
+- TypeScript strict, Vite, PWA, PixiJS et IndexedDB ;
+- séparation moteur, renderer, UI, sauvegarde et contenu ;
+- pipeline qualité, tests, build et déploiement GitHub Pages ;
 - import minimal d’un paquet de contenu Bastognac.
 
-**Sortie attendue :** une PWA vide mais installable, testée et publiée, avec un écran de diagnostic du contenu.
+**Sortie obtenue :** une PWA installable, testée et publiée avec un écran de fondation et un contenu Bastognac validé.
 
-## Sprint 1 — Boucle de salle
+## Sprint 1 — Boucle de salle ✅
 
-Objectif : jouer une salle tactique complète avec des représentations temporaires.
+Objectif atteint : jouer une salle tactique complète avec des représentations provisoires.
 
-- sélection de 1 à 4 héros ;
-- plateau quadrillé ;
+Livré :
+
+- sélection de 1 à 4 héros officiels ;
+- plateau quadrillé 8 × 4 ;
 - trois actions par héros ;
-- déplacement, portée et ligne de vue ;
-- attaque déterministe ;
-- tour ennemi ;
-- victoire et défaite de salle ;
-- sauvegarde d’une partie en cours.
+- déplacement orthogonal et cheminement déterministe ;
+- portée et ligne de vue supercover ;
+- attaque déterministe `max(1, ATK - DEF)` ;
+- tour ennemi déterministe et explicable ;
+- phases héros, ennemis, victoire et défaite verrouillées ;
+- sauvegarde et reprise complète de la salle ;
+- rendu PixiJS et commandes DOM accessibles ;
+- tests unitaires et Playwright desktop/mobile paysage.
 
-**Sortie attendue :** une salle jouable de bout en bout sur téléphone.
+**Sortie obtenue :** une salle jouable de bout en bout, sauvegardable et reproductible sur navigateur.
 
 ## Sprint 2 — Brouhaha et décor
 
-- jauge 0–12 ;
+Objectif : faire du plateau un acteur tactique visible, sans perdre le caractère déterministe du moteur.
+
+Périmètre envisagé :
+
+- jauge de Brouhaha 0–12 ;
 - événements pairs et impairs ;
-- renforts ;
-- tables, tonneaux, grilles, torches et piliers ;
+- seuils déclenchant renforts ou effets cumulés ;
+- tables, tonneaux, grilles, torches et piliers interactifs ;
 - réactions en chaîne ;
 - journal d’événements explicatif ;
-- premiers effets visuels et sonores.
+- premiers effets visuels et sonores temporaires ;
+- sauvegarde et reprise de tous les nouveaux états.
+
+**Sortie attendue :** la même salle reste jouable, mais le bruit et le décor créent des décisions tactiques et des catastrophes lisibles.
 
 ## Sprint 3 — Héros et créatures de Bastognac
 
-- quatre héros officiels ;
-- compétences ;
+Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce sprint doit leur donner leur identité de gameplay définitive.
+
+- caractéristiques et rôles équilibrés ;
+- compétences propres aux quatre héros ;
 - comportements IA différenciés ;
-- seize créatures ;
+- seize créatures de Bastognac ;
+- ciblage et explications de décision enrichis ;
 - fiches et tutoriel contextuel ;
 - équilibrage du vertical slice.
 
@@ -65,9 +92,9 @@ Objectif : jouer une salle tactique complète avec des représentations temporai
 - intégration des médias définitifs ;
 - animations ;
 - audio ;
-- accessibilité ;
+- accessibilité renforcée ;
 - performances mobile ;
-- installation PWA complète ;
+- installation PWA finalisée ;
 - tests utilisateurs.
 
 ## Après Bastognac
