@@ -352,3 +352,49 @@ footer {
     animation-iteration-count: 1 !important;
   }
 }
+.hero-picker {
+  display: grid;
+  gap: 8px;
+}
+.hero-toggle {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+.hero-toggle input {
+  width: 24px;
+  height: 24px;
+}
+.hud {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  color: var(--gold);
+  font-weight: 850;
+}
+@media (orientation: landscape) and (max-width: 900px) {
+  .app-shell {
+    padding: 10px;
+    gap: 8px;
+  }
+  .game-layout {
+    grid-template-columns: 1.4fr 0.9fr;
+    gap: 8px;
+  }
+  .board-panel {
+    min-height: 360px;
+    padding: 10px;
+  }
+  .control-panel > section,
+  .actions {
+    padding: 10px;
+  }
+  .button {
+    min-height: 44px;
+    padding: 9px 12px;
+  }
+}

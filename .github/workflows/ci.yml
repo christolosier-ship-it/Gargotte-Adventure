@@ -29,8 +29,37 @@ jobs:
       - name: Install dependencies from lockfile
         run: npm ci
 
-      - name: Validate content, types, tests and build
-        run: npm run check
+      - name: Check formatting
+        run: npm run format:check
+
+      - name: Generate Prettier repair patch
+        if: failure()
+        run: |
+          npm run format
+          git diff --binary > prettier.patch
+
+      - name: Upload Prettier repair patch
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: prettier-repair-patch
+          path: prettier.patch
+          if-no-files-found: error
+
+      - name: Validate content
+        run: npm run validate:content
+
+      - name: TypeScript strict check
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm run test
+
+      - name: Production build
+        run: npm run build
+
+      - name: Validate repository
+        run: python tools/validate_repository.py
 
       - name: Install Playwright Chromium
         run: npx playwright install --with-deps chromium
@@ -38,10 +67,20 @@ jobs:
       - name: Browser smoke tests
         run: npm run test:e2e
 
+      - name: Upload Playwright diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: playwright-diagnostics
+          path: |
+            test-results
+            playwright-report
+          if-no-files-found: warn
+
       - name: Upload generated lockfile
         uses: actions/upload-artifact@v7
         with:
-          name: sprint-0-package-lock
+          name: sprint-1-package-lock
           path: package-lock.json
           if-no-files-found: error
 

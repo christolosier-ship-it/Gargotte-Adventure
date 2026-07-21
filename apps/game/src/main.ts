@@ -3,43 +3,233 @@ import "./styles.css";
 import { APP_VERSION } from "@gargotte/common";
 import {
   EventBus,
+  attackTarget,
   createEvent,
   createInitialGameState,
+  createRoomState,
+  endHeroActivation,
+  endHeroesTurn,
+  finishEnemyTurn,
+  getAttackableTargets,
+  moveCombatant,
+  reachablePositions,
   reduceGameState,
+  selectHero,
   type GameState,
+  type GridPosition,
+  type RoomState,
 } from "@gargotte/engine";
 import { createTabletopRenderer } from "@gargotte/renderer";
+import {
+  loadGameState,
+  loadRoomState,
+  saveGameState,
+  saveRoomState,
+} from "@gargotte/save";
 import { createGameShell } from "@gargotte/ui";
-import { loadGameState, saveGameState } from "@gargotte/save";
 import dungeon from "../../../content/bastognac/dungeon.json";
+import roomDefinition from "../../../content/bastognac/sprint-1-room.json";
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) throw new Error("Point de montage #app introuvable.");
 
-const shell = createGameShell(root);
+const defaultHeroId = roomDefinition.heroes[0]?.id;
+if (!defaultHeroId) throw new Error("Aucun héros disponible dans le scénario.");
+const validHeroIds = new Set(roomDefinition.heroes.map((hero) => hero.id));
+const shell = createGameShell(
+  root,
+  roomDefinition.heroes.map((hero) => ({ id: hero.id, name: hero.name })),
+);
 const renderer = await createTabletopRenderer(shell.boardHost);
 const events = new EventBus();
 let state: GameState = createInitialGameState(1);
+let room: RoomState | null = null;
+let selectedHeroIds = [defaultHeroId];
 let deferredInstallPrompt: BeforeInstallPromptEvent | null = null;
 
 const stored = await loadGameState();
 if (stored) state = stored;
+const storedRoom = await loadRoomState();
+if (storedRoom && storedRoom !== "legacy") {
+  room = storedRoom.room;
+  selectedHeroIds = storedRoom.selectedHeroIds.filter((id) =>
+    validHeroIds.has(id),
+  );
+  if (selectedHeroIds.length === 0) selectedHeroIds = [defaultHeroId];
+  state = {
+    ...state,
+    phase: "expedition",
+    expeditionNumber: Math.max(1, state.expeditionNumber),
+  };
+}
 state = reduceGameState(state, createEvent("app/ready"));
+if (room) state = { ...state, phase: "expedition" };
 
-const render = (saveText = stored ? "Sauvegarde restaurée" : "Prête") => {
+function buildRoom(): RoomState {
+  const chosen = roomDefinition.heroes.filter((hero) =>
+    selectedHeroIds.includes(hero.id),
+  );
+  return createRoomState({
+    scenarioId: roomDefinition.id,
+    width: roomDefinition.grid.width,
+    height: roomDefinition.grid.height,
+    obstacles: roomDefinition.obstacles,
+    heroes: chosen,
+    enemies: roomDefinition.enemies,
+  });
+}
+
+function highlights() {
+  const hero = room?.heroes.find(
+    (candidate) => candidate.id === room?.activeHeroId,
+  );
+  return {
+    reachable:
+      room && hero
+        ? reachablePositions(
+            room,
+            hero.position,
+            hero.actionsRemaining,
+            hero.id,
+          )
+        : [],
+    attackable: room && hero ? getAttackableTargets(room, hero.id) : [],
+  };
+}
+
+function createActionButton(
+  label: string,
+  onClick: () => void,
+  disabled = false,
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "button button-ghost";
+  button.textContent = label;
+  button.disabled = disabled;
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+function renderTacticalActions(): void {
+  shell.tacticalActions.replaceChildren();
+  if (!room) return;
+
+  if (room.phase === "victory" || room.phase === "defeat") {
+    const message = document.createElement("strong");
+    message.textContent =
+      room.phase === "victory" ? "Salle nettoyée !" : "Expédition vaincue.";
+    shell.tacticalActions.append(message);
+    return;
+  }
+
+  if (room.phase !== "heroes-turn") {
+    const message = document.createElement("span");
+    message.textContent = "Les ennemis préparent leur mauvais coup.";
+    shell.tacticalActions.append(message);
+    return;
+  }
+
+  for (const hero of room.heroes.filter(
+    (candidate) => candidate.alive && !candidate.activationCompleted,
+  )) {
+    shell.tacticalActions.append(
+      createActionButton(
+        `Activer ${hero.name}`,
+        () => handleHeroSelection(hero.id),
+        Boolean(room.activeHeroId && room.activeHeroId !== hero.id),
+      ),
+    );
+  }
+
+  const activeHero = room.heroes.find((hero) => hero.id === room?.activeHeroId);
+  if (!activeHero) return;
+
+  for (const position of reachablePositions(
+    room,
+    activeHero.position,
+    activeHero.actionsRemaining,
+    activeHero.id,
+  )) {
+    shell.tacticalActions.append(
+      createActionButton(
+        `Se déplacer en colonne ${position.column + 1}, ligne ${position.row + 1}`,
+        () => handleMove(position),
+      ),
+    );
+  }
+
+  for (const enemyId of getAttackableTargets(room, activeHero.id)) {
+    const enemy = room.enemies.find((candidate) => candidate.id === enemyId);
+    if (!enemy) continue;
+    shell.tacticalActions.append(
+      createActionButton(`Attaquer ${enemy.name}`, () => handleAttack(enemyId)),
+    );
+  }
+}
+
+const render = (
+  saveText = storedRoom && storedRoom !== "legacy"
+    ? "Salle restaurée"
+    : "Prête",
+) => {
+  const active = room?.heroes.find((hero) => hero.id === room?.activeHeroId);
   shell.update({
     phase: state.phase,
+    tacticalPhase: room?.phase ?? null,
     expeditionNumber: state.expeditionNumber,
-    canContinue: state.expeditionNumber > 0,
+    canContinue: Boolean(room),
     saveText,
+    actions: active?.actionsRemaining ?? 0,
+    activeHero: active?.name ?? null,
+    selectedHeroIds,
   });
-  renderer.setExpeditionActive(state.phase === "expedition");
+  renderTacticalActions();
+  if (room) renderer.renderRoom(room, highlights());
+  else renderer.setExpeditionActive(false);
 };
 
 const persist = async () => {
+  if (room)
+    await saveRoomState({
+      kind: "tactical-room",
+      version: 1,
+      room,
+      selectedHeroIds,
+    });
   await saveGameState(state);
   render("Enregistrée sur cet appareil");
 };
+
+function handleHeroSelection(heroId: string): void {
+  if (!room) return;
+  const result = selectHero(room, heroId);
+  if (result.ok) {
+    room = result.value.state;
+    shell.appendEvent(`Héros sélectionné: ${heroId}.`);
+    void persist();
+  } else shell.appendEvent(result.error.message);
+}
+
+function handleMove(position: GridPosition): void {
+  if (!room?.activeHeroId) return;
+  const result = moveCombatant(room, room.activeHeroId, position);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach(() => shell.appendEvent("Déplacement."));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+}
+
+function handleAttack(enemyId: string): void {
+  if (!room?.activeHeroId) return;
+  const result = attackTarget(room, room.activeHeroId, enemyId);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach((event) => shell.appendEvent(event.type));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+}
 
 events.subscribe((event) => {
   state = reduceGameState(state, event);
@@ -47,15 +237,68 @@ events.subscribe((event) => {
   void persist();
 });
 
+shell.heroPicker.addEventListener("change", () => {
+  const inputs = [
+    ...shell.heroPicker.querySelectorAll<HTMLInputElement>("input:checked"),
+  ];
+  selectedHeroIds = inputs.map((input) => input.value).slice(0, 4);
+  if (selectedHeroIds.length === 0) {
+    selectedHeroIds = [defaultHeroId];
+    const fallback = shell.heroPicker.querySelector<HTMLInputElement>(
+      `input[value="${defaultHeroId}"]`,
+    );
+    if (fallback) fallback.checked = true;
+  }
+});
+
 shell.startButton.addEventListener("click", () => {
-  const seed = 10_000 + state.expeditionNumber * 137 + 1;
+  room = buildRoom();
+  const seed = 10000 + state.expeditionNumber * 137 + 1;
   events.publish(createEvent("expedition/started", { seed }));
+  render("Salle lancée");
 });
 
 shell.continueButton.addEventListener("click", () => {
-  shell.appendEvent(`Retour sur la table, graine ${state.seed}.`);
-  renderer.setExpeditionActive(true);
+  if (room) {
+    state = { ...state, phase: "expedition" };
+    shell.appendEvent("Reprise de la salle sauvegardée.");
+    render("Salle restaurée");
+  }
 });
+
+shell.endActivationButton.addEventListener("click", () => {
+  if (!room?.activeHeroId) return;
+  const result = endHeroActivation(room, room.activeHeroId);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach((event) => shell.appendEvent(event.type));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+});
+
+shell.endHeroesTurnButton.addEventListener("click", () => {
+  if (!room) return;
+  const result = endHeroesTurn(room);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach((event) => shell.appendEvent(event.type));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+});
+
+shell.resolveEnemyTurnButton.addEventListener("click", () => {
+  if (!room) return;
+  const result = finishEnemyTurn(room);
+  if (result.ok) {
+    room = result.value.state;
+    result.value.events.forEach((event) => shell.appendEvent(event.type));
+    void persist();
+  } else shell.appendEvent(result.error.message);
+});
+
+renderer.onHeroSelected(handleHeroSelection);
+renderer.onCellSelected(handleMove);
+renderer.onEnemySelected(handleAttack);
 
 window.addEventListener("beforeinstallprompt", (event) => {
   event.preventDefault();
@@ -70,22 +313,19 @@ shell.installButton.addEventListener("click", async () => {
   shell.installButton.hidden = true;
 });
 
-window.addEventListener("appinstalled", () => {
-  shell.appendEvent("Gargotte Adventure est installé sur l’appareil.");
-});
+window.addEventListener("appinstalled", () =>
+  shell.appendEvent("Gargotte Adventure est installé sur l’appareil."),
+);
 
 render();
 shell.appendEvent(`${dungeon.name} chargé · ${APP_VERSION}.`);
 
 function eventMessage(type: string): string {
-  switch (type) {
-    case "expedition/started":
-      return "Une nouvelle expédition quitte La Chope Qui Colle.";
-    case "expedition/returned-to-menu":
-      return "Les héros reviennent compter leurs bosses.";
-    default:
-      return "Le moteur de jeu est prêt.";
-  }
+  return type === "expedition/started"
+    ? "Les héros entrent dans la salle tactique."
+    : type === "expedition/returned-to-menu"
+      ? "Retour au menu."
+      : "Le moteur de jeu est prêt.";
 }
 
 declare global {
