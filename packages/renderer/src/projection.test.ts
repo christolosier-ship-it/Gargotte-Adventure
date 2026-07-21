@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   defaultIsometricProjection,
   gridToScreen,
+  isometricDepthLayer,
   screenToGrid,
   stableDepth,
 } from "./projection";
@@ -77,5 +78,20 @@ describe("projection isométrique", () => {
     expect(stableDepth(left.y, projection.tileHeight, 2)).toBeLessThan(
       stableDepth(right.y, projection.tileHeight, 3),
     );
+  });
+
+  it("maintient toutes les tuiles sous tous les objets de la grille 8 × 4", () => {
+    const deepestFloor = gridToScreen({ column: 7, row: 3 }, projection);
+    const nearestObject = gridToScreen({ column: 0, row: 0 }, projection);
+    const floorDepth =
+      isometricDepthLayer.floor +
+      stableDepth(deepestFloor.y, projection.tileHeight, 0);
+    const objectDepth =
+      isometricDepthLayer.object +
+      stableDepth(nearestObject.y, projection.tileHeight, 0);
+
+    expect(floorDepth).toBeLessThan(objectDepth);
+    expect(isometricDepthLayer.backdrop).toBeLessThan(floorDepth);
+    expect(isometricDepthLayer.interface).toBeGreaterThan(objectDepth);
   });
 });
