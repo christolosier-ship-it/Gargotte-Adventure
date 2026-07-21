@@ -57,12 +57,7 @@ const tileHitArea = new Polygon([
 ]);
 
 type TileState =
-  | "base"
-  | "alternate"
-  | "reachable"
-  | "selected"
-  | "attackable"
-  | "blocked";
+  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
 
 const tileStyle: Record<TileState, { color: number; alpha: number }> = {
   base: { color: tokenNumber(tokens.color.primitive.stoneDark), alpha: 1 },
