@@ -41,6 +41,50 @@ const readCanvasState = async (page: Page) => {
   }));
 };
 
+const canvasPointForCell = async (
+  page: Page,
+  position: { column: number; row: number },
+  nudge: { x: number; y: number } = { x: 0, y: 0 },
+) => {
+  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  return canvas.evaluate(
+    (element, { position, nudge }) => {
+      const projection = JSON.parse(element.dataset.projection ?? "{}");
+      const camera = JSON.parse(element.dataset.camera ?? "{}");
+      const rect = element.getBoundingClientRect();
+      const localX =
+        projection.originX +
+        ((position.column - position.row) * projection.tileWidth) / 2 +
+        nudge.x;
+      const localY =
+        projection.originY +
+        ((position.column + position.row) * projection.tileHeight) / 2 +
+        nudge.y;
+      return {
+        x: rect.left + camera.offsetX + localX * camera.scale,
+        y: rect.top + camera.offsetY + localY * camera.scale,
+      };
+    },
+    { position, nudge },
+  );
+};
+
+const expectBrunhilda = async (
+  page: Page,
+  position: { column: number; row: number },
+  actions: number,
+) => {
+  await expect
+    .poll(async () => {
+      const state = await readCanvasState(page);
+      const hero = state.heroes.find(
+        (candidate) => candidate.id === "brunhilda",
+      );
+      return { position: hero?.position, actions: hero?.actionsRemaining };
+    })
+    .toEqual({ position, actions });
+};
+
 test("sélectionne les héros officiels et lance la salle PixiJS", async ({
   page,
 }) => {
@@ -194,6 +238,62 @@ test("atteint une victoire reproductible", async ({ page }) => {
     .toBe("victory");
   await expect(page.getByText("Victoire")).toBeVisible();
   await expect(page.getByText("Salle nettoyée !")).toBeVisible();
+});
+
+test("déplace Brünhilda par picking réel du canvas", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+    .click();
+
+  const target = { column: 1, row: 0 };
+  const point = await canvasPointForCell(page, target);
+  if (isMobile) await page.touchscreen.tap(point.x, point.y);
+  else await page.mouse.click(point.x, point.y);
+
+  await expectBrunhilda(page, target, 2);
+});
+
+test("pique une case proche d'une arête commune du losange", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+    .click();
+
+  const target = { column: 1, row: 0 };
+  const point = await canvasPointForCell(page, target, { x: 56, y: 0 });
+  if (isMobile) await page.touchscreen.tap(point.x, point.y);
+  else await page.mouse.click(point.x, point.y);
+
+  await expectBrunhilda(page, target, 2);
+});
+
+test("préserve les coordonnées logiques lors d'un redimensionnement paysage", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+    .click();
+  const before = await readCanvasState(page);
+  await page.setViewportSize({ width: 1024, height: 576 });
+  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  await expect
+    .poll(async () =>
+      canvas.evaluate((element) => JSON.parse(element.dataset.camera ?? "{}")),
+    )
+    .toHaveProperty("scale");
+  expect(await readCanvasState(page)).toEqual(before);
+  await expect(canvas).toBeInViewport();
 });
 
 test("expose le manifeste PWA français et le service worker", async ({

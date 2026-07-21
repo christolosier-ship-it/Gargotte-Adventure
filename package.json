@@ -18,7 +18,8 @@
     "validate:content": "tsx tools/validators/src/validate-content.ts",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "check": "npm run format:check && npm run validate:content && npm run typecheck && npm run test && npm run build"
+    "check": "npm run format:check && npm run validate:content && npm run typecheck && npm run test && npm run build",
+    "validate:repository": "python3 tools/validate_repository.py"
   },
   "dependencies": {
     "idb": "8.0.3",
