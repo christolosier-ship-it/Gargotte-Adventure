@@ -20,6 +20,19 @@ export const isometricTileGeometry = {
   halfTileHeight: tokens.geometry.tileHalfHeight,
 } as const;
 
+// Le conteneur du pion est placé exactement sur le centre projeté de la case.
+// Le corps est dessiné au-dessus de ce point et son bas touche l’ancrage au sol.
+export const isometricPlaceholderTokenGeometry = {
+  groundAnchorY: 0,
+  shadowCenterY: 0,
+  shadowRadiusX: 30,
+  shadowRadiusY: 10,
+  bodyCenterY: -27,
+  bodyRadius: 27,
+  labelCenterY: -27,
+  hpCenterY: 14,
+} as const;
+
 // Les écarts dépassent toute la profondeur de la grille 8 × 4 :
 // le sol reste donc toujours derrière les objets, quel que soit leur rang.
 export const isometricDepthLayer = {

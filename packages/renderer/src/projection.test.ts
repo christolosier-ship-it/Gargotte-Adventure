@@ -3,6 +3,7 @@ import {
   defaultIsometricProjection,
   gridToScreen,
   isometricDepthLayer,
+  isometricPlaceholderTokenGeometry,
   screenToGrid,
   stableDepth,
 } from "./projection";
@@ -93,5 +94,16 @@ describe("projection isométrique", () => {
     expect(floorDepth).toBeLessThan(objectDepth);
     expect(isometricDepthLayer.backdrop).toBeLessThan(floorDepth);
     expect(isometricDepthLayer.interface).toBeGreaterThan(objectDepth);
+  });
+
+  it("place le bas du pion et son ombre sur le centre projeté de la case", () => {
+    expect(
+      isometricPlaceholderTokenGeometry.bodyCenterY +
+        isometricPlaceholderTokenGeometry.bodyRadius,
+    ).toBe(isometricPlaceholderTokenGeometry.groundAnchorY);
+    expect(isometricPlaceholderTokenGeometry.shadowCenterY).toBeCloseTo(
+      isometricPlaceholderTokenGeometry.groundAnchorY,
+      0,
+    );
   });
 });
