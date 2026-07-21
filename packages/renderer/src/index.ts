@@ -9,6 +9,7 @@ import tokens from "../../../design/isometric/tokens.json";
 import {
   gridToScreen,
   isometricDepthLayer,
+  isometricPlaceholderTokenGeometry,
   isometricTileGeometry,
   stableDepth,
   type IsometricProjection,
@@ -212,10 +213,19 @@ export async function createTabletopRenderer(
     );
 
     const shadow = new Graphics()
-      .ellipse(0, 22, 30, 10)
+      .ellipse(
+        0,
+        isometricPlaceholderTokenGeometry.shadowCenterY,
+        isometricPlaceholderTokenGeometry.shadowRadiusX,
+        isometricPlaceholderTokenGeometry.shadowRadiusY,
+      )
       .fill({ color: 0x000000, alpha: tokens.opacity.shadow });
     const tokenBody = new Graphics()
-      .circle(0, -8, 27)
+      .circle(
+        0,
+        isometricPlaceholderTokenGeometry.bodyCenterY,
+        isometricPlaceholderTokenGeometry.bodyRadius,
+      )
       .fill({ color: combatant.kind === "hero" ? 0xd7b568 : 0x637f37 })
       .stroke({
         color: active ? 0xf1c86f : attackable ? 0xd45f57 : 0xf8ecd2,
@@ -226,15 +236,15 @@ export async function createTabletopRenderer(
       style: { fill: 0x20140f, fontSize: 16, fontWeight: "700" },
     });
     label.anchor.set(0.5);
-    label.position.set(0, -8);
+    label.position.set(0, isometricPlaceholderTokenGeometry.labelCenterY);
     const hp = new Text({
       text: `${combatant.hp}/${combatant.maxHp}`,
       style: { fill: 0xf8ecd2, fontSize: 12, fontWeight: "700" },
     });
     hp.anchor.set(0.5);
-    hp.position.set(0, 34);
+    hp.position.set(0, isometricPlaceholderTokenGeometry.hpCenterY);
     token.addChild(shadow, tokenBody, label, hp);
-    token.position.set(screen.x, screen.y + gridProjection.tileHeight / 2);
+    token.position.set(screen.x, screen.y);
     stage.addChild(token);
   }
 
@@ -371,6 +381,7 @@ export {
   defaultIsometricProjection,
   gridToScreen,
   isometricDepthLayer,
+  isometricPlaceholderTokenGeometry,
   screenToGrid,
   stableDepth,
 } from "./projection";
