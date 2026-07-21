@@ -24,7 +24,7 @@ export const isometricTileGeometry = {
 // Le corps est dessiné au-dessus de ce point et son bas touche l’ancrage au sol.
 export const isometricPlaceholderTokenGeometry = {
   groundAnchorY: 0,
-  shadowCenterY: 2,
+  shadowCenterY: 0,
   shadowRadiusX: 30,
   shadowRadiusY: 10,
   bodyCenterY: -27,
