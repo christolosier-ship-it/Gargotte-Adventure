@@ -62,9 +62,9 @@ const nextTask = () => new Promise((resolve) => setTimeout(resolve, 0));
 describe("runtime isometric asset manifest", () => {
   it("valide plusieurs orientations pour un même identifiant", () => {
     expect(manifest.schemaVersion).toBe(1);
-    expect(manifest.assets.filter((asset) => asset.id === "hero.test")).toHaveLength(
-      2,
-    );
+    expect(
+      manifest.assets.filter((asset) => asset.id === "hero.test"),
+    ).toHaveLength(2);
   });
   it("rejette un manifeste invalide", () =>
     expect(() =>
