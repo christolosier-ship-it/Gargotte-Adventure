@@ -1,22 +1,22 @@
 #!/usr/bin/env python3
-"""Validate Sprint 0 repository invariants without third-party dependencies."""
+"""Validate repository invariants without third-party dependencies."""
 
 from __future__ import annotations
 
+import json
 import re
 import sys
-import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 IGNORED_DIRECTORIES = {
-    '.git',
-    'node_modules',
-    'dist',
-    'build',
-    'coverage',
-    'playwright-report',
-    'test-results',
+    ".git",
+    "node_modules",
+    "dist",
+    "build",
+    "coverage",
+    "playwright-report",
+    "test-results",
 }
 
 REQUIRED_FILES = (
@@ -43,6 +43,7 @@ SECRET_PATTERNS = {
 }
 
 FORBIDDEN_RUNTIME_SUFFIXES = {".pdf", ".psd", ".png"}
+ALLOWED_RUNTIME_SUFFIXES = {".svg", ".webp"}
 ASSET_ROOT = ROOT / "apps/game/public/assets/isometric"
 RUNTIME_MANIFEST = ASSET_ROOT / "manifest.json"
 
@@ -66,31 +67,49 @@ TEXT_SUFFIXES = {
 def iter_text_files() -> list[Path]:
     files: list[Path] = []
     for path in ROOT.rglob("*"):
-        if not path.is_file() or IGNORED_DIRECTORIES.intersection(path.relative_to(ROOT).parts):
+        if not path.is_file() or IGNORED_DIRECTORIES.intersection(
+            path.relative_to(ROOT).parts
+        ):
             continue
         if path.suffix.lower() in TEXT_SUFFIXES or path.name.startswith(".env"):
             files.append(path)
     return files
 
 
-
 def validate_isometric_assets(errors: list[str]) -> None:
     if not RUNTIME_MANIFEST.is_file():
-        errors.append("Manifeste runtime isométrique absent : apps/game/public/assets/isometric/manifest.json")
+        errors.append(
+            "Manifeste runtime isométrique absent : "
+            "apps/game/public/assets/isometric/manifest.json"
+        )
         return
     try:
         manifest = json.loads(RUNTIME_MANIFEST.read_text(encoding="utf-8"))
     except json.JSONDecodeError as exc:
         errors.append(f"Manifeste runtime isométrique JSON invalide : {exc}")
         return
-    ids: set[str] = set()
+
+    assets = manifest.get("assets", [])
+    budgets = manifest.get("budgets", {})
+    total_budget = int(budgets.get("pilotTotalBytes", 0))
+    sprite_budget = int(budgets.get("spritePilotBytes", 0))
+    technical_budget = int(budgets.get("technicalAssetBytes", 0))
+    all_ids = {candidate.get("id") for candidate in assets}
+    variant_keys: set[str] = set()
     declared: set[Path] = set()
+    counted_files: set[Path] = set()
     total = 0
-    for asset in manifest.get("assets", []):
+
+    for asset in assets:
         asset_id = asset.get("id", "<id absent>")
-        if asset_id in ids:
-            errors.append(f"{asset_id}: identifiant dupliqué dans le manifeste runtime")
-        ids.add(asset_id)
+        orientation = asset.get("orientation", "<orientation absente>")
+        variant_key = f"{asset_id}@{orientation}"
+        if variant_key in variant_keys:
+            errors.append(
+                f"{asset_id}: variante {orientation} dupliquée dans le manifeste runtime"
+            )
+        variant_keys.add(variant_key)
+
         path_value = asset.get("path", "")
         if path_value.startswith("/") or ".." in Path(path_value).parts:
             errors.append(f"{asset_id}: chemin relatif public non sûr ({path_value})")
@@ -98,39 +117,64 @@ def validate_isometric_assets(errors: list[str]) -> None:
         if not path_value.startswith("assets/isometric/"):
             errors.append(f"{asset_id}: chemin incompatible GitHub Pages ({path_value})")
         suffix = Path(path_value).suffix.lower()
-        if suffix not in {".svg", ".webp"}:
+        if suffix not in ALLOWED_RUNTIME_SUFFIXES:
             errors.append(f"{asset_id}: extension runtime interdite ({suffix})")
         if suffix in FORBIDDEN_RUNTIME_SUFFIXES:
-            errors.append(f"{asset_id}: source maître interdite dans les assets runtime ({path_value})")
+            errors.append(
+                f"{asset_id}: source maître interdite dans les assets runtime "
+                f"({path_value})"
+            )
+
         file_path = ROOT / "apps/game/public" / path_value
         try:
             file_path.relative_to(ASSET_ROOT)
         except ValueError:
             errors.append(f"{asset_id}: fichier hors dossier isométrique ({path_value})")
             continue
+
         if asset.get("required") and not file_path.is_file():
             errors.append(f"{asset_id}: fichier obligatoire absent ({path_value})")
             continue
         if file_path.is_file():
             declared.add(file_path)
             size = file_path.stat().st_size
-            total += size
+            if file_path not in counted_files:
+                total += size
+                counted_files.add(file_path)
             budget = int(asset.get("budgetBytes", 0))
             if budget and size > budget:
                 errors.append(f"{asset_id}: poids {size} octets > budget {budget}")
+
+        asset_budget = int(asset.get("budgetBytes", 0))
+        category_limit = (
+            sprite_budget if asset.get("category") == "character" else technical_budget
+        )
+        if category_limit and asset_budget > category_limit:
+            errors.append(
+                f"{asset_id}: budget déclaré {asset_budget} > limite {category_limit}"
+            )
+
         fallback = asset.get("fallbackId")
-        if fallback and fallback not in [candidate.get("id") for candidate in manifest.get("assets", [])]:
+        if fallback and fallback not in all_ids:
             errors.append(f"{asset_id}: fallback absent ({fallback})")
         dims = asset.get("dimensions", {})
         if dims.get("width", 0) <= 0 or dims.get("height", 0) <= 0:
             errors.append(f"{asset_id}: dimensions déclarées incohérentes")
-        if asset.get("mirrorOf") and asset.get("orientation") == "omni":
+        if asset.get("mirrorOf") and orientation == "omni":
             errors.append(f"{asset_id}: miroir incohérent avec orientation omni")
+        if asset.get("mirrorOf", {}).get("orientation") == orientation:
+            errors.append(f"{asset_id}: miroir identique à son orientation source")
+
     for file_path in ASSET_ROOT.rglob("*"):
-        if file_path.is_file() and file_path.name != "manifest.json" and file_path not in declared:
+        if (
+            file_path.is_file()
+            and file_path.name != "manifest.json"
+            and file_path not in declared
+        ):
             errors.append(f"Fichier asset non déclaré : {file_path.relative_to(ROOT)}")
-    if total > 1024 * 1024:
-        errors.append(f"Lot pilote 2B.1 trop lourd : {total} octets")
+    if total_budget and total > total_budget:
+        errors.append(f"Lot pilote 2B.1 trop lourd : {total} octets > {total_budget}")
+
 
 def main() -> int:
     errors: list[str] = []
@@ -164,7 +208,7 @@ def main() -> int:
             print(f"- {error}")
         return 1
 
-    print("Validation Sprint 0 réussie : structure présente, UTF-8 valide, aucun secret détecté.")
+    print("Validation réussie : structure présente, UTF-8 valide, aucun secret détecté.")
     return 0
 
 
