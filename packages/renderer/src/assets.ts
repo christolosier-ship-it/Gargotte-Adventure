@@ -52,15 +52,30 @@ export const runtimeAssetManifestSchema = z
     assets: z.array(runtimeAssetSchema).min(1),
   })
   .superRefine((manifest, ctx) => {
-    const ids = new Set<string>();
+    const variants = new Set<string>();
+    const ids = new Set(manifest.assets.map((asset) => asset.id));
+
+    if (
+      manifest.budgets.pilotTotalBytes !== assetBudgets.pilotTotalBytes ||
+      manifest.budgets.spritePilotBytes !== assetBudgets.spritePilotBytes ||
+      manifest.budgets.technicalAssetBytes !== assetBudgets.technicalAssetBytes
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["budgets"],
+        message: "Les budgets du manifeste divergent des seuils runtime.",
+      });
+
     for (const asset of manifest.assets) {
-      if (ids.has(asset.id))
+      const variantKey = `${asset.id}@${asset.orientation}`;
+      if (variants.has(variantKey))
         ctx.addIssue({
           code: "custom",
-          path: ["assets", asset.id],
-          message: `Identifiant dupliqué: ${asset.id}`,
+          path: ["assets", asset.id, asset.orientation],
+          message: `Variante dupliquée: ${variantKey}`,
         });
-      ids.add(asset.id);
+      variants.add(variantKey);
+
       if (
         !asset.path.startsWith(manifest.basePath) ||
         asset.path.includes("..") ||
@@ -77,7 +92,25 @@ export const runtimeAssetManifestSchema = z
           path: ["assets", asset.id, "format"],
           message: `Extension incohérente pour ${asset.id}`,
         });
+      if (
+        asset.budgetBytes >
+        (asset.category === "character"
+          ? manifest.budgets.spritePilotBytes
+          : manifest.budgets.technicalAssetBytes)
+      )
+        ctx.addIssue({
+          code: "custom",
+          path: ["assets", asset.id, "budgetBytes"],
+          message: `Budget trop élevé pour ${asset.id}`,
+        });
+      if (asset.mirrorOf?.orientation === asset.orientation)
+        ctx.addIssue({
+          code: "custom",
+          path: ["assets", asset.id, "mirrorOf"],
+          message: `Miroir incohérent pour ${asset.id}`,
+        });
     }
+
     for (const asset of manifest.assets)
       if (!ids.has(asset.fallbackId))
         ctx.addIssue({
@@ -97,7 +130,8 @@ export type AssetResolveResult =
         | "manifest-missing"
         | "asset-missing"
         | "orientation-missing"
-        | "texture-error";
+        | "texture-error"
+        | "registry-destroyed";
       fallback?: RuntimeAsset;
       error?: unknown;
     };
@@ -109,24 +143,35 @@ export function validateRuntimeAssetManifest(
 export const defaultAssetManifestUrl = "assets/isometric/manifest.json";
 const makePublicUrl = (path: string, base = import.meta.env.BASE_URL) =>
   `${base}${path}`.replace(/([^:]\/)\/+/g, "$1");
+type TextureLoader = (url: string) => Promise<Texture>;
+type TextureReleaser = (url: string, texture: Texture) => void | Promise<void>;
+
 export class IsometricAssetRegistry {
   private manifest: RuntimeAssetManifest | null = null;
   private cache = new Map<string, Promise<Texture>>();
+  private destroyed = false;
+
   constructor(
-    private readonly loadTexture: (url: string) => Promise<Texture> = async (
-      url,
-    ) => {
+    private readonly loadTexture: TextureLoader = async (url) => {
       const { Assets } = await import("pixi.js");
       return Assets.load<Texture>(url);
     },
+    private readonly releaseTexture: TextureReleaser = async (url) => {
+      const { Assets } = await import("pixi.js");
+      await Assets.unload(url);
+    },
   ) {}
+
   async loadManifest(
     url = makePublicUrl(defaultAssetManifestUrl),
   ): Promise<boolean> {
+    if (this.destroyed) return false;
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      this.manifest = validateRuntimeAssetManifest(await response.json());
+      const manifest = validateRuntimeAssetManifest(await response.json());
+      if (this.destroyed) return false;
+      this.manifest = manifest;
       return true;
     } catch (error) {
       console.error("[assets] manifeste isométrique indisponible", error);
@@ -134,30 +179,35 @@ export class IsometricAssetRegistry {
       return false;
     }
   }
+
   setManifest(manifest: RuntimeAssetManifest): void {
+    if (this.destroyed) throw new Error("Registre d’assets détruit.");
     this.manifest = manifest;
   }
+
   resolve(
     id: string,
     orientation: AssetOrientation = "omni",
   ): AssetResolveResult {
+    if (this.destroyed) return { ok: false, reason: "registry-destroyed" };
     if (!this.manifest) return { ok: false, reason: "manifest-missing" };
     const candidates = this.manifest.assets.filter((asset) => asset.id === id);
-    if (candidates.length === 0) return this.fallback(id, "asset-missing");
-    const direct = candidates.find(
-      (asset) =>
-        asset.orientation === orientation || asset.orientation === "omni",
-    );
+    if (candidates.length === 0) return { ok: false, reason: "asset-missing" };
+    const direct = candidates.find((asset) => asset.orientation === orientation);
     if (direct) return { ok: true, asset: direct, mirrored: false };
+    const omni = candidates.find((asset) => asset.orientation === "omni");
+    if (omni) return { ok: true, asset: omni, mirrored: false };
     const mirrored = candidates.find(
       (asset) => asset.mirrorOf?.orientation === orientation,
     );
     if (mirrored) return { ok: true, asset: mirrored, mirrored: true };
-    return this.fallback(
-      candidates[0]?.fallbackId ?? id,
-      "orientation-missing",
-    );
+    return {
+      ok: false,
+      reason: "orientation-missing",
+      fallback: this.findVariant(candidates[0]?.fallbackId ?? id, orientation),
+    };
   }
+
   async textureFor(
     id: string,
     orientation: AssetOrientation = "omni",
@@ -171,31 +221,49 @@ export class IsometricAssetRegistry {
       this.cache.set(url, promise);
     }
     try {
-      return { ...resolved, texture: await promise };
+      const texture = await promise;
+      if (this.destroyed)
+        return { ok: false, reason: "registry-destroyed" };
+      return { ...resolved, texture };
     } catch (error) {
       console.error(`[assets] texture échouée: ${resolved.asset.id}`, error);
       this.cache.delete(url);
       return {
         ok: false,
         reason: "texture-error",
-        fallback: resolved.asset,
+        fallback: this.findVariant(resolved.asset.fallbackId, orientation),
         error,
       };
     }
   }
+
   destroy(): void {
+    if (this.destroyed) return;
+    this.destroyed = true;
+    this.manifest = null;
+    for (const [url, promise] of this.cache)
+      void promise
+        .then((texture) => this.releaseTexture(url, texture))
+        .catch(() => undefined);
     this.cache.clear();
   }
+
   get cacheSize(): number {
     return this.cache.size;
   }
-  private fallback(
+
+  private findVariant(
     id: string,
-    reason: "asset-missing" | "orientation-missing",
-  ): AssetResolveResult {
-    const asset = this.manifest?.assets.find(
-      (candidate) => candidate.id === id,
+    orientation: AssetOrientation,
+  ): RuntimeAsset | undefined {
+    const candidates = this.manifest?.assets.filter((asset) => asset.id === id);
+    return (
+      candidates?.find((asset) => asset.orientation === orientation) ??
+      candidates?.find((asset) => asset.orientation === "omni") ??
+      candidates?.find(
+        (asset) => asset.mirrorOf?.orientation === orientation,
+      ) ??
+      candidates?.[0]
     );
-    return { ok: false, reason, fallback: asset };
   }
 }
