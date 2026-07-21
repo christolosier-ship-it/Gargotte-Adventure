@@ -41,11 +41,9 @@ test("reste jouable lorsqu’une texture technique manque réellement", async ({
     const column = 1;
     const row = 0;
     const localX =
-      projection.originX +
-      ((column - row) * projection.tileWidth) / 2;
+      projection.originX + ((column - row) * projection.tileWidth) / 2;
     const localY =
-      projection.originY +
-      ((column + row) * projection.tileHeight) / 2;
+      projection.originY + ((column + row) * projection.tileHeight) / 2;
     return {
       x: rect.left + camera.offsetX + localX * camera.scale,
       y: rect.top + camera.offsetY + localY * camera.scale,
