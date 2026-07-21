@@ -47,7 +47,7 @@ Le résultat ne dépend pas de l’ordre accidentel d’itération d’un objet 
 Les dégâts utilisent :
 
 ```ts
-Math.max(1, attacker.atk - target.def)
+Math.max(1, attacker.atk - target.def);
 ```
 
 Aucun dé ni tirage aléatoire n’intervient dans le Sprint 1.
