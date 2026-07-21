@@ -1,23 +1,17 @@
-# Relais Google Drive — Sprint 1
+# Google Drive — Sprint 1
 
-## Statut
+## Document de référence
 
-Ce fichier a été créé comme relais lorsque l’environnement Codex ne pouvait pas écrire dans Google Drive.
+Le rapport de clôture est maintenant disponible dans le dossier Drive **Projet Gargotte / Gargotte Adventure / Documentation** :
 
-Le dossier Drive **Projet Gargotte / Gargotte Adventure** contient actuellement :
+[Gargotte Adventure — Sprint 1 — Rapport de clôture](https://docs.google.com/document/d/1kUluOXqSPaGe6WmsA5R7BtQ77DJz_im6hLFWn-tMtgo)
 
-- un dossier `Documentation` ;
-- un dossier `Builds` ;
-- le rapport de contrôle du Sprint 0.
+Ce document résume le résultat du sprint pour un lecteur non développeur. La documentation GitHub reste la source de vérité technique.
 
-Aucun document Drive spécifique au Sprint 1 n’a été créé automatiquement pendant son développement.
+## Contenu couvert
 
-## Résumé à conserver côté Drive
-
-Le Sprint 1 a livré :
-
-- une salle tactique 8 × 4 ;
-- les quatre héros officiels ;
+- salle tactique 8 × 4 ;
+- quatre héros officiels ;
 - deux gobelins provisoires ;
 - trois actions par héros ;
 - déplacement orthogonal ;
@@ -27,7 +21,8 @@ Le Sprint 1 a livré :
 - victoire et défaite ;
 - sauvegarde IndexedDB versionnée ;
 - interface PixiJS + DOM accessible ;
-- tests desktop et mobile paysage.
+- tests desktop et mobile paysage ;
+- limites acceptées et périmètre du Sprint 2.
 
 ## Sources de vérité
 
@@ -36,19 +31,10 @@ Le Sprint 1 a livré :
 - **Gargottex** : données structurées éditoriales ;
 - **Figma / FigJam** : écrans, composants et diagrammes.
 
-Un document Drive ne doit pas recopier intégralement l’architecture technique. Il doit plutôt :
-
-- résumer les décisions pour un lecteur non développeur ;
-- pointer vers la documentation GitHub ;
-- conserver les règles et choix éditoriaux ;
-- signaler les validations et limites du sprint.
-
-## Références GitHub
+Le document Drive ne recopie pas toute l’architecture. Il synthétise les décisions et renvoie vers :
 
 - `docs/sprints/sprint-1.md` ;
 - `docs/architecture/tactical-room.md` ;
 - `docs/design/sprint-1-interface.md` ;
 - `docs/adr/0005-deterministic-room-engine.md` ;
 - Pull Request #10.
-
-Ce fichier peut être supprimé lorsqu’un document Drive Sprint 1 équivalent existe et pointe vers ces références.
