@@ -68,14 +68,16 @@ Pour le premier lot, la solution recommandée est :
 
 ## Point d’ancrage
 
-La position projetée d’une case représente le centre de son losange.
+La position projetée d’une case représente le centre de son losange et le point de contact au sol des objets qui occupent cette case.
 
 Pour un sprite de personnage :
 
 ```ts
 sprite.anchor.set(0.5, 0.92);
-sprite.position.set(screenX, screenY + tileHeight / 2);
+sprite.position.set(screenX, screenY);
 ```
+
+Il ne faut pas ajouter `tileHeight / 2` à `screenY`. Cette translation décale visuellement le pion d’une demi-tuile et peut le faire paraître posé sur la case voisine.
 
 L’ancrage réel pourra être ajusté par manifeste, mais il doit toujours désigner le contact au sol. La tête, l’arme et les accessoires peuvent dépasser de la case.
 
@@ -131,6 +133,7 @@ La stratégie finale sera choisie après test sur téléphone paysage.
 - coordonnées négatives rejetées par le moteur ;
 - picking au centre de chaque tuile ;
 - picking près des quatre arêtes ;
+- ancrage du bas du pion et de son ombre sur le centre projeté de la case ;
 - tri stable de deux sprites partageant le même `screenY` ;
 - redimensionnement sans modification des positions logiques ;
 - commandes DOM toujours opérationnelles lorsque le canvas est ignoré.
