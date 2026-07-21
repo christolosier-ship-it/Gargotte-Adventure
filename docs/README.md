@@ -35,12 +35,12 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 
 ## Rôle des différentes sources
 
-| Source | Rôle |
-| --- | --- |
-| GitHub | Code, architecture technique, ADR, formats, tests et historique des changements |
-| Gargottex | Source de vérité éditoriale des données structurées |
-| Google Drive | Règles humaines, lore, médias maîtres, comptes rendus et archives |
-| Figma / FigJam | Écrans, composants, tokens et diagrammes |
+| Source         | Rôle                                                                            |
+| -------------- | ------------------------------------------------------------------------------- |
+| GitHub         | Code, architecture technique, ADR, formats, tests et historique des changements |
+| Gargottex      | Source de vérité éditoriale des données structurées                             |
+| Google Drive   | Règles humaines, lore, médias maîtres, comptes rendus et archives               |
+| Figma / FigJam | Écrans, composants, tokens et diagrammes                                        |
 
 ## Règles de maintenance
 
