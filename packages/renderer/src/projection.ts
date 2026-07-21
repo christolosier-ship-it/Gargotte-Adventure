@@ -20,6 +20,13 @@ export const isometricTileGeometry = {
   halfTileHeight: tokens.geometry.tileHalfHeight,
 } as const;
 
+export const isometricDepthLayer = {
+  backdrop: -2_000_000,
+  floor: -1_000_000,
+  object: 0,
+  interface: 2_000_000,
+} as const;
+
 export const defaultIsometricProjection: IsometricProjection = {
   tileWidth: isometricTileGeometry.tileWidth,
   tileHeight: isometricTileGeometry.tileHeight,
