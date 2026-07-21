@@ -14,8 +14,8 @@ interface GridPosition {
 Le renderer transforme cette position logique en position écran :
 
 ```ts
-screenX = originX + (column - row) * tileWidth / 2;
-screenY = originY + (column + row) * tileHeight / 2;
+screenX = originX + ((column - row) * tileWidth) / 2;
+screenY = originY + ((column + row) * tileHeight) / 2;
 ```
 
 Valeurs initiales :
@@ -53,10 +53,8 @@ La conversion inverse commence par retirer l’origine :
 const localX = screenX - originX;
 const localY = screenY - originY;
 
-const column =
-  localX / tileWidth + localY / tileHeight;
-const row =
-  localY / tileHeight - localX / tileWidth;
+const column = localX / tileWidth + localY / tileHeight;
+const row = localY / tileHeight - localX / tileWidth;
 ```
 
 Le résultat flottant ne doit pas être arrondi aveuglément. Le picking doit vérifier le losange candidat avec une équation locale ou utiliser des zones interactives PixiJS correspondant exactement aux tuiles rendues.
@@ -116,14 +114,14 @@ La stratégie finale sera choisie après test sur téléphone paysage.
 
 ## États de tuile
 
-| État | Rôle | Opacité indicative |
-| --- | --- | ---: |
-| `base` | sol sombre | 1 |
-| `alternate` | variation visuelle | 1 |
-| `reachable` | déplacement autorisé | 0,68 |
-| `selected` | héros ou case active | 0,84 |
-| `attackable` | cible valide | 0,76 |
-| `blocked` | collision ou case indisponible | 0,88 |
+| État         | Rôle                           | Opacité indicative |
+| ------------ | ------------------------------ | -----------------: |
+| `base`       | sol sombre                     |                  1 |
+| `alternate`  | variation visuelle             |                  1 |
+| `reachable`  | déplacement autorisé           |               0,68 |
+| `selected`   | héros ou case active           |               0,84 |
+| `attackable` | cible valide                   |               0,76 |
+| `blocked`    | collision ou case indisponible |               0,88 |
 
 ## Tests minimum
 
