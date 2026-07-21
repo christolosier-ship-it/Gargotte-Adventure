@@ -8,10 +8,10 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 | ------------------------------------------ | ---------- | ------------------------------------------------------------------------------ |
 | Sprint 0 — Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
 | Sprint 1 — Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
-| Sprint 2 — Brouhaha et décor               | Prochain   | Le plateau devient un système vivant et explicable                             |
-| Sprint 3 — Héros et créatures              | À venir    | Rôles, compétences et comportements définitifs de Bastognac                    |
-| Sprint 4 — Donjon complet                  | À venir    | Cinq étages, loot, progression et boss                                         |
-| Sprint 5 — Direction artistique et confort | À venir    | Médias définitifs, audio, accessibilité et performances                        |
+| Sprint 2 — Plateau isométrique             | Prochain   | Même salle jouable en 2D isométrique avec pipeline graphique minimal           |
+| Sprint 3 — Brouhaha et décor               | À venir    | Le plateau devient un système vivant, interactif et explicable                 |
+| Sprint 4 — Héros et créatures de Bastognac | À venir    | Rôles, compétences et comportements définitifs                                 |
+| Sprint 5 — Donjon complet et finition      | À venir    | Cinq étages, loot, boss, médias enrichis, audio, accessibilité et performances |
 
 ## Sprint 0 — Fondations ✅
 
@@ -49,9 +49,33 @@ Livré :
 
 **Sortie obtenue :** une salle jouable de bout en bout, sauvegardable et reproductible sur navigateur.
 
-## Sprint 2 — Brouhaha et décor
+## Sprint 2 — Plateau isométrique et pipeline graphique
 
-Objectif : faire du plateau un acteur tactique visible, sans perdre le caractère déterministe du moteur.
+Objectif : donner au jeu sa direction visuelle cible avant d’ajouter le Brouhaha et les nombreux objets interactifs.
+
+Périmètre :
+
+- projection 2D isométrique sous PixiJS ;
+- grille logique et moteur tactique inchangés ;
+- picking et interactions tactiles fiables ;
+- caméra et redimensionnement adaptés au paysage ;
+- tri de profondeur stable ;
+- tuiles, murs, obstacles, ombres et overlays isométriques ;
+- personnages en sprites 2D fixes ou très légèrement animés ;
+- aucune 3D, aucun rig et aucune animation squelettique ;
+- premier pipeline versionné d’assets ;
+- Brünhilda et un gobelin comme assets pilotes ;
+- placeholders compatibles pour le reste du casting ;
+- tests de projection, picking, profondeur et non-régression du gameplay ;
+- mesure du poids des textures et des performances mobile.
+
+**Sortie attendue :** la salle Sprint 1 reste identique du point de vue des règles, mais devient jouable avec une présentation isométrique cohérente et un pipeline graphique réutilisable.
+
+Le cadrage détaillé se trouve dans [Sprint 2 — Plateau isométrique et pipeline graphique](sprints/sprint-2.md).
+
+## Sprint 3 — Brouhaha et décor
+
+Objectif : faire du plateau isométrique un acteur tactique visible, sans perdre le caractère déterministe du moteur.
 
 Périmètre envisagé :
 
@@ -61,12 +85,12 @@ Périmètre envisagé :
 - tables, tonneaux, grilles, torches et piliers interactifs ;
 - réactions en chaîne ;
 - journal d’événements explicatif ;
-- premiers effets visuels et sonores temporaires ;
+- premiers effets visuels et sonores liés au décor ;
 - sauvegarde et reprise de tous les nouveaux états.
 
-**Sortie attendue :** la même salle reste jouable, mais le bruit et le décor créent des décisions tactiques et des catastrophes lisibles.
+**Sortie attendue :** le bruit et le décor créent des décisions tactiques et des catastrophes lisibles sur le plateau isométrique.
 
-## Sprint 3 — Héros et créatures de Bastognac
+## Sprint 4 — Héros et créatures de Bastognac
 
 Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce sprint doit leur donner leur identité de gameplay définitive.
 
@@ -76,21 +100,18 @@ Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce 
 - seize créatures de Bastognac ;
 - ciblage et explications de décision enrichis ;
 - fiches et tutoriel contextuel ;
+- intégration progressive des sprites définitifs ;
 - équilibrage du vertical slice.
 
-## Sprint 4 — Donjon complet
+## Sprint 5 — Donjon complet et finition
 
 - cinq étages ;
 - génération contrôlée selon les budgets de menace ;
 - loot ;
 - progression entre salles ;
 - boss Baron Pas-Très-Terrifiant ;
-- reprise de campagne.
-
-## Sprint 5 — Direction artistique et confort
-
+- reprise de campagne ;
 - intégration des médias définitifs ;
-- animations ;
 - audio ;
 - accessibilité renforcée ;
 - performances mobile ;
@@ -110,7 +131,8 @@ Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce 
 
 1. expérience joueur avant sophistication technique ;
 2. règles testables avant animations ;
-3. Bastognac complet avant multiplication des donjons ;
-4. données versionnées avant automatisation massive ;
-5. mesures de performance avant WebAssembly ;
-6. aucune dépendance à l’API OpenAI pour lancer ou terminer une partie.
+3. rendu isométrique stabilisé avant multiplication des objets interactifs ;
+4. Bastognac complet avant multiplication des donjons ;
+5. données et assets versionnés avant automatisation massive ;
+6. mesures de performance avant WebAssembly ou véritable 3D ;
+7. aucune dépendance à l’API OpenAI pour lancer ou terminer une partie.

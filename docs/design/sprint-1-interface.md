@@ -104,8 +104,8 @@ Lorsqu’un fichier Figma Design éditable sera créé, il devra couvrir au mini
 Composants à prévoir :
 
 - carte héros ;
-- jeton héros ;
-- jeton ennemi ;
+- personnage ou jeton héros ;
+- personnage ou jeton ennemi ;
 - compteur de trois actions ;
 - bouton principal ;
 - bouton secondaire ;
@@ -115,11 +115,29 @@ Composants à prévoir :
 - journal d’événements ;
 - panneau victoire/défaite.
 
-## Suite au Sprint 2
+## Transition vers le Sprint 2
+
+Le Sprint 2 remplace uniquement la projection visuelle du plateau par une vue 2D isométrique sous PixiJS.
+
+Les garanties d’interface suivantes restent obligatoires :
+
+- mêmes intentions métier ;
+- mêmes commandes DOM accessibles ;
+- même fonctionnement clavier, souris et tactile ;
+- HUD lisible malgré l’augmentation de profondeur visuelle ;
+- sélection des cases sans clic au pixel fragile ;
+- héros actif et cibles attaquables visibles ;
+- aucun contrôle essentiel masqué par un mur ou un objet haut.
+
+Les personnages deviennent des sprites 2D fixes ou très légèrement animés. Aucun rig ou moteur 3D n’est prévu.
+
+Les gabarits détaillés sont définis dans [Design Sprint 2 — Gabarits isométriques](sprint-2-isometric-guidelines.md).
+
+## Suite au Sprint 3
 
 L’arrivée du Brouhaha et du décor interactif devra ajouter de l’information sans saturer le HUD. Les nouvelles réactions devront rester :
 
-- visibles sur le plateau ;
+- visibles sur le plateau isométrique ;
 - expliquées dans le journal ;
 - accessibles par les commandes DOM lorsque nécessaire ;
 - lisibles sur téléphone paysage.
