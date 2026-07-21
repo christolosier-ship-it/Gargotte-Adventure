@@ -4,14 +4,14 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d’avancement
 
-| Sprint | Statut | Résultat principal |
-| --- | --- | --- |
-| Sprint 0 — Fondations | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
-| Sprint 1 — Boucle de salle | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise |
-| Sprint 2 — Brouhaha et décor | Prochain | Le plateau devient un système vivant et explicable |
-| Sprint 3 — Héros et créatures | À venir | Rôles, compétences et comportements définitifs de Bastognac |
-| Sprint 4 — Donjon complet | À venir | Cinq étages, loot, progression et boss |
-| Sprint 5 — Direction artistique et confort | À venir | Médias définitifs, audio, accessibilité et performances |
+| Sprint                                     | Statut     | Résultat principal                                                             |
+| ------------------------------------------ | ---------- | ------------------------------------------------------------------------------ |
+| Sprint 0 — Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
+| Sprint 1 — Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
+| Sprint 2 — Brouhaha et décor               | Prochain   | Le plateau devient un système vivant et explicable                             |
+| Sprint 3 — Héros et créatures              | À venir    | Rôles, compétences et comportements définitifs de Bastognac                    |
+| Sprint 4 — Donjon complet                  | À venir    | Cinq étages, loot, progression et boss                                         |
+| Sprint 5 — Direction artistique et confort | À venir    | Médias définitifs, audio, accessibilité et performances                        |
 
 ## Sprint 0 — Fondations ✅
 
