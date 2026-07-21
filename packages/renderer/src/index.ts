@@ -7,8 +7,11 @@ import type {
 } from "@gargotte/engine";
 import tokens from "../../../design/isometric/tokens.json";
 import {
+  buildRoomProjection,
+  calculateIsometricGridBounds,
+  defaultCameraMargins,
+  fitIsometricCamera,
   gridToScreen,
-  isometricDepthLayer,
   isometricPlaceholderTokenGeometry,
   isometricTileGeometry,
   stableDepth,
@@ -19,7 +22,6 @@ export interface TacticalHighlights {
   reachable: GridPosition[];
   attackable: string[];
 }
-
 export interface TabletopRenderer {
   destroy(): void;
   setExpeditionActive(active: boolean): void;
@@ -29,23 +31,13 @@ export interface TabletopRenderer {
   onEnemySelected(listener: (enemyId: string) => void): void;
 }
 
-const boardPaddingX = 46;
-const boardPaddingTop = 84;
-const boardPaddingBottom = 32;
-const gridWidth = 8;
-const gridHeight = 4;
-const gridPixelWidth =
-  (gridWidth + gridHeight) * isometricTileGeometry.halfTileWidth;
-const gridPixelHeight =
-  (gridWidth + gridHeight) * isometricTileGeometry.halfTileHeight;
-const boardWidth = gridPixelWidth + boardPaddingX * 2;
-const boardHeight = gridPixelHeight + boardPaddingTop + boardPaddingBottom;
-const gridProjection: IsometricProjection = {
-  tileWidth: isometricTileGeometry.tileWidth,
-  tileHeight: isometricTileGeometry.tileHeight,
-  originX: gridHeight * isometricTileGeometry.halfTileWidth,
-  originY: isometricTileGeometry.halfTileHeight,
-};
+type TileState =
+  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
+type SceneLayers = Record<
+  "backdrop" | "floor" | "object" | "foreground" | "interface",
+  Container
+>;
+
 const tileHitArea = new Polygon([
   0,
   -isometricTileGeometry.halfTileHeight,
@@ -56,16 +48,9 @@ const tileHitArea = new Polygon([
   -isometricTileGeometry.halfTileWidth,
   0,
 ]);
-
-type TileState =
-  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
-
 const tileStyle: Record<TileState, { color: number; alpha: number }> = {
   base: { color: tokenNumber(tokens.color.primitive.stoneDark), alpha: 1 },
-  alternate: {
-    color: tokenNumber(tokens.color.primitive.stoneMid),
-    alpha: 1,
-  },
+  alternate: { color: tokenNumber(tokens.color.primitive.stoneMid), alpha: 1 },
   reachable: {
     color: tokenNumber(tokens.color.primitive.green),
     alpha: tokens.opacity.reachable,
@@ -93,9 +78,11 @@ function diamond(): number[] {
     0,
   ];
 }
-
 function tokenNumber(value: string): number {
   return Number(value.replace("#", "0x"));
+}
+function samePosition(a: GridPosition, b: GridPosition): boolean {
+  return a.column === b.column && a.row === b.row;
 }
 
 export async function createTabletopRenderer(
@@ -115,25 +102,40 @@ export async function createTabletopRenderer(
   host.replaceChildren(app.canvas);
 
   const stage = new Container();
-  stage.sortableChildren = true;
   app.stage.addChild(stage);
+  const layers: SceneLayers = {
+    backdrop: new Container(),
+    floor: new Container(),
+    object: new Container(),
+    foreground: new Container(),
+    interface: new Container(),
+  };
+  for (const [name, layer] of Object.entries(layers)) {
+    layer.label = `layer:${name}`;
+    layer.sortableChildren = true;
+    stage.addChild(layer);
+  }
+  let currentProjection: IsometricProjection = buildRoomProjection({
+    width: 1,
+    height: 1,
+  });
+  let currentBounds = calculateIsometricGridBounds(
+    { width: 1, height: 1 },
+    currentProjection,
+  );
   const listeners = {
     cell: [] as ((position: GridPosition) => void)[],
     hero: [] as ((id: string) => void)[],
     enemy: [] as ((id: string) => void)[],
   };
 
-  function clearStage(): void {
-    for (const child of stage.removeChildren())
-      child.destroy({ children: true });
+  function clearLayers(): void {
+    for (const layer of Object.values(layers))
+      for (const child of layer.removeChildren())
+        child.destroy({ children: true });
   }
-
-  function projectedPosition(position: GridPosition): { x: number; y: number } {
-    const screen = gridToScreen(position, gridProjection);
-    return {
-      x: boardPaddingX + screen.x,
-      y: boardPaddingTop + screen.y,
-    };
+  function projectedPosition(position: GridPosition) {
+    return gridToScreen(position, currentProjection);
   }
 
   function tileState(
@@ -143,12 +145,7 @@ export async function createTabletopRenderer(
     selected: boolean,
     attackable: boolean,
   ): TileState {
-    if (
-      state.obstacles.some(
-        (obstacle) =>
-          obstacle.column === position.column && obstacle.row === position.row,
-      )
-    )
+    if (state.obstacles.some((obstacle) => samePosition(obstacle, position)))
       return "blocked";
     if (selected) return "selected";
     if (attackable) return "attackable";
@@ -168,14 +165,11 @@ export async function createTabletopRenderer(
     cell.hitArea = tileHitArea;
     cell.label = `cell:${position.column},${position.row}`;
     cell.position.set(screen.x, screen.y);
-    cell.zIndex =
-      isometricDepthLayer.floor +
-      stableDepth(screen.y, gridProjection.tileHeight, 0);
+    cell.zIndex = stableDepth(screen.y, currentProjection.tileHeight, 0);
     cell.on("pointertap", () =>
       listeners.cell.forEach((listener) => listener(position)),
     );
-    stage.addChild(cell);
-
+    layers.floor.addChild(cell);
     if (tileKind === "blocked") {
       const obstacle = new Graphics()
         .roundRect(-22, -46, 44, 58, 8)
@@ -185,10 +179,12 @@ export async function createTabletopRenderer(
         })
         .stroke({ color: tokenNumber(tokens.color.primitive.gold), width: 3 });
       obstacle.position.set(screen.x, screen.y + 6);
-      obstacle.zIndex =
-        isometricDepthLayer.object +
-        stableDepth(screen.y, gridProjection.tileHeight, 100);
-      stage.addChild(obstacle);
+      obstacle.zIndex = stableDepth(
+        screen.y,
+        currentProjection.tileHeight,
+        100,
+      );
+      layers.object.addChild(obstacle);
     }
   }
 
@@ -203,15 +199,16 @@ export async function createTabletopRenderer(
     token.eventMode = "static";
     token.cursor = "pointer";
     token.label = `${combatant.kind}:${combatant.id}`;
-    token.zIndex =
-      isometricDepthLayer.object +
-      stableDepth(screen.y, gridProjection.tileHeight, 200 + tieBreaker);
+    token.zIndex = stableDepth(
+      screen.y,
+      currentProjection.tileHeight,
+      200 + tieBreaker,
+    );
     token.on("pointertap", () =>
       combatant.kind === "hero"
         ? listeners.hero.forEach((listener) => listener(combatant.id))
         : listeners.enemy.forEach((listener) => listener(combatant.id)),
     );
-
     const shadow = new Graphics()
       .ellipse(
         0,
@@ -220,7 +217,7 @@ export async function createTabletopRenderer(
         isometricPlaceholderTokenGeometry.shadowRadiusY,
       )
       .fill({ color: 0x000000, alpha: tokens.opacity.shadow });
-    const tokenBody = new Graphics()
+    const body = new Graphics()
       .circle(
         0,
         isometricPlaceholderTokenGeometry.bodyCenterY,
@@ -243,16 +240,61 @@ export async function createTabletopRenderer(
     });
     hp.anchor.set(0.5);
     hp.position.set(0, isometricPlaceholderTokenGeometry.hpCenterY);
-    token.addChild(shadow, tokenBody, label, hp);
+    token.addChild(shadow, body, label, hp);
     token.position.set(screen.x, screen.y);
-    stage.addChild(token);
+    layers.object.addChild(token);
+  }
+
+  function drawWalls(state: RoomState, focus: GridPosition[]): void {
+    const faded = (position: GridPosition) =>
+      focus.some((candidate) => samePosition(candidate, position));
+    for (let column = 0; column < state.width; column += 1)
+      drawWall(
+        { column, row: state.height - 1 },
+        "south-east",
+        faded({ column, row: state.height - 1 }),
+      );
+    for (let row = 0; row < state.height; row += 1)
+      drawWall({ column: 0, row }, "north-east", faded({ column: 0, row }));
+  }
+  function drawWall(
+    position: GridPosition,
+    orientation: "south-east" | "north-east",
+    faded: boolean,
+  ): void {
+    const screen = projectedPosition(position);
+    const w = isometricTileGeometry.halfTileWidth;
+    const h = tokens.geometry.wallHeight;
+    const t = isometricTileGeometry.halfTileHeight;
+    const points =
+      orientation === "south-east"
+        ? [-w, 0, 0, t, 0, t - h, -w, -h]
+        : [w, 0, 0, t, 0, t - h, w, -h];
+    const wall = new Graphics()
+      .poly(points)
+      .fill({
+        color: tokenNumber(tokens.color.primitive.woodDark),
+        alpha: faded ? 0.3 : 0.82,
+      })
+      .stroke({
+        color: tokenNumber(tokens.color.primitive.gold),
+        width: 2,
+        alpha: faded ? 0.45 : 0.9,
+      });
+    wall.eventMode = "none";
+    wall.label = `wall:${orientation}:${position.column},${position.row}`;
+    wall.position.set(screen.x, screen.y);
+    wall.zIndex = stableDepth(screen.y, currentProjection.tileHeight, 700);
+    layers.foreground.addChild(wall);
   }
 
   function renderRoom(
     state: RoomState,
     highlights: TacticalHighlights = { reachable: [], attackable: [] },
   ): void {
-    clearStage();
+    clearLayers();
+    currentProjection = buildRoomProjection(state);
+    currentBounds = calculateIsometricGridBounds(state, currentProjection);
     app.canvas.dataset.phase = state.phase;
     app.canvas.dataset.turn = String(state.turn);
     app.canvas.dataset.activeHero = state.activeHeroId ?? "";
@@ -273,14 +315,23 @@ export async function createTabletopRenderer(
         alive: enemy.alive,
       })),
     );
-
+    app.canvas.dataset.projection = JSON.stringify(currentProjection);
+    app.canvas.dataset.bounds = JSON.stringify(currentBounds);
     const backdrop = new Graphics()
-      .roundRect(0, 0, boardWidth, boardHeight, 28)
+      .roundRect(
+        currentBounds.minX - defaultCameraMargins.left,
+        currentBounds.minY - defaultCameraMargins.top,
+        currentBounds.width +
+          defaultCameraMargins.left +
+          defaultCameraMargins.right,
+        currentBounds.height +
+          defaultCameraMargins.top +
+          defaultCameraMargins.bottom,
+        28,
+      )
       .fill({ color: 0x2a1d18 })
       .stroke({ color: 0x806044, width: 5 });
-    backdrop.zIndex = isometricDepthLayer.backdrop;
-    stage.addChild(backdrop);
-
+    layers.backdrop.addChild(backdrop);
     const title = new Text({
       text:
         state.phase === "victory"
@@ -290,77 +341,77 @@ export async function createTabletopRenderer(
             : "BASTOGNAC · SALLE TACTIQUE",
       style: { fill: 0xf1c86f, fontSize: 22, fontWeight: "700" },
     });
-    title.position.set(boardPaddingX, 22);
-    title.zIndex = isometricDepthLayer.interface;
-    stage.addChild(title);
-
+    title.position.set(currentBounds.minX - 46, currentBounds.minY - 62);
+    layers.interface.addChild(title);
     const attackablePositions = state.enemies
       .filter(
         (enemy) => enemy.alive && highlights.attackable.includes(enemy.id),
       )
       .map((enemy) => enemy.position);
-
-    for (let row = 0; row < state.height; row += 1) {
+    for (let row = 0; row < state.height; row += 1)
       for (let column = 0; column < state.width; column += 1) {
         const position = { column, row };
-        const reachable = highlights.reachable.some(
-          (candidate) => candidate.column === column && candidate.row === row,
-        );
-        const selected = state.heroes.some(
-          (hero) =>
-            hero.alive &&
-            hero.id === state.activeHeroId &&
-            hero.position.column === column &&
-            hero.position.row === row,
-        );
-        const attackable = attackablePositions.some(
-          (candidate) => candidate.column === column && candidate.row === row,
-        );
         drawTile(
           position,
-          tileState(state, position, reachable, selected, attackable),
+          tileState(
+            state,
+            position,
+            highlights.reachable.some((p) => samePosition(p, position)),
+            state.heroes.some(
+              (hero) =>
+                hero.alive &&
+                hero.id === state.activeHeroId &&
+                samePosition(hero.position, position),
+            ),
+            attackablePositions.some((p) => samePosition(p, position)),
+          ),
         );
       }
-    }
-
-    for (const hero of state.heroes.filter((candidate) => candidate.alive))
-      drawToken(
-        hero,
-        hero.id === state.activeHeroId,
-        false,
-        state.heroes.indexOf(hero),
+    state.heroes
+      .filter((candidate) => candidate.alive)
+      .forEach((hero, index) =>
+        drawToken(hero, hero.id === state.activeHeroId, false, index),
       );
-    for (const enemy of state.enemies.filter((candidate) => candidate.alive))
-      drawToken(
-        enemy,
-        false,
-        highlights.attackable.includes(enemy.id),
-        state.enemies.indexOf(enemy),
+    state.enemies
+      .filter((candidate) => candidate.alive)
+      .forEach((enemy, index) =>
+        drawToken(
+          enemy,
+          false,
+          highlights.attackable.includes(enemy.id),
+          index,
+        ),
       );
-
-    host.dataset.displayObjects = String(stage.children.length);
+    const active = state.heroes.find((hero) => hero.id === state.activeHeroId);
+    drawWalls(state, [
+      ...(active ? [active.position] : []),
+      ...highlights.reachable,
+      ...attackablePositions,
+    ]);
+    host.dataset.displayObjects = String(
+      Object.values(layers).reduce(
+        (sum, layer) => sum + layer.children.length,
+        0,
+      ),
+    );
     resize();
   }
 
   function resize(): void {
-    const scale = Math.min(
-      host.clientWidth / boardWidth,
-      host.clientHeight / boardHeight,
-    );
-    stage.scale.set(scale);
-    stage.position.set(
-      Math.max(0, (host.clientWidth - boardWidth * scale) / 2),
-      Math.max(0, (host.clientHeight - boardHeight * scale) / 2),
-    );
+    const camera = fitIsometricCamera(currentBounds, {
+      width: host.clientWidth || 1,
+      height: host.clientHeight || 1,
+    });
+    stage.scale.set(camera.scale);
+    stage.position.set(camera.offsetX, camera.offsetY);
+    app.canvas.dataset.camera = JSON.stringify(camera);
   }
-
   const observer = new ResizeObserver(resize);
   observer.observe(host);
-
   return {
     destroy() {
       observer.disconnect();
-      clearStage();
+      clearLayers();
       app.destroy(true, { children: true });
     },
     setExpeditionActive() {},
@@ -378,11 +429,21 @@ export async function createTabletopRenderer(
 }
 
 export {
+  buildRoomProjection,
+  calculateIsometricGridBounds,
+  defaultCameraMargins,
   defaultIsometricProjection,
+  fitIsometricCamera,
   gridToScreen,
-  isometricDepthLayer,
   isometricPlaceholderTokenGeometry,
   screenToGrid,
   stableDepth,
 } from "./projection";
-export type { IsometricProjection, ScreenPosition } from "./projection";
+export type {
+  CameraFit,
+  CameraMargins,
+  IsometricBounds,
+  IsometricProjection,
+  ScreenPosition,
+  Viewport,
+} from "./projection";
