@@ -18,7 +18,7 @@ Les ADR conservent les décisions structurantes, leur contexte et leurs conséqu
 | [ADR-0003](0003-no-client-secrets.md)          | Accepté | Aucun secret ou appel OpenAI dans le client               |
 | [ADR-0004](0004-lightweight-branching.md)      | Accepté | Branches courtes et Pull Requests, squash privilégié      |
 | [ADR-0005](0005-deterministic-room-engine.md)  | Accepté | Moteur de salle, combat, IA et ligne de vue déterministes |
-| [ADR-0006](0006-isometric-2d-renderer.md)       | Accepté | Plateau 2D isométrique sous PixiJS, sans rig ni 3D        |
+| [ADR-0006](0006-isometric-2d-renderer.md)      | Accepté | Plateau 2D isométrique sous PixiJS, sans rig ni 3D        |
 
 ## Quand créer un ADR
 
