@@ -24,13 +24,13 @@ Le fichier contient actuellement :
 
 Nœuds de référence :
 
-| Élément | Nœud Figma |
-| --- | --- |
-| Couverture | `5:2` |
-| Palette | `5:32` |
-| Typographie et géométrie | `5:72` |
-| Variants de tuile | `6:14` |
-| Variants de mur | `7:10` |
+| Élément                  | Nœud Figma |
+| ------------------------ | ---------- |
+| Couverture               | `5:2`      |
+| Palette                  | `5:32`     |
+| Typographie et géométrie | `5:72`     |
+| Variants de tuile        | `6:14`     |
+| Variants de mur          | `7:10`     |
 
 La limite d’appels MCP du plan Figma Starter a interrompu la création après les murs. Les composants restant à construire dans Figma sont listés dans `asset-manifest.json`. Les spécifications présentes ici permettent néanmoins de démarrer le renderer sans ambiguïté.
 
