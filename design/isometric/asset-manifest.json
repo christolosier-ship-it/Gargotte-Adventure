@@ -62,10 +62,7 @@
       "id": "wall",
       "figmaNodeId": "7:10",
       "runtimePath": "assets/isometric/walls",
-      "states": [
-        "left",
-        "right"
-      ],
+      "states": ["left", "right"],
       "status": "figma-ready"
     },
     {
@@ -96,10 +93,7 @@
       "x": 0.5,
       "y": 0.92
     },
-    "orientations": [
-      "south-east",
-      "north-east"
-    ],
+    "orientations": ["south-east", "north-east"],
     "mirroredOrientations": {
       "south-west": "south-east",
       "north-west": "north-east"
