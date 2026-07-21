@@ -193,7 +193,9 @@ export class IsometricAssetRegistry {
     if (!this.manifest) return { ok: false, reason: "manifest-missing" };
     const candidates = this.manifest.assets.filter((asset) => asset.id === id);
     if (candidates.length === 0) return { ok: false, reason: "asset-missing" };
-    const direct = candidates.find((asset) => asset.orientation === orientation);
+    const direct = candidates.find(
+      (asset) => asset.orientation === orientation,
+    );
     if (direct) return { ok: true, asset: direct, mirrored: false };
     const omni = candidates.find((asset) => asset.orientation === "omni");
     if (omni) return { ok: true, asset: omni, mirrored: false };
@@ -222,8 +224,7 @@ export class IsometricAssetRegistry {
     }
     try {
       const texture = await promise;
-      if (this.destroyed)
-        return { ok: false, reason: "registry-destroyed" };
+      if (this.destroyed) return { ok: false, reason: "registry-destroyed" };
       return { ...resolved, texture };
     } catch (error) {
       console.error(`[assets] texture échouée: ${resolved.asset.id}`, error);
