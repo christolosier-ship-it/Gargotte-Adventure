@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+  "version": "2B.1.0",
+  "basePath": "assets/isometric/",
+  "budgets": {
+    "pilotTotalBytes": 1048576,
+    "spritePilotBytes": 256000,
+    "technicalAssetBytes": 102400
+  },
+  "assets": [
+    {
+      "id": "common.ground-shadow",
+      "category": "common",
+      "path": "assets/isometric/common/ground-shadow.svg",
+      "format": "svg",
+      "dimensions": { "width": 96, "height": 32 },
+      "anchor": { "x": 0.5, "y": 0.5 },
+      "orientation": "omni",
+      "fallbackId": "common.ground-shadow",
+      "budgetBytes": 102400,
+      "required": true
+    },
+    {
+      "id": "tile.fallback",
+      "category": "tile",
+      "path": "assets/isometric/tiles/fallback-tile.svg",
+      "format": "svg",
+      "dimensions": { "width": 128, "height": 64 },
+      "anchor": { "x": 0.5, "y": 0.5 },
+      "orientation": "omni",
+      "fallbackId": "tile.fallback",
+      "budgetBytes": 102400,
+      "required": true
+    },
+    {
+      "id": "wall.fallback",
+      "category": "wall",
+      "path": "assets/isometric/walls/fallback-wall.svg",
+      "format": "svg",
+      "dimensions": { "width": 128, "height": 128 },
+      "anchor": { "x": 0.5, "y": 0.75 },
+      "orientation": "south-east",
+      "mirrorOf": { "orientation": "north-east", "axis": "horizontal" },
+      "fallbackId": "wall.fallback",
+      "budgetBytes": 102400,
+      "required": true
+    },
+    {
+      "id": "prop.fallback-obstacle",
+      "category": "prop",
+      "path": "assets/isometric/props/fallback-obstacle.svg",
+      "format": "svg",
+      "dimensions": { "width": 96, "height": 96 },
+      "anchor": { "x": 0.5, "y": 0.75 },
+      "orientation": "omni",
+      "fallbackId": "prop.fallback-obstacle",
+      "budgetBytes": 102400,
+      "required": true
+    },
+    {
+      "id": "fx.impact-test",
+      "category": "fx",
+      "path": "assets/isometric/fx/impact-test.svg",
+      "format": "svg",
+      "dimensions": { "width": 96, "height": 96 },
+      "anchor": { "x": 0.5, "y": 0.5 },
+      "orientation": "omni",
+      "fallbackId": "fx.impact-test",
+      "budgetBytes": 102400,
+      "required": false
+    }
+  ]
+}

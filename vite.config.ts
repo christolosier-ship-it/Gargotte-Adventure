@@ -7,6 +7,7 @@ const alias = (path: string) => fileURLToPath(new URL(path, import.meta.url));
 export default defineConfig({
   base: "/Gargotte-Adventure/",
   root: ".",
+  publicDir: "apps/game/public",
   resolve: {
     alias: {
       "@gargotte/common": alias("./packages/common/src/index.ts"),
@@ -23,7 +24,7 @@ export default defineConfig({
   plugins: [
     VitePWA({
       registerType: "autoUpdate",
-      includeAssets: ["icon.svg"],
+      includeAssets: ["icon.svg", "assets/isometric/**/*.{svg,json,webp}"],
       manifest: {
         name: "Gargotte Adventure",
         short_name: "Gargotte",

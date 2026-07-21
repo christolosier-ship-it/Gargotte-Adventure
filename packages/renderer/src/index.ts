@@ -1,4 +1,5 @@
 import { Application, Container, Graphics, Polygon, Text } from "pixi.js";
+import { IsometricAssetRegistry } from "./assets";
 import type {
   Combatant,
   GridPosition,
@@ -17,7 +18,6 @@ import {
   stableDepth,
   type IsometricProjection,
 } from "./projection";
-
 export interface TacticalHighlights {
   reachable: GridPosition[];
   attackable: string[];
@@ -101,6 +101,18 @@ export async function createTabletopRenderer(
   app.canvas.tabIndex = 0;
   host.replaceChildren(app.canvas);
 
+  const assets = new IsometricAssetRegistry();
+  void assets.loadManifest().then(async (loaded) => {
+    app.canvas.dataset.assetManifest = loaded ? "loaded" : "fallback";
+    await Promise.allSettled([
+      assets.textureFor("tile.fallback"),
+      assets.textureFor("wall.fallback", "south-east"),
+      assets.textureFor("prop.fallback-obstacle"),
+      assets.textureFor("fx.impact-test"),
+      assets.textureFor("missing.asset"),
+    ]);
+    app.canvas.dataset.assetCacheSize = String(assets.cacheSize);
+  });
   const stage = new Container();
   app.stage.addChild(stage);
   const layers: SceneLayers = {
@@ -412,6 +424,7 @@ export async function createTabletopRenderer(
     destroy() {
       observer.disconnect();
       clearLayers();
+      assets.destroy();
       app.destroy(true, { children: true });
     },
     setExpeditionActive() {},
@@ -447,3 +460,14 @@ export type {
   ScreenPosition,
   Viewport,
 } from "./projection";
+export {
+  IsometricAssetRegistry,
+  assetBudgets,
+  validateRuntimeAssetManifest,
+} from "./assets";
+export type {
+  AssetOrientation,
+  AssetResolveResult,
+  RuntimeAsset,
+  RuntimeAssetManifest,
+} from "./assets";

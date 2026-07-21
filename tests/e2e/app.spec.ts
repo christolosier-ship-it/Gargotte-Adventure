@@ -311,3 +311,43 @@ test("expose le manifeste PWA français et le service worker", async ({
   expect(serviceWorkerResponse.ok()).toBe(true);
   await expect(serviceWorkerResponse.text()).resolves.toContain("precache");
 });
+
+test("démarre avec les assets techniques et expose le manifeste runtime", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  await expect(canvas).toBeVisible();
+  await expect
+    .poll(async () =>
+      canvas.evaluate((element) => element.dataset.assetManifest),
+    )
+    .toBe("loaded");
+  const manifest = await page.request.get("./assets/isometric/manifest.json");
+  expect(manifest.ok()).toBe(true);
+  expect(
+    await page.request.get("./assets/isometric/tiles/fallback-tile.svg"),
+  ).toBeOK();
+  await expect(canvas).toBeInViewport();
+});
+
+test("reste jouable quand une texture manquante déclenche un fallback non fatal", async ({
+  page,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+    .click();
+  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  await expect
+    .poll(async () =>
+      canvas.evaluate((element) => element.dataset.assetManifest),
+    )
+    .toBe("loaded");
+  const target = { column: 1, row: 0 };
+  const point = await canvasPointForCell(page, target);
+  await page.mouse.click(point.x, point.y);
+  await expectBrunhilda(page, target, 2);
+});
