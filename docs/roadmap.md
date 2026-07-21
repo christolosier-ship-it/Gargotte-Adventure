@@ -4,14 +4,14 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d’avancement
 
-| Sprint                                      | Statut     | Résultat principal                                                                  |
-| ------------------------------------------- | ---------- | ----------------------------------------------------------------------------------- |
-| Sprint 0 — Fondations                       | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac      |
-| Sprint 1 — Boucle de salle                  | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise                |
-| Sprint 2 — Plateau isométrique              | Prochain   | Même salle jouable en 2D isométrique avec pipeline graphique minimal                |
-| Sprint 3 — Brouhaha et décor                | À venir    | Le plateau devient un système vivant, interactif et explicable                      |
-| Sprint 4 — Héros et créatures de Bastognac  | À venir    | Rôles, compétences et comportements définitifs                                      |
-| Sprint 5 — Donjon complet et finition       | À venir    | Cinq étages, loot, boss, médias enrichis, audio, accessibilité et performances       |
+| Sprint                                     | Statut     | Résultat principal                                                             |
+| ------------------------------------------ | ---------- | ------------------------------------------------------------------------------ |
+| Sprint 0 — Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
+| Sprint 1 — Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
+| Sprint 2 — Plateau isométrique             | Prochain   | Même salle jouable en 2D isométrique avec pipeline graphique minimal           |
+| Sprint 3 — Brouhaha et décor               | À venir    | Le plateau devient un système vivant, interactif et explicable                 |
+| Sprint 4 — Héros et créatures de Bastognac | À venir    | Rôles, compétences et comportements définitifs                                 |
+| Sprint 5 — Donjon complet et finition      | À venir    | Cinq étages, loot, boss, médias enrichis, audio, accessibilité et performances |
 
 ## Sprint 0 — Fondations ✅
 
