@@ -20,6 +20,8 @@ export const isometricTileGeometry = {
   halfTileHeight: tokens.geometry.tileHalfHeight,
 } as const;
 
+// Les écarts dépassent toute la profondeur de la grille 8 × 4 :
+// le sol reste donc toujours derrière les objets, quel que soit leur rang.
 export const isometricDepthLayer = {
   backdrop: -2_000_000,
   floor: -1_000_000,
