@@ -1,0 +1,40 @@
+:root {
+  --ga-color-ink: #17100d;
+  --ga-color-panel: #241914;
+  --ga-color-panel-raised: #30221b;
+  --ga-color-cream: #f8ecd2;
+  --ga-color-muted: #cdbda3;
+  --ga-color-gold: #f1c86f;
+  --ga-color-copper: #b66b35;
+  --ga-color-danger: #d45f57;
+  --ga-color-green: #7fbd76;
+  --ga-color-line: #674936;
+  --ga-color-stone-dark: #3a312c;
+  --ga-color-stone-mid: #66574c;
+  --ga-color-wood-dark: #5a3823;
+  --ga-color-wood-mid: #8b5a2b;
+
+  --ga-surface-app: var(--ga-color-ink);
+  --ga-surface-panel: var(--ga-color-panel);
+  --ga-surface-raised: var(--ga-color-panel-raised);
+  --ga-surface-tile: var(--ga-color-stone-dark);
+  --ga-surface-tile-alt: var(--ga-color-stone-mid);
+  --ga-surface-wall: var(--ga-color-wood-dark);
+  --ga-surface-obstacle: var(--ga-color-wood-mid);
+  --ga-content-primary: var(--ga-color-cream);
+  --ga-content-muted: var(--ga-color-muted);
+  --ga-accent-primary: var(--ga-color-gold);
+  --ga-accent-secondary: var(--ga-color-copper);
+  --ga-state-reachable: var(--ga-color-green);
+  --ga-state-attackable: var(--ga-color-danger);
+  --ga-border-default: var(--ga-color-line);
+
+  --ga-tile-width: 128px;
+  --ga-tile-height: 64px;
+  --ga-wall-height: 96px;
+  --ga-sprite-max-width: 128px;
+  --ga-sprite-max-height: 192px;
+  --ga-touch-min: 44px;
+  --ga-opacity-overlay: 0.72;
+  --ga-opacity-shadow: 0.35;
+}

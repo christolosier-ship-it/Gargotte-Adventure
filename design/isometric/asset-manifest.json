@@ -1,0 +1,109 @@
+{
+  "version": 1,
+  "status": "design-foundations",
+  "figma": {
+    "fileKey": "Fx1ZqDlMwsfdfdyjDYJDBE",
+    "url": "https://www.figma.com/design/Fx1ZqDlMwsfdfdyjDYJDBE",
+    "nodes": {
+      "cover": "5:2",
+      "palette": "5:32",
+      "geometry": "5:72",
+      "tileComponentSet": "6:14",
+      "wallComponentSet": "7:10"
+    }
+  },
+  "sourceArt": [
+    {
+      "id": "brunhilda",
+      "name": "Brünhilda la Torgnole",
+      "driveFileId": "1PVT0BKb_zf9f3A01gFneRvdXxYYe3hKG",
+      "driveFileName": "Brunhilda.PNG",
+      "role": "hero-pilot",
+      "runtimeReady": false,
+      "requiredWork": [
+        "remove-background",
+        "crop-transparent-canvas",
+        "set-ground-anchor",
+        "export-webp"
+      ]
+    },
+    {
+      "id": "gobelin-bricoleur",
+      "name": "Gobelin Bricoleur",
+      "driveFileId": "1tydL8kQSblMp8N1nsP0xgVxIEE-pCCXy",
+      "driveFileName": "bestiaire_creatures_standards.pdf",
+      "role": "enemy-pilot",
+      "runtimeReady": false,
+      "requiredWork": [
+        "extract-original-image",
+        "remove-background",
+        "crop-transparent-canvas",
+        "set-ground-anchor",
+        "export-webp"
+      ]
+    }
+  ],
+  "components": [
+    {
+      "id": "tile",
+      "figmaNodeId": "6:14",
+      "runtimePath": "assets/isometric/tiles",
+      "states": [
+        "base",
+        "alternate",
+        "reachable",
+        "selected",
+        "attackable",
+        "blocked"
+      ],
+      "status": "figma-ready"
+    },
+    {
+      "id": "wall",
+      "figmaNodeId": "7:10",
+      "runtimePath": "assets/isometric/walls",
+      "states": ["left", "right"],
+      "status": "figma-ready"
+    },
+    {
+      "id": "ground-shadow",
+      "runtimePath": "assets/isometric/common/ground-shadow.svg",
+      "status": "specified"
+    },
+    {
+      "id": "barrel-placeholder",
+      "runtimePath": "assets/isometric/props/barrel-placeholder.svg",
+      "status": "specified"
+    },
+    {
+      "id": "impact-placeholder",
+      "runtimePath": "assets/isometric/fx/impact-placeholder.svg",
+      "status": "specified"
+    }
+  ],
+  "runtimeExport": {
+    "preferredRasterFormat": "webp",
+    "transparentBackground": true,
+    "tileRatio": "2:1",
+    "tileWidth": 128,
+    "tileHeight": 64,
+    "spriteCanvasWidth": 128,
+    "spriteCanvasHeight": 192,
+    "spriteAnchor": {
+      "x": 0.5,
+      "y": 0.92
+    },
+    "orientations": ["south-east", "north-east"],
+    "mirroredOrientations": {
+      "south-west": "south-east",
+      "north-west": "north-east"
+    }
+  },
+  "remainingFigmaWork": [
+    "ground-shadow-component",
+    "barrel-placeholder-component",
+    "character-source-cards",
+    "reference-board-frame",
+    "codex-handoff-page"
+  ]
+}
