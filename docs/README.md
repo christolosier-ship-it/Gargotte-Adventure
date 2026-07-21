@@ -15,16 +15,19 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Structure du dépôt](architecture/repository-structure.md)
 - [Salle tactique](architecture/tactical-room.md)
 - [Décisions d’architecture](adr/README.md)
+- [ADR-0006 — Plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 
 ## Sprints
 
 - [Sprint 0 — cadrage historique](sprints/sprint-0.md)
 - [Sprint 0 — rapport de clôture](sprints/sprint-0-completion.md)
 - [Sprint 1 — rapport de clôture](sprints/sprint-1.md)
+- [Sprint 2 — Plateau isométrique et pipeline graphique](sprints/sprint-2.md)
 
 ## Design et sources externes
 
 - [Interface du Sprint 1](design/sprint-1-interface.md)
+- [Gabarits isométriques du Sprint 2](design/sprint-2-isometric-guidelines.md)
 - [Rapport Sprint 1 dans Google Drive](external/sprint-1-drive-content.md)
 - [Diagramme FigJam](https://www.figma.com/board/wscHfycwhhvJRWQqelY4f9)
 
@@ -40,7 +43,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 | GitHub         | Code, architecture technique, ADR, formats, tests et historique des changements |
 | Gargottex      | Source de vérité éditoriale des données structurées                             |
 | Google Drive   | Règles humaines, lore, médias maîtres, comptes rendus et archives               |
-| Figma / FigJam | Écrans, composants, tokens et diagrammes                                        |
+| Figma / FigJam | Écrans, composants, gabarits, tokens et diagrammes                              |
 
 ## Règles de maintenance
 
@@ -51,17 +54,18 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 5. Les ADR consignent les décisions structurantes, pas les détails locaux.
 6. Drive, Gargottex et Figma ne sont pas recopiés intégralement dans le dépôt.
 7. Les liens internes au dépôt sont relatifs.
-8. Toute modification d’architecture, de sauvegarde ou de format de contenu met à jour les pages associées.
+8. Toute modification d’architecture, de sauvegarde, de renderer ou de format de contenu met à jour les pages associées.
 
 ## État documentaire
 
-Après le Sprint 1 :
+Après la décision isométrique :
 
-- README aligné sur la version jouable ;
-- roadmap actualisée ;
-- architecture actuelle distinguée de la cible ;
+- README aligné sur la version jouable du Sprint 1 ;
+- roadmap réordonnée avec le rendu isométrique en Sprint 2 ;
+- architecture actuelle distinguée de la projection isométrique planifiée ;
 - rapports Sprint 0 et Sprint 1 consolidés ;
-- index ADR complet jusqu’à ADR-0005 ;
-- sécurité débarrassée de toute mention publique d’un secret existant ;
-- rapport Sprint 1 créé dans le dossier Google Drive `Documentation` ;
-- spécification d’interface alignée sur l’implémentation réelle.
+- Sprint 2 cadré avec critères d’acceptation ;
+- index ADR complet jusqu’à ADR-0006 ;
+- gabarits isométriques et contraintes d’assets documentés ;
+- rapport Sprint 1 présent dans Google Drive ;
+- aucun rig, moteur 3D ou animation squelettique prévu.
