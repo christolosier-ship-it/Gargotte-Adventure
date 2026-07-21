@@ -8,6 +8,7 @@ import type {
 import tokens from "../../../design/isometric/tokens.json";
 import {
   gridToScreen,
+  isometricDepthLayer,
   isometricTileGeometry,
   stableDepth,
   type IsometricProjection,
@@ -56,7 +57,12 @@ const tileHitArea = new Polygon([
 ]);
 
 type TileState =
-  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
+  | "base"
+  | "alternate"
+  | "reachable"
+  | "selected"
+  | "attackable"
+  | "blocked";
 
 const tileStyle: Record<TileState, { color: number; alpha: number }> = {
   base: { color: tokenNumber(tokens.color.primitive.stoneDark), alpha: 1 },
@@ -113,6 +119,7 @@ export async function createTabletopRenderer(
   host.replaceChildren(app.canvas);
 
   const stage = new Container();
+  stage.sortableChildren = true;
   app.stage.addChild(stage);
   const listeners = {
     cell: [] as ((position: GridPosition) => void)[],
@@ -165,7 +172,9 @@ export async function createTabletopRenderer(
     cell.hitArea = tileHitArea;
     cell.label = `cell:${position.column},${position.row}`;
     cell.position.set(screen.x, screen.y);
-    cell.zIndex = stableDepth(screen.y, gridProjection.tileHeight, 0);
+    cell.zIndex =
+      isometricDepthLayer.floor +
+      stableDepth(screen.y, gridProjection.tileHeight, 0);
     cell.on("pointertap", () =>
       listeners.cell.forEach((listener) => listener(position)),
     );
@@ -180,7 +189,9 @@ export async function createTabletopRenderer(
         })
         .stroke({ color: tokenNumber(tokens.color.primitive.gold), width: 3 });
       obstacle.position.set(screen.x, screen.y + 6);
-      obstacle.zIndex = stableDepth(screen.y, gridProjection.tileHeight, 100);
+      obstacle.zIndex =
+        isometricDepthLayer.object +
+        stableDepth(screen.y, gridProjection.tileHeight, 100);
       stage.addChild(obstacle);
     }
   }
@@ -196,11 +207,9 @@ export async function createTabletopRenderer(
     token.eventMode = "static";
     token.cursor = "pointer";
     token.label = `${combatant.kind}:${combatant.id}`;
-    token.zIndex = stableDepth(
-      screen.y,
-      gridProjection.tileHeight,
-      200 + tieBreaker,
-    );
+    token.zIndex =
+      isometricDepthLayer.object +
+      stableDepth(screen.y, gridProjection.tileHeight, 200 + tieBreaker);
     token.on("pointertap", () =>
       combatant.kind === "hero"
         ? listeners.hero.forEach((listener) => listener(combatant.id))
@@ -260,12 +269,13 @@ export async function createTabletopRenderer(
       })),
     );
 
-    stage.addChild(
-      new Graphics()
-        .roundRect(0, 0, boardWidth, boardHeight, 28)
-        .fill({ color: 0x2a1d18 })
-        .stroke({ color: 0x806044, width: 5 }),
-    );
+    const backdrop = new Graphics()
+      .roundRect(0, 0, boardWidth, boardHeight, 28)
+      .fill({ color: 0x2a1d18 })
+      .stroke({ color: 0x806044, width: 5 });
+    backdrop.zIndex = isometricDepthLayer.backdrop;
+    stage.addChild(backdrop);
+
     const title = new Text({
       text:
         state.phase === "victory"
@@ -276,9 +286,9 @@ export async function createTabletopRenderer(
       style: { fill: 0xf1c86f, fontSize: 22, fontWeight: "700" },
     });
     title.position.set(boardPaddingX, 22);
+    title.zIndex = isometricDepthLayer.interface;
     stage.addChild(title);
 
-    stage.sortableChildren = true;
     const attackablePositions = state.enemies
       .filter(
         (enemy) => enemy.alive && highlights.attackable.includes(enemy.id),
@@ -365,6 +375,7 @@ export async function createTabletopRenderer(
 export {
   defaultIsometricProjection,
   gridToScreen,
+  isometricDepthLayer,
   screenToGrid,
   stableDepth,
 } from "./projection";
