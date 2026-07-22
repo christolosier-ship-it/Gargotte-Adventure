@@ -57,19 +57,9 @@ export interface TabletopRenderer {
 }
 
 type TileState =
-  | "base"
-  | "alternate"
-  | "reachable"
-  | "selected"
-  | "attackable"
-  | "blocked";
+  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
 type SceneLayers = Record<
-  | "backdrop"
-  | "floor"
-  | "backWall"
-  | "object"
-  | "foreground"
-  | "interface",
+  "backdrop" | "floor" | "backWall" | "object" | "foreground" | "interface",
   Container
 >;
 
@@ -540,7 +530,11 @@ export async function createTabletopRenderer(
     wall.eventMode = "none";
     wall.label = `wall:${segment.id}:${segment.viewSide}`;
     wall.position.set(screen.x, screen.y);
-    wall.zIndex = stableDepth(screen.y, currentProjection.tileHeight, segment.index);
+    wall.zIndex = stableDepth(
+      screen.y,
+      currentProjection.tileHeight,
+      segment.index,
+    );
     const fallback = new Graphics()
       .poly(wallFallbackPoints(segment))
       .fill({
