@@ -2,7 +2,7 @@ import { readFileSync, statSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   IsometricAssetRegistry,
-  environmentTileAssetId,
+  alternatingAssetId,
   validateRuntimeAssetManifest,
 } from "./index";
 
@@ -11,6 +11,11 @@ const manifest = validateRuntimeAssetManifest(
     readFileSync("apps/game/public/assets/isometric/manifest.json", "utf8"),
   ),
 );
+
+const floorAssetIds = [
+  "tile.bastognac-floor-a",
+  "tile.bastognac-floor-b",
+] as const;
 
 const environmentFiles = [
   [
@@ -47,13 +52,13 @@ const environmentFiles = [
 
 describe("Bastognac environment runtime assets", () => {
   it("alterne les deux sols sans dépendre des états tactiques", () => {
-    expect(environmentTileAssetId({ column: 0, row: 0 })).toBe(
+    expect(alternatingAssetId({ column: 0, row: 0 }, floorAssetIds)).toBe(
       "tile.bastognac-floor-a",
     );
-    expect(environmentTileAssetId({ column: 1, row: 0 })).toBe(
+    expect(alternatingAssetId({ column: 1, row: 0 }, floorAssetIds)).toBe(
       "tile.bastognac-floor-b",
     );
-    expect(environmentTileAssetId({ column: 3, row: 3 })).toBe(
+    expect(alternatingAssetId({ column: 3, row: 3 }, floorAssetIds)).toBe(
       "tile.bastognac-floor-a",
     );
   });

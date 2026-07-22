@@ -2,12 +2,12 @@
 
 ## Règle générale
 
-La structure suit les responsabilités réelles du projet. Aucun dossier vide n’est créé uniquement pour donner l’illusion d’un gros studio.
+La structure suit les responsabilités réelles du projet. Aucun dossier vide n’est créé uniquement pour anticiper une fonctionnalité future.
 
-Cette page distingue volontairement :
+Cette page distingue :
 
 - **la structure actuelle**, qui doit correspondre au dépôt ;
-- **les extensions cibles**, qui ne seront créées que lorsqu’un sprint en aura besoin.
+- **les extensions cibles**, créées seulement lorsqu’un sprint en a besoin.
 
 ## Arborescence actuelle
 
@@ -17,6 +17,15 @@ Gargotte-Adventure/
 │   └── game/
 │       ├── public/assets/isometric/
 │       └── src/
+│           ├── main.ts
+│           ├── bootstrap.ts
+│           ├── bastognac.ts
+│           ├── game-controller.ts
+│           ├── tactical-actions.ts
+│           ├── persistence-controller.ts
+│           ├── pwa-install.ts
+│           ├── styles.css
+│           └── theme.css
 ├── packages/
 │   ├── audio/
 │   ├── common/
@@ -24,16 +33,31 @@ Gargotte-Adventure/
 │   ├── engine/
 │   │   └── src/tactical/
 │   ├── renderer/
+│   │   └── src/
+│   │       ├── scene/
+│   │       ├── assets.ts
+│   │       ├── catalog.ts
+│   │       ├── projection.ts
+│   │       ├── view.ts
+│   │       ├── tabletop-renderer.ts
+│   │       ├── types.ts
+│   │       └── index.ts
 │   ├── save/
+│   │   └── src/
+│   │       ├── schema.ts
+│   │       └── index.ts
 │   └── ui/
-├── design/
-│   └── isometric/
+│       └── src/
+│           ├── shell-template.ts
+│           ├── types.ts
+│           └── index.ts
+├── design/isometric/
 ├── tools/
-│   └── validators/
-├── content/
-│   └── bastognac/
-├── tests/
-│   └── e2e/
+│   ├── validators/
+│   └── validate_repository.py
+├── content/bastognac/
+├── tests/e2e/
+│   └── helpers/
 ├── docs/
 │   ├── adr/
 │   ├── architecture/
@@ -43,7 +67,6 @@ Gargotte-Adventure/
 │   ├── product/
 │   ├── security/
 │   └── sprints/
-├── public/
 ├── .github/
 ├── package.json
 ├── playwright.config.ts
@@ -51,183 +74,150 @@ Gargotte-Adventure/
 └── vite.config.ts
 ```
 
+Le dossier racine `public/` n’est pas utilisé. La racine publique de Vite est `apps/game/public`.
+
 ## Responsabilités actuelles
 
 ### `apps/game`
 
-Point d’entrée de la PWA. Il assemble les packages, charge le contenu Bastognac, gère le cycle de vie de l’application, le service worker, la sélection des héros et la persistance automatique.
+Point de composition de la PWA.
 
-`apps/game/src/main.ts` reste un orchestrateur. Les règles de déplacement, combat, IA ou phase ne doivent pas y être réimplémentées.
+- `main.ts` importe les styles et déclenche le bootstrap ;
+- `bootstrap.ts` assemble les dépendances ;
+- `bastognac.ts` valide le contenu et décrit les assets propres au donjon ;
+- `game-controller.ts` orchestre état, moteur, UI et renderer ;
+- `tactical-actions.ts` crée les commandes accessibles dérivées de l’état ;
+- `persistence-controller.ts` restaure la session et sérialise les écritures ;
+- `pwa-install.ts` isole le cycle d’installation ;
+- `theme.css` relie les tokens de conception aux variables historiques du CSS.
 
-Le sous-dossier `apps/game/public/assets/isometric` contient les exports runtime SVG et WebP déclarés dans le manifeste d’assets.
+Les règles de déplacement, combat, IA ou phase ne doivent jamais être réimplémentées dans cette couche.
 
 ### `packages/engine`
 
-Contient la logique de jeu pure.
+Contient la logique de jeu pure : état, grille, déplacement, ligne de vue, combat, tours, IA, événements et erreurs métier.
 
-Le sous-dossier `src/tactical` regroupe actuellement :
-
-- état de salle ;
-- grille et occupation ;
-- déplacements et cheminement ;
-- ligne de vue ;
-- combat ;
-- machine de tour ;
-- IA ennemie ;
-- événements ;
-- erreurs métier.
-
-Il ne doit importer ni PixiJS, ni API navigateur, ni composant UI, ni IndexedDB.
+Il ne doit importer ni PixiJS, ni API navigateur, ni UI, ni IndexedDB.
 
 ### `packages/content-schema`
 
-Définit les schémas Zod et les validations du contenu consommé par le jeu :
-
-- dimensions de salle ;
-- positions ;
-- héros et ennemis ;
-- statistiques ;
-- unicité des identifiants ;
-- absence de collisions initiales ;
-- cohérence du paquet Bastognac.
+Définit les schémas Zod du contenu consommé par le jeu : paquet, donjon, salle, positions, statistiques, unicité et collisions initiales.
 
 ### `packages/renderer`
 
-Traduit `RoomState` en plateau PixiJS 2D isométrique :
+Traduit `RoomState` en plateau PixiJS 2D isométrique.
 
-- projection grille vers écran ;
-- conversion inverse et picking ;
-- caméra responsive ;
-- tuiles, murs et obstacles ;
-- héros et ennemis ;
-- PV et surbrillances ;
-- tri de profondeur ;
-- occlusion des murs ;
-- chargement, cache et fallback des assets ;
-- événements de sélection.
+- `tabletop-renderer.ts` : cycle de vie PixiJS, caméra et reconstruction ;
+- `catalog.ts` : contrat générique d’assets fourni par l’application ;
+- `projection.ts` : projection et fit caméra ;
+- `view.ts` : rotation logique et murs physiques ;
+- `scene/context.ts` : contexte partagé d’un rendu ;
+- `scene/asset-sprite.ts` : chargement asynchrone ;
+- `scene/diagnostics.ts` : instrumentation E2E ;
+- `scene/primitives.ts` : formes et styles élémentaires ;
+- `scene/environment.ts` : sols, obstacles et murs ;
+- `scene/combatants.ts` : héros, ennemis et ombres ;
+- `scene/room.ts` : composition d’une image de salle ;
+- `index.ts` : API publique uniquement.
 
-Il ne décide jamais si une action est autorisée.
+Le renderer ne décide jamais si une action est autorisée et ne connaît aucun identifiant de donjon.
 
 ### `packages/ui`
 
-Composants DOM accessibles :
+Composants DOM accessibles : template, contrats, sélection des héros, HUD, boutons fixes, journal et mise à jour de la coque.
 
-- menu ;
-- sélection des héros ;
-- HUD ;
-- boutons de phase ;
-- commandes tactiques utilisables au clavier, à la souris et au toucher ;
-- journal d’événements.
+Les actions tactiques variables appartiennent à l’application, car elles traduisent l’état moteur en intentions utilisateur.
 
 ### `packages/save`
 
-Persistance IndexedDB :
+Persistance IndexedDB et validation profonde :
 
 - état général de l’application ;
-- sauvegarde complète de la salle tactique ;
+- salle tactique complète ;
 - héros sélectionnés ;
 - détection des anciennes sauvegardes ;
-- rejet défensif des données incompatibles ou corrompues.
+- rejet des données incompatibles ou corrompues ;
+- connexion IndexedDB réutilisée.
 
 ### `packages/common`
 
-Types, constantes et utilitaires partagés qui ne relèvent pas directement des règles tactiques.
+Socle minimal partagé : label de build et création d’identifiants.
 
 ### `packages/audio`
 
-Socle minimal déjà présent :
-
-- type de réglages audio ;
-- volume principal borné entre 0 et 1 ;
-- état muet ;
-- `AudioDirector` de configuration.
-
-Ce package n’est pas encore importé par `apps/game`, ne charge aucun média et ne produit aucun son. Il constitue une fondation inactive, pas une fonctionnalité audio livrée.
+Fondation inactive de réglages audio. Elle ne possède aucun consommateur applicatif et ne charge aucun média.
 
 ### `design/isometric`
 
-Handoff graphique versionné :
+Handoff graphique versionné : tokens JSON et CSS, gabarits, projection, pipeline runtime, sources artistiques et historique de conception.
 
-- tokens ;
-- gabarits ;
-- blueprint du plateau ;
-- règles de projection, picking, profondeur et ancrage ;
-- manifeste de conception ;
-- documentation du pipeline runtime ;
-- références artistiques.
-
-Ce dossier complète Figma et reste exploitable même lorsque les droits ou quotas du service externe sont limités.
+`tokens.json` nourrit le renderer. `tokens.css` nourrit la présentation DOM. Leur cohérence est contrôlée automatiquement.
 
 ### `tools/validators`
 
-Validation hors bundle du jeu :
+Validation TypeScript hors bundle du jeu : contenu Bastognac, manifeste runtime, chemins, formats, dimensions et budgets.
 
-- contenu Bastognac ;
-- structure du dépôt ;
-- encodage UTF-8 ;
-- motifs courants de secrets ;
-- cohérence des fichiers attendus ;
-- manifeste, extensions, dimensions et budgets des assets ;
-- absence de sources PNG, PDF ou PSD dans le runtime.
+### `tools/validate_repository.py`
+
+Garde-fous transversaux sans dépendance tierce :
+
+- fichiers requis ;
+- UTF-8 et fins de ligne ;
+- motifs de secrets ;
+- assets runtime ;
+- frontières et cycles de packages ;
+- taille des modules ;
+- neutralité du renderer ;
+- unicité de la racine publique ;
+- cohérence des tokens ;
+- complétude de l’index documentaire.
 
 ### `content/bastognac`
 
-Contenu compilé du premier vertical slice, notamment :
-
-- manifeste du paquet ;
-- définition minimale du donjon ;
-- scénario de salle du Sprint 1.
-
-Les statistiques restent provisoires. Le moteur ne doit pas dépendre des noms ou identifiants spécifiques de Bastognac.
+Contenu compilé du vertical slice : manifeste, définition du donjon et salle tactique. Les statistiques restent provisoires.
 
 ### `tests/e2e`
 
-Parcours Playwright sur le build de production servi par Vite Preview.
+Parcours Playwright sur le build de production, en Chromium desktop et mobile paysage.
 
-Les projets couvrent :
-
-- Chromium desktop ;
-- format mobile paysage avec interactions tactiles ;
-- sélection des héros ;
-- déplacement par commandes DOM et canvas ;
-- tour ennemi ;
-- sauvegarde et reprise ;
-- victoire ;
-- manifeste et service worker ;
-- caméra, picking et resize ;
-- chargement des sprites et de l’environnement ;
-- pannes réelles de textures et fallbacks.
+`tests/e2e/helpers/canvas.ts` centralise lecture de scène, conversion logique-écran, scroll, clic/toucher, attentes de héros et statuts d’assets.
 
 ### `docs/audits`
 
-Rapports de contrôle transversaux qui comparent l’état réel de `main` à la roadmap, aux critères de sprint et aux décisions d’architecture.
+Rapports transversaux comparant l’état réel de `main` aux critères de sprint, décisions et risques architecturaux.
 
 ## Dépendances autorisées
 
 ```text
 apps/game
+  ├─► common
+  ├─► content-schema
   ├─► engine
   ├─► renderer
   ├─► ui
-  ├─► save
-  ├─► common
-  └─► contenu validé
+  └─► save
 
 renderer ─► engine + common
-ui       ─► types partagés utiles
-save     ─► types sérialisables du moteur
+ui       ─► engine
+save     ─► engine
 engine   ─► common
 ```
 
-Le moteur ne dépend d’aucune couche applicative.
+`content-schema`, `common` et `audio` ne dépendent d’aucun autre package Gargotte. Aucun cycle n’est autorisé.
 
-Le renderer dépend des types sérialisables du moteur, mais le moteur ne connaît ni le renderer, ni le manifeste d’assets.
+Ces frontières sont vérifiées par `tools/validate_repository.py`.
 
-`packages/audio` ne possède actuellement aucun consommateur applicatif. Une dépendance depuis `apps/game` ne sera ajoutée que lors d’une intégration audio testée.
+## Limites de taille
+
+Les fichiers principaux restent volontairement bornés :
+
+- `apps/game/src/main.ts` : 80 lignes maximum ;
+- `packages/renderer/src/index.ts` : 120 lignes maximum ;
+- autre module TypeScript de production : 350 lignes maximum.
+
+Une limite dépassée doit conduire à créer une responsabilité stable, pas à augmenter silencieusement le seuil.
 
 ## Extensions cibles
-
-Ces dossiers sont prévus mais ne doivent être créés que lorsqu’un sprint les rend utiles :
 
 ```text
 tools/
@@ -235,11 +225,7 @@ tools/
   asset-pipeline/       optimisation industrielle des médias
 ```
 
-Le registre et la validation runtime des assets isométriques existent déjà dans `packages/renderer` et `tools/validate_repository.py`. Un futur `tools/asset-pipeline` ne sera créé que pour automatiser une production plus importante.
-
-L’intégration audio réelle, les médias sonores et le mixage restent également des cibles futures, mais le package `packages/audio` existe déjà comme fondation minimale.
-
-D’autres packages ne seront ajoutés que si une responsabilité stable ne peut pas rester dans un module existant.
+Ces dossiers ne seront créés que lorsqu’un sprint les rend nécessaires.
 
 ## Nommage
 
@@ -248,16 +234,8 @@ D’autres packages ne seront ajoutés que si une responsabilité stable ne peut
 - fonctions et variables : `camelCase` ;
 - identifiants de contenu : minuscules avec tirets ;
 - versions de schéma : entiers croissants ;
-- branches : `sprint-N/sujet`, `feature/sujet`, `fix/sujet` ou `docs/sujet`.
+- branches : `sprint-N/sujet`, `feature/sujet`, `fix/sujet`, `refactor/sujet` ou `docs/sujet`.
 
 ## Fichiers générés
 
-Chaque paquet généré doit pouvoir indiquer :
-
-- source ;
-- date de génération ;
-- version de schéma ;
-- empreinte des données ;
-- outil et version utilisés.
-
-Les sources humaines ne sont jamais écrasées automatiquement par le pipeline.
+Chaque paquet généré doit indiquer source, date, version de schéma, empreinte et outil utilisé. Les sources humaines ne sont jamais écrasées automatiquement.

@@ -1,0 +1,14 @@
+@import "../../../design/isometric/tokens.css";
+
+:root {
+  --ink: var(--ga-color-ink);
+  --panel: var(--ga-color-panel);
+  --panel-raised: var(--ga-color-panel-raised);
+  --cream: var(--ga-color-cream);
+  --muted: var(--ga-color-muted);
+  --gold: var(--ga-color-gold);
+  --copper: var(--ga-color-copper);
+  --danger: var(--ga-color-danger);
+  --green: var(--ga-color-green);
+  --line: var(--ga-color-line);
+}

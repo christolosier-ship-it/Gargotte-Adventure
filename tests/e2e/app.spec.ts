@@ -1,4 +1,13 @@
 import { expect, test, type Page } from "@playwright/test";
+import {
+  activateBrunhilda,
+  canvasLocator,
+  canvasPointForLogicalCell,
+  enterRoom,
+  expectHeroAt,
+  readCanvasState,
+  tapOrClick,
+} from "./helpers/canvas";
 
 const getRoomSave = async (page: Page) =>
   page.evaluate(async () => {
@@ -19,72 +28,6 @@ const getRoomSave = async (page: Page) =>
     }
   });
 
-const readCanvasState = async (page: Page) => {
-  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
-  return canvas.evaluate((element) => ({
-    phase: element.dataset.phase,
-    turn: Number(element.dataset.turn),
-    activeHero: element.dataset.activeHero,
-    heroes: JSON.parse(element.dataset.heroes ?? "[]") as {
-      id: string;
-      position: { column: number; row: number };
-      hp: number;
-      actionsRemaining: number;
-      activationCompleted: boolean;
-    }[],
-    enemies: JSON.parse(element.dataset.enemies ?? "[]") as {
-      id: string;
-      position: { column: number; row: number };
-      hp: number;
-      alive: boolean;
-    }[],
-  }));
-};
-
-const canvasPointForCell = async (
-  page: Page,
-  position: { column: number; row: number },
-  nudge: { x: number; y: number } = { x: 0, y: 0 },
-) => {
-  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
-  return canvas.evaluate(
-    (element, { position, nudge }) => {
-      const projection = JSON.parse(element.dataset.projection ?? "{}");
-      const camera = JSON.parse(element.dataset.camera ?? "{}");
-      const rect = element.getBoundingClientRect();
-      const localX =
-        projection.originX +
-        ((position.column - position.row) * projection.tileWidth) / 2 +
-        nudge.x;
-      const localY =
-        projection.originY +
-        ((position.column + position.row) * projection.tileHeight) / 2 +
-        nudge.y;
-      return {
-        x: rect.left + camera.offsetX + localX * camera.scale,
-        y: rect.top + camera.offsetY + localY * camera.scale,
-      };
-    },
-    { position, nudge },
-  );
-};
-
-const expectBrunhilda = async (
-  page: Page,
-  position: { column: number; row: number },
-  actions: number,
-) => {
-  await expect
-    .poll(async () => {
-      const state = await readCanvasState(page);
-      const hero = state.heroes.find(
-        (candidate) => candidate.id === "brunhilda",
-      );
-      return { position: hero?.position, actions: hero?.actionsRemaining };
-    })
-    .toEqual({ position, actions });
-};
-
 test("sélectionne les héros officiels et lance la salle PixiJS", async ({
   page,
 }) => {
@@ -98,9 +41,7 @@ test("sélectionne les héros officiels et lance la salle PixiJS", async ({
   await expect(page.getByLabel("Grompif Arcabidon")).toBeVisible();
   await page.getByLabel("Aelion Trois-Gorgées").check();
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await expect(
-    page.getByRole("img", { name: /Plateau tactique PixiJS/i }),
-  ).toBeVisible();
+  await expect(canvasLocator(page)).toBeVisible();
   await expect(page.getByText("Salle en cours")).toBeVisible();
   await expect.poll(async () => Boolean(await getRoomSave(page))).toBe(true);
 });
@@ -112,9 +53,7 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
   await page.getByLabel("Aelion Trois-Gorgées").check();
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
 
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
+  await activateBrunhilda(page);
   await expect
     .poll(async () => (await readCanvasState(page)).activeHero)
     .toBe("brunhilda");
@@ -123,22 +62,9 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
   ).toBeVisible();
 
   await page
-    .getByRole("button", {
-      name: "Se déplacer en colonne 2, ligne 1",
-    })
+    .getByRole("button", { name: "Se déplacer en colonne 2, ligne 1" })
     .click();
-  await expect
-    .poll(async () => {
-      const state = await readCanvasState(page);
-      const hero = state.heroes.find(
-        (candidate) => candidate.id === "brunhilda",
-      );
-      return {
-        position: hero?.position,
-        actions: hero?.actionsRemaining,
-      };
-    })
-    .toEqual({ position: { column: 1, row: 0 }, actions: 2 });
+  await expectHeroAt(page, "brunhilda", { column: 1, row: 0 }, 2);
 
   await page.getByRole("button", { name: "Terminer l'activation" }).click();
   await expect(
@@ -160,14 +86,11 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
   await page.reload();
   await expect(page.getByRole("button", { name: "Reprendre" })).toBeEnabled();
   await page.getByRole("button", { name: "Reprendre" }).click();
-  await expect
-    .poll(async () => await readCanvasState(page))
-    .toEqual(beforeReload);
+  await expect.poll(async () => readCanvasState(page)).toEqual(beforeReload);
 });
 
 test("atteint une victoire reproductible", async ({ page }) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await enterRoom(page);
   await expect.poll(async () => Boolean(await getRoomSave(page))).toBe(true);
 
   await page.evaluate(async () => {
@@ -227,9 +150,7 @@ test("atteint une victoire reproductible", async ({ page }) => {
 
   await page.reload();
   await page.getByRole("button", { name: "Reprendre" }).click();
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
+  await activateBrunhilda(page);
   await page
     .getByRole("button", { name: "Attaquer Gobelin Bricoleur" })
     .click();
@@ -244,49 +165,34 @@ test("déplace Brünhilda par picking réel du canvas", async ({
   page,
   isMobile,
 }) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
-
+  await enterRoom(page);
+  await activateBrunhilda(page);
   const target = { column: 1, row: 0 };
-  const point = await canvasPointForCell(page, target);
-  if (isMobile) await page.touchscreen.tap(point.x, point.y);
-  else await page.mouse.click(point.x, point.y);
-
-  await expectBrunhilda(page, target, 2);
+  const point = await canvasPointForLogicalCell(page, target);
+  await tapOrClick(page, isMobile, point);
+  await expectHeroAt(page, "brunhilda", target, 2);
 });
 
 test("pique une case proche d'une arête commune du losange", async ({
   page,
   isMobile,
 }) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
-
+  await enterRoom(page);
+  await activateBrunhilda(page);
   const target = { column: 1, row: 0 };
-  const point = await canvasPointForCell(page, target, { x: 56, y: 0 });
-  if (isMobile) await page.touchscreen.tap(point.x, point.y);
-  else await page.mouse.click(point.x, point.y);
-
-  await expectBrunhilda(page, target, 2);
+  const point = await canvasPointForLogicalCell(page, target, { x: 56, y: 0 });
+  await tapOrClick(page, isMobile, point);
+  await expectHeroAt(page, "brunhilda", target, 2);
 });
 
 test("préserve les coordonnées logiques lors d'un redimensionnement paysage", async ({
   page,
 }) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
+  await enterRoom(page);
+  await activateBrunhilda(page);
   const before = await readCanvasState(page);
   await page.setViewportSize({ width: 1024, height: 576 });
-  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  const canvas = canvasLocator(page);
   await expect
     .poll(async () =>
       canvas.evaluate((element) => JSON.parse(element.dataset.camera ?? "{}")),
@@ -315,9 +221,8 @@ test("expose le manifeste PWA français et le service worker", async ({
 test("démarre avec les assets techniques et expose le manifeste runtime", async ({
   page,
 }) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  await enterRoom(page);
+  const canvas = canvasLocator(page);
   await expect(canvas).toBeVisible();
   await expect
     .poll(async () =>
@@ -334,20 +239,17 @@ test("démarre avec les assets techniques et expose le manifeste runtime", async
 
 test("reste jouable quand une texture manquante déclenche un fallback non fatal", async ({
   page,
+  isMobile,
 }) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
-  const canvas = page.getByRole("img", { name: /Plateau tactique PixiJS/i });
+  await enterRoom(page);
   await expect
     .poll(async () =>
-      canvas.evaluate((element) => element.dataset.assetManifest),
+      canvasLocator(page).evaluate((element) => element.dataset.assetManifest),
     )
     .toBe("loaded");
+  await activateBrunhilda(page);
   const target = { column: 1, row: 0 };
-  const point = await canvasPointForCell(page, target);
-  await page.mouse.click(point.x, point.y);
-  await expectBrunhilda(page, target, 2);
+  const point = await canvasPointForLogicalCell(page, target);
+  await tapOrClick(page, isMobile, point);
+  await expectHeroAt(page, "brunhilda", target, 2);
 });

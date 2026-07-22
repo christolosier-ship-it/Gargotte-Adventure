@@ -1,8 +1,8 @@
-name: Validate foundations
+name: Validate application
 
 on:
   pull_request:
-    branches: [main, sprint-0/foundations]
+    branches: [main]
   push:
     branches: [main]
   workflow_dispatch:
@@ -11,7 +11,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: foundations-${{ github.workflow }}-${{ github.ref }}
+  group: validation-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -77,10 +77,10 @@ jobs:
             playwright-report
           if-no-files-found: warn
 
-      - name: Upload generated lockfile
+      - name: Upload package lock
         uses: actions/upload-artifact@v7
         with:
-          name: sprint-1-package-lock
+          name: package-lock
           path: package-lock.json
           if-no-files-found: error
 

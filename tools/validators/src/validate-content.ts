@@ -1,14 +1,11 @@
 import { readFile, stat } from "node:fs/promises";
-import { resolve, relative, sep } from "node:path";
+import { relative, resolve, sep } from "node:path";
 import {
   parseContentManifest,
   parseDungeon,
   parseTacticalRoom,
 } from "@gargotte/content-schema";
-import {
-  assetBudgets,
-  validateRuntimeAssetManifest,
-} from "../../../packages/renderer/src/assets";
+import { assetBudgets, validateRuntimeAssetManifest } from "@gargotte/renderer";
 
 const packDirectory = resolve("content/bastognac");
 const manifest = parseContentManifest(
@@ -33,7 +30,6 @@ const assetManifest = validateRuntimeAssetManifest(
   JSON.parse(await readFile(assetManifestPath, "utf8")),
 );
 let total = 0;
-const seenFiles = new Set<string>();
 for (const asset of assetManifest.assets) {
   const file = resolve(root, asset.path);
   const safe = relative(root, file);
@@ -71,7 +67,6 @@ for (const asset of assetManifest.assets) {
   )
     throw new Error(`${asset.id}: budget asset technique trop élevé.`);
   total += size;
-  seenFiles.add(asset.path);
 }
 if (total > assetBudgets.pilotTotalBytes)
   throw new Error(

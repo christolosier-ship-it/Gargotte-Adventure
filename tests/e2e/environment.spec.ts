@@ -1,99 +1,36 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
+import {
+  canvasLocator,
+  enterRoom,
+  environmentAssetStatus,
+  moveBrunhilda,
+} from "./helpers/canvas";
 
-const canvasPointForCell = async (
-  page: Page,
-  position: { column: number; row: number },
-) => {
-  const canvas = page.getByRole("img", {
-    name: /Plateau tactique PixiJS/i,
-  });
-  return canvas.evaluate((element, target) => {
-    const projection = JSON.parse(element.dataset.projection ?? "{}");
-    const camera = JSON.parse(element.dataset.camera ?? "{}");
-    const rect = element.getBoundingClientRect();
-    const localX =
-      projection.originX +
-      ((target.column - target.row) * projection.tileWidth) / 2;
-    const localY =
-      projection.originY +
-      ((target.column + target.row) * projection.tileHeight) / 2;
-    return {
-      x: rect.left + camera.offsetX + localX * camera.scale,
-      y: rect.top + camera.offsetY + localY * camera.scale,
-    };
-  }, position);
-};
+const environmentKeys = [
+  "tile-bastognac-floor-a",
+  "tile-bastognac-floor-b",
+  "wall-bastognac-south-east",
+  "wall-bastognac-north-east",
+  "prop-bastognac-barrel",
+] as const;
 
-const environmentStatus = async (page: Page, key: string) => {
-  const canvas = page.getByRole("img", {
-    name: /Plateau tactique PixiJS/i,
-  });
-  return canvas.evaluate(
-    (element, statusKey) =>
-      element.getAttribute(`data-asset-environment-${statusKey}`),
-    key,
-  );
-};
-
-const expectBrunhildaMoved = async (page: Page) => {
-  const canvas = page.getByRole("img", {
-    name: /Plateau tactique PixiJS/i,
-  });
-  await expect
-    .poll(async () =>
-      canvas.evaluate((element) => {
-        const heroes = JSON.parse(element.dataset.heroes ?? "[]");
-        const brunhilda = heroes.find(
-          (hero: { id: string }) => hero.id === "brunhilda",
-        );
-        return {
-          position: brunhilda?.position,
-          actionsRemaining: brunhilda?.actionsRemaining,
-        };
-      }),
-    )
-    .toEqual({
-      position: { column: 1, row: 0 },
-      actionsRemaining: 2,
-    });
-};
-
-const enterRoom = async (page: Page) => {
-  await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-};
-
-const moveBrunhilda = async (page: Page, isMobile: boolean) => {
-  await page
-    .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
-    .click();
-  const point = await canvasPointForCell(page, { column: 1, row: 0 });
-  if (isMobile) await page.touchscreen.tap(point.x, point.y);
-  else await page.mouse.click(point.x, point.y);
-  await expectBrunhildaMoved(page);
-};
+const environmentPaths = [
+  "./assets/isometric/tiles/bastognac-floor-a.svg",
+  "./assets/isometric/tiles/bastognac-floor-b.svg",
+  "./assets/isometric/walls/bastognac-wall-se.svg",
+  "./assets/isometric/walls/bastognac-wall-ne.svg",
+  "./assets/isometric/props/bastognac-barrel.svg",
+] as const;
 
 test("charge l’environnement Bastognac et conserve le picking canvas", async ({
   page,
   isMobile,
 }) => {
   await enterRoom(page);
-  for (const key of [
-    "tile-bastognac-floor-a",
-    "tile-bastognac-floor-b",
-    "wall-bastognac-south-east",
-    "wall-bastognac-north-east",
-    "prop-bastognac-barrel",
-  ])
-    await expect.poll(() => environmentStatus(page, key)).toBe("svg");
+  for (const key of environmentKeys)
+    await expect.poll(() => environmentAssetStatus(page, key)).toBe("svg");
 
-  for (const path of [
-    "./assets/isometric/tiles/bastognac-floor-a.svg",
-    "./assets/isometric/tiles/bastognac-floor-b.svg",
-    "./assets/isometric/walls/bastognac-wall-se.svg",
-    "./assets/isometric/walls/bastognac-wall-ne.svg",
-    "./assets/isometric/props/bastognac-barrel.svg",
-  ])
+  for (const path of environmentPaths)
     expect(await page.request.get(path)).toBeOK();
 
   await moveBrunhilda(page, isMobile);
@@ -120,11 +57,9 @@ for (const failure of [
 
     await enterRoom(page);
     await expect
-      .poll(() => environmentStatus(page, failure.key))
+      .poll(() => environmentAssetStatus(page, failure.key))
       .toBe("texture-error");
-    await expect(
-      page.getByRole("img", { name: /Plateau tactique PixiJS/i }),
-    ).toBeVisible();
+    await expect(canvasLocator(page)).toBeVisible();
     await moveBrunhilda(page, isMobile);
     expect(pageErrors).toEqual([]);
   });
