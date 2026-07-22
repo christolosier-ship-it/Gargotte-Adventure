@@ -80,7 +80,10 @@ La validation du dépôt contrôle maintenant :
 - label de build centralisé sur `Sprint 2` ;
 - template HTML de l’UI séparé de sa logique ;
 - tokens CSS de conception chargés par le runtime ;
-- validateur de contenu branché sur l’API publique du renderer.
+- validateur de contenu branché sur l’API publique du renderer ;
+- noms historiques du workflow et de l’artefact de verrouillage supprimés ;
+- manifeste de conception aligné sur les vrais assets runtime ;
+- brief Codex 2A.1 explicitement classé comme historique.
 
 ## Suivi Drive
 
@@ -88,14 +91,20 @@ Le suivi humain est conservé dans le document Google Drive `Gargotte Adventure 
 
 ## Validation finale
 
-À compléter après stabilisation de la Pull Request :
+Le chantier est stabilisé sans modification des règles tactiques. Les contrôles suivants sont tous verts :
 
-- formatage ;
-- contenu ;
+- formatage Prettier ;
+- validation du contenu et des assets ;
 - TypeScript strict ;
 - tests unitaires ;
-- build ;
-- validation du dépôt ;
-- Playwright desktop ;
+- build de production ;
+- validation du dépôt et des frontières d’architecture ;
+- Repository quality ;
+- Playwright Chromium desktop ;
 - Playwright mobile paysage ;
-- contrôle final du diff.
+- scénarios de sauvegarde et reprise ;
+- rotation et picking logique ;
+- chargement, retard et panne des assets ;
+- victoire reproductible.
+
+La Pull Request reste ouverte pour le contrôle final de l’utilisateur. Elle n’est pas fusionnée automatiquement.
