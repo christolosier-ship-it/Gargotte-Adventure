@@ -1,10 +1,12 @@
 # Lot Codex 2A.1 — Projection isométrique
 
-## Objectif
+> **Statut historique : terminé.** Ce brief décrit le premier lot du Sprint 2. Il est conservé pour la traçabilité et ne constitue plus une instruction active. La rotation de caméra, les assets pilotes et l’environnement Bastognac ont été livrés dans les lots suivants.
+
+## Objectif initial
 
 Remplacer le dessin orthogonal provisoire par une projection 2D isométrique minimale, sans ajouter d’asset définitif et sans modifier les règles tactiques.
 
-## Périmètre obligatoire
+## Périmètre obligatoire initial
 
 - ajouter un module de projection pur dans `packages/renderer` ;
 - implémenter `gridToScreen` ;
@@ -17,7 +19,7 @@ Remplacer le dessin orthogonal provisoire par une projection 2D isométrique min
 - ajouter des tests unitaires de projection ;
 - maintenir tous les tests existants.
 
-## Hors périmètre
+## Hors périmètre du lot initial
 
 - images définitives ;
 - détourage des personnages ;
@@ -30,16 +32,18 @@ Remplacer le dessin orthogonal provisoire par une projection 2D isométrique min
 - rotation de caméra ;
 - dépendance 3D.
 
+La mention de la rotation comme hors périmètre s’applique uniquement au lot 2A.1. Une rotation de contrôle à quatre orientations a depuis été livrée et documentée.
+
 ## Contraintes
 
 1. `packages/engine` ne doit pas dépendre de la projection.
 2. `RoomState` et la version de sauvegarde ne changent pas.
 3. Les positions logiques restent des entiers `column` et `row`.
 4. Les clics et touchers doivent sélectionner la même case que les commandes DOM.
-5. Les tokens de ce dossier servent de valeurs initiales ; ils ne doivent pas être dupliqués dans plusieurs fichiers sans source commune.
-6. Le renderer doit pouvoir continuer à afficher des placeholders si un asset est absent.
+5. Les tokens de ce dossier servent de source commune.
+6. Le renderer doit continuer à afficher des placeholders si un asset est absent.
 
-## Critères d’acceptation
+## Critères d’acceptation initiaux
 
 - la salle Sprint 1 reste jouable de bout en bout ;
 - les mêmes actions produisent les mêmes états et événements ;
@@ -48,9 +52,8 @@ Remplacer le dessin orthogonal provisoire par une projection 2D isométrique min
 - aucune sélection ne se décale sur une tuile voisine ;
 - la grille reste centrée lors du redimensionnement ;
 - les tests de projection couvrent au minimum les quatre coins et le centre ;
-- TypeScript, Vitest, build, validation du dépôt et Playwright sont verts ;
-- aucune image définitive n’est exigée pour fusionner ce premier lot.
+- TypeScript, Vitest, build, validation du dépôt et Playwright sont verts.
 
-## Livrable attendu
+## Résultat
 
-Une Pull Request isolée contenant le renderer isométrique minimal, ses tests et la documentation technique strictement nécessaire. Les assets pilotes arriveront dans un lot séparé après validation du picking et de la profondeur.
+Le livrable initial a été complété par le pipeline d’assets, les sprites pilotes, l’environnement Bastognac, les murs sensibles à la caméra et le désendettement structurel pré-Sprint 3. L’état technique courant est décrit dans `docs/architecture/overview.md` et `docs/architecture/repository-structure.md`.
