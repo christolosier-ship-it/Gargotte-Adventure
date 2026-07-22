@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "2B.2.0",
+  "version": "2B.3.0",
   "basePath": "assets/isometric/",
   "budgets": {
     "pilotTotalBytes": 1048576,
@@ -136,6 +136,96 @@
       "orientation": "omni",
       "fallbackId": "tile.fallback",
       "budgetBytes": 256000,
+      "required": false
+    },
+    {
+      "id": "tile.bastognac-floor-a",
+      "category": "tile",
+      "path": "assets/isometric/tiles/bastognac-floor-a.svg",
+      "format": "svg",
+      "dimensions": {
+        "width": 128,
+        "height": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "orientation": "omni",
+      "fallbackId": "tile.fallback",
+      "budgetBytes": 102400,
+      "required": false
+    },
+    {
+      "id": "tile.bastognac-floor-b",
+      "category": "tile",
+      "path": "assets/isometric/tiles/bastognac-floor-b.svg",
+      "format": "svg",
+      "dimensions": {
+        "width": 128,
+        "height": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
+      "orientation": "omni",
+      "fallbackId": "tile.fallback",
+      "budgetBytes": 102400,
+      "required": false
+    },
+    {
+      "id": "wall.bastognac",
+      "category": "wall",
+      "path": "assets/isometric/walls/bastognac-wall-se.svg",
+      "format": "svg",
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.82
+      },
+      "orientation": "south-east",
+      "fallbackId": "wall.fallback",
+      "budgetBytes": 102400,
+      "required": false
+    },
+    {
+      "id": "wall.bastognac",
+      "category": "wall",
+      "path": "assets/isometric/walls/bastognac-wall-ne.svg",
+      "format": "svg",
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.82
+      },
+      "orientation": "north-east",
+      "fallbackId": "wall.fallback",
+      "budgetBytes": 102400,
+      "required": false
+    },
+    {
+      "id": "prop.bastognac-barrel",
+      "category": "prop",
+      "path": "assets/isometric/props/bastognac-barrel.svg",
+      "format": "svg",
+      "dimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.96
+      },
+      "orientation": "omni",
+      "fallbackId": "prop.fallback-obstacle",
+      "budgetBytes": 102400,
       "required": false
     }
   ]

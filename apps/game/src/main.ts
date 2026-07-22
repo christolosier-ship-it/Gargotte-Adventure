@@ -40,6 +40,7 @@ const shell = createGameShell(
   root,
   roomDefinition.heroes.map((hero) => ({ id: hero.id, name: hero.name })),
 );
+shell.startButton.disabled = true;
 const renderer = await createTabletopRenderer(shell.boardHost);
 const events = new EventBus();
 let state: GameState = createInitialGameState(1);
@@ -317,6 +318,7 @@ window.addEventListener("appinstalled", () =>
   shell.appendEvent("Gargotte Adventure est installé sur l’appareil."),
 );
 
+shell.startButton.disabled = false;
 render();
 shell.appendEvent(`${dungeon.name} chargé · ${APP_VERSION}.`);
 
