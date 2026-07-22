@@ -1,44 +1,14 @@
-export interface HeroOption {
-  id: string;
-  name: string;
-}
+import { gameShellMarkup } from "./shell-template";
+import type { GameShell, HeroOption } from "./types";
 
-export interface GameShell {
-  boardHost: HTMLElement;
-  status: HTMLElement;
-  saveStatus: HTMLElement;
-  cameraStatus: HTMLElement;
-  eventLog: HTMLElement;
-  startButton: HTMLButtonElement;
-  continueButton: HTMLButtonElement;
-  rotateCameraButton: HTMLButtonElement;
-  installButton: HTMLButtonElement;
-  heroPicker: HTMLElement;
-  tacticalActions: HTMLElement;
-  hud: HTMLElement;
-  endActivationButton: HTMLButtonElement;
-  endHeroesTurnButton: HTMLButtonElement;
-  resolveEnemyTurnButton: HTMLButtonElement;
-  update(state: {
-    phase: string;
-    tacticalPhase?: string | null;
-    expeditionNumber: number;
-    canContinue: boolean;
-    canRotateCamera?: boolean;
-    cameraRotation?: number;
-    saveText: string;
-    actions?: number;
-    activeHero?: string | null;
-    selectedHeroIds?: string[];
-  }): void;
-  appendEvent(message: string): void;
-}
+export type { GameShell, GameShellUpdate, HeroOption } from "./types";
 
 export function createGameShell(
   root: HTMLElement,
   heroes: HeroOption[],
+  buildLabel: string,
 ): GameShell {
-  root.innerHTML = `<div class="app-shell"><header class="topbar"><div><p class="eyebrow">LA CHOPE QUI COLLE PRÉSENTE</p><h1>Gargotte Adventure</h1></div><div class="build-badge" aria-label="Version Sprint un">Sprint 1</div></header><main class="game-layout"><section class="board-panel" aria-labelledby="board-title"><div class="panel-heading"><div><p class="eyebrow">PREMIER DONJON</p><h2 id="board-title">Le Château de Bastognac</h2></div><span class="status-chip" data-status>Préparation</span></div><div class="board-host" data-board></div></section><aside class="control-panel" aria-label="Commandes tactiques"><section class="hero-card"><p class="eyebrow">SALLE TACTIQUE</p><h2>Choisir l'équipe</h2><div data-hero-picker class="hero-picker"></div></section><div class="actions"><button class="button button-primary" type="button" data-start>Entrer dans la salle</button><button class="button button-secondary" type="button" data-continue disabled>Reprendre</button><button class="button button-ghost" type="button" data-rotate-camera disabled>↻ Pivoter la caméra de 90°</button><button class="button button-secondary" type="button" data-end-activation disabled>Terminer l'activation</button><button class="button button-ghost" type="button" data-end-heroes-turn disabled>Terminer le tour des héros</button><button class="button button-ghost" type="button" data-resolve-enemy-turn disabled>Résoudre le tour ennemi</button><button class="button button-ghost" type="button" data-install hidden>Installer l'application</button></div><section class="system-card" aria-live="polite"><div class="system-line"><span>Sauvegarde locale</span><strong data-save-status>Initialisation…</strong></div><div class="system-line"><span>Caméra de contrôle</span><strong data-camera-status>Vue : 0°</strong></div><div data-hud class="hud">Actions: ●●●</div></section><section class="tactical-actions-card"><p class="eyebrow">COMMANDES ACCESSIBLES</p><div data-tactical-actions class="tactical-actions" aria-label="Actions tactiques disponibles"></div></section><section class="event-card"><p class="eyebrow">JOURNAL</p><ol data-events><li>La salle tactique est prête.</li></ol></section></aside></main><footer>Aucun réseau requis pour jouer. Interface tactile paysage.</footer></div>`;
+  root.innerHTML = gameShellMarkup(buildLabel);
 
   const query = <T extends Element>(selector: string): T => {
     const element = root.querySelector<T>(selector);
@@ -74,6 +44,7 @@ export function createGameShell(
   const resolveEnemyTurnButton = query<HTMLButtonElement>(
     "[data-resolve-enemy-turn]",
   );
+  const hud = query<HTMLElement>("[data-hud]");
 
   return {
     boardHost: query("[data-board]"),
@@ -87,7 +58,7 @@ export function createGameShell(
     installButton: query("[data-install]"),
     heroPicker,
     tacticalActions: query("[data-tactical-actions]"),
-    hud: query("[data-hud]"),
+    hud,
     endActivationButton,
     endHeroesTurnButton,
     resolveEnemyTurnButton,
@@ -106,19 +77,17 @@ export function createGameShell(
       rotateCameraButton.disabled = !next.canRotateCamera;
       cameraStatus.textContent = `Vue : ${next.cameraRotation ?? 0}°`;
       saveStatus.textContent = next.saveText;
-      this.hud.textContent = `Héros actif: ${next.activeHero ?? "aucun"} · Actions: ${"●".repeat(next.actions ?? 0)}${"○".repeat(Math.max(0, 3 - (next.actions ?? 0)))} · Phase: ${tacticalPhase ?? "menu"}`;
+      hud.textContent = `Héros actif: ${next.activeHero ?? "aucun"} · Actions: ${"●".repeat(next.actions ?? 0)}${"○".repeat(Math.max(0, 3 - (next.actions ?? 0)))} · Phase: ${tacticalPhase ?? "menu"}`;
       endActivationButton.disabled =
         tacticalPhase !== "heroes-turn" || !next.activeHero;
       endHeroesTurnButton.disabled = tacticalPhase !== "heroes-turn";
       resolveEnemyTurnButton.disabled = tacticalPhase !== "enemy-turn";
 
-      if (next.selectedHeroIds) {
+      if (next.selectedHeroIds)
         for (const input of heroPicker.querySelectorAll<HTMLInputElement>(
           'input[type="checkbox"]',
-        )) {
+        ))
           input.checked = next.selectedHeroIds.includes(input.value);
-        }
-      }
     },
     appendEvent(message) {
       const item = document.createElement("li");
