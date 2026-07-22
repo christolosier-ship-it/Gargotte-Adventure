@@ -8,10 +8,7 @@ import {
 
 const manifest = validateRuntimeAssetManifest(
   JSON.parse(
-    readFileSync(
-      "apps/game/public/assets/isometric/manifest.json",
-      "utf8",
-    ),
+    readFileSync("apps/game/public/assets/isometric/manifest.json", "utf8"),
   ),
 );
 
@@ -65,7 +62,9 @@ describe("Bastognac environment runtime assets", () => {
     expect(manifest.version).toBe("2B.3.0");
     for (const [id, path, width, height] of environmentFiles) {
       const asset = manifest.assets.find(
-        (candidate) => candidate.id === id && candidate.path.endsWith(path.split("/").at(-1) ?? ""),
+        (candidate) =>
+          candidate.id === id &&
+          candidate.path.endsWith(path.split("/").at(-1) ?? ""),
       );
       expect(asset).toMatchObject({
         id,
