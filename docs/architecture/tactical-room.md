@@ -1,4 +1,4 @@
-# Architecture — Salle tactique
+# Architecture - Salle tactique
 
 ## Responsabilités
 
@@ -6,7 +6,7 @@ La salle tactique est divisée en cinq responsabilités :
 
 1. **Contenu** (`content/bastognac` et `packages/content-schema`) : définition et validation du scénario.
 2. **Moteur** (`packages/engine/src/tactical`) : grille, déplacements, ligne de vue, combat, tours, IA, événements et erreurs métier.
-3. **Renderer PixiJS** (`packages/renderer`) : projection visuelle de `RoomState` et remontée des intentions de sélection.
+3. **Renderer PixiJS** (`packages/renderer`) : projection isométrique de `RoomState`, assets et remontée des intentions de sélection.
 4. **UI DOM** (`packages/ui`) : sélection des héros, HUD, boutons de phase, commandes accessibles et journal.
 5. **Sauvegarde** (`packages/save`) : persistance IndexedDB versionnée et restauration défensive.
 
@@ -31,6 +31,8 @@ Les héros ajoutent :
 
 - actions restantes ;
 - activation terminée ou disponible.
+
+L’état ne contient aucune coordonnée écran, texture, orientation visuelle ou référence PixiJS.
 
 ## Phases
 
@@ -69,7 +71,7 @@ Le joueur ne peut pas appeler directement le tour ennemi pendant `heroes-turn`. 
 
 ## Grille et déplacement
 
-La salle du Sprint 1 utilise une grille 8 × 4.
+La salle pilote utilise une grille 8 × 4. Le renderer peut néanmoins calculer sa projection et sa caméra depuis d’autres dimensions.
 
 Le moteur fournit :
 
@@ -146,26 +148,71 @@ L’IA ne cherche pas un chemin vers la case occupée par le héros. Elle cherch
 
 Chaque décision peut produire une explication structurée comprenant cible, action, motif et chemin retenu.
 
-## Présentation
+## Présentation isométrique
 
-### PixiJS
+### Projection et caméra
 
-Le renderer affiche :
+Le renderer utilise une projection 2D isométrique 128 × 64 :
 
-- grille ;
-- obstacles ;
-- héros ;
-- ennemis ;
-- PV ;
-- héros actif ;
-- cases atteignables ;
-- cibles attaquables.
+```text
+screenX = originX + (column - row) × tileWidth / 2
+screenY = originY + (column + row) × tileHeight / 2
+```
 
-Les objets graphiques retirés lors d’une reconstruction sont détruits afin d’éviter l’accumulation de textures, listeners ou objets GPU.
+Les bornes de la salle, le scale et le centrage sont recalculés depuis les dimensions réelles du `RoomState` et du viewport.
 
-### DOM accessible
+### Couches
 
-Les mêmes actions sont également exposées sous forme de commandes DOM nommées :
+Le plateau distingue :
+
+1. fond ;
+2. sol ;
+3. objets et combattants ;
+4. premier plan et murs ;
+5. interface canvas.
+
+Le tri interne utilise une profondeur stable dérivée de la position projetée et d’un offset de catégorie.
+
+### Picking
+
+- chaque tuile possède une hit area polygonale correspondant au losange logique ;
+- les combattants possèdent une zone tactile explicite ;
+- les textures et leurs pixels transparents ne décident jamais du picking ;
+- clic et toucher produisent les mêmes intentions métier que les commandes DOM ;
+- murs et obstacles visuels utilisent `eventMode = none`.
+
+### Occlusion
+
+Les murs peuvent devenir semi-transparents lorsqu’ils recouvrent une position active, atteignable ou attaquable. Cette réduction d’opacité n’a aucun effet sur les collisions ou la ligne de vue.
+
+### Assets et fallbacks
+
+Le manifeste runtime versionné décrit :
+
+- identifiants ;
+- catégories ;
+- chemins ;
+- formats SVG ou WebP ;
+- dimensions ;
+- ancrages ;
+- orientations ;
+- miroirs ;
+- fallbacks ;
+- budgets.
+
+Le registre centralisé met les textures en cache, capture les erreurs et conserve les formes vectorielles de secours si un asset ne charge pas.
+
+Les assets pilotes actuels comprennent Brünhilda, le Gobelin Bricoleur, deux sols, deux murs, un tonneau, une ombre et un effet d’impact technique.
+
+### Cycle de vie
+
+Les objets graphiques retirés lors d’une reconstruction sont détruits. Le registre libère les textures lors de la destruction du renderer, y compris lorsqu’un chargement se termine tardivement.
+
+Un compteur de génération empêche un asset chargé en retard d’être réinséré dans une scène déjà reconstruite.
+
+## DOM accessible
+
+Les mêmes actions sont exposées sous forme de commandes DOM nommées :
 
 - activer un héros ;
 - se déplacer vers une case disponible ;
@@ -174,7 +221,9 @@ Les mêmes actions sont également exposées sous forme de commandes DOM nommée
 - terminer le tour des héros ;
 - résoudre le tour ennemi.
 
-Ces commandes servent l’accessibilité clavier et rendent les tests Playwright indépendants de coordonnées de canvas fragiles.
+Ces commandes servent l’accessibilité clavier et offrent une voie de jeu indépendante du canvas.
+
+Le bouton de lancement reste désactivé jusqu’à la fin de l’initialisation du renderer et des sauvegardes.
 
 ## Sauvegarde
 
@@ -197,9 +246,11 @@ Le chargement :
 - rejette sans planter une version incompatible ;
 - rejette les données corrompues.
 
-## Contenu Bastognac du Sprint 1
+Le Sprint 2 conserve la sauvegarde version 1, car aucune donnée visuelle n’est persistée dans `RoomState`.
 
-Le scénario actuel contient :
+## Contenu Bastognac actuel
+
+Le scénario contient :
 
 - Brünhilda la Torgnole ;
 - Aelion Trois-Gorgées ;
@@ -209,7 +260,7 @@ Le scénario actuel contient :
 - Gobelin Lance-Tout ;
 - deux obstacles.
 
-Les statistiques et positions restent provisoires. Le moteur ne connaît aucun de ces noms.
+Brünhilda et le Gobelin Bricoleur disposent d’un sprite pilote. Les autres combattants restent en placeholders. Les statistiques et positions restent provisoires.
 
 ## Tests
 
@@ -223,7 +274,9 @@ Les statistiques et positions restent provisoires. Le moteur ne connaît aucun d
 - victoire et défaite ;
 - IA visible, bloquée ou inaccessible ;
 - validation du contenu ;
-- sauvegarde, migration et corruption.
+- sauvegarde, migration et corruption ;
+- projection, conversion inverse, caméra et profondeur ;
+- manifeste, registre, cache, fallbacks, poids et dimensions.
 
 ### Playwright
 
@@ -233,16 +286,19 @@ Sur build de production :
 - lancement de la salle ;
 - activation ;
 - déplacement et consommation d’action ;
+- clic et toucher réels sur le canvas ;
 - verrouillage des phases ;
 - tour ennemi ;
 - sauvegarde et restauration exacte ;
 - victoire reproductible ;
-- manifeste français et service worker ;
+- service worker et assets précachés ;
+- chargement des sprites et de l’environnement ;
+- panne d’un sprite, d’un sol, d’un mur et du tonneau ;
 - desktop et mobile paysage tactile.
 
 ## Limites actuelles
 
-Le Sprint 1 n’implémente pas encore :
+La version après Sprint 2 n’implémente pas encore :
 
 - Brouhaha ;
 - objets interactifs ;
@@ -250,5 +306,7 @@ Le Sprint 1 n’implémente pas encore :
 - compétences définitives ;
 - loot et progression ;
 - bestiaire complet ;
-- animations et sons définitifs ;
-- plusieurs salles ou étages.
+- micro-animations de déplacement ou d’impact ;
+- sons définitifs ;
+- plusieurs salles ou étages ;
+- baseline quantitative de performance.

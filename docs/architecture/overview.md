@@ -6,7 +6,7 @@ Gargotte Adventure est organisé en quatre couches :
 
 1. **contenu** : données versionnées de héros, créatures, salles, obstacles et références d’assets ;
 2. **moteur** : règles déterministes, déplacements, combat, tours, IA et événements ;
-3. **présentation** : plateau PixiJS, HUD et commandes DOM accessibles ;
+3. **présentation** : plateau isométrique PixiJS, HUD et commandes DOM accessibles ;
 4. **plateforme** : PWA, sauvegarde IndexedDB, validation, tests, build et déploiement.
 
 Le moteur ne dépend ni du DOM, ni de PixiJS, ni d’IndexedDB, ni d’un donjon particulier. Il reçoit un état et une intention, puis retourne un nouvel état, des événements de domaine ou une erreur métier typée.
@@ -29,7 +29,7 @@ Interaction joueur
       ▼                ▼
  nouvel état      événements / erreur
       │
-      ├─► projection et rendu PixiJS
+      ├─► projection et rendu isométrique PixiJS
       ├─► mise à jour du HUD
       ├─► journal d’événements
       └─► sauvegarde IndexedDB
@@ -37,7 +37,7 @@ Interaction joueur
 
 Les interactions PixiJS et les commandes DOM utilisent les mêmes handlers. L’interface n’implémente donc pas une seconde version des règles.
 
-## État actuel après le Sprint 1
+## État actuel après le Sprint 2
 
 ### Contenu
 
@@ -64,78 +64,99 @@ Le contenu est validé par Zod avant la création du `RoomState`.
 - IA ennemie ;
 - événements et erreurs métier.
 
-### Présentation
+Le moteur conserve exclusivement des coordonnées `GridPosition { column, row }`. Il ne connaît ni l’isométrie, ni les dimensions des tuiles, ni les assets.
 
-- `packages/renderer` projette actuellement `RoomState` dans une grille orthogonale PixiJS provisoire ;
+### Renderer isométrique
+
+`packages/renderer` projette `RoomState` sur un plateau PixiJS 2D isométrique :
+
+- projection grille vers écran et conversion inverse ;
+- tuiles 128 × 64 ;
+- caméra responsive et centrage ;
+- hit areas polygonales ;
+- picking par clic et toucher ;
+- tri de profondeur déterministe ;
+- couches fond, sol, objets, premier plan et interface ;
+- murs hauts non interactifs ;
+- occlusion contextuelle par réduction d’opacité ;
+- obstacles et combattants ancrés au point de contact au sol ;
+- overlays atteignable, sélectionné, attaquable et bloqué ;
+- destruction des objets graphiques lors des reconstructions.
+
+### Pipeline d’assets
+
+Le renderer utilise un pipeline versionné :
+
+- manifeste runtime `apps/game/public/assets/isometric/manifest.json` ;
+- validation Zod des identifiants, catégories, formats, dimensions, ancrages, orientations et budgets ;
+- registre `IsometricAssetRegistry` ;
+- résolution directe, omnidirectionnelle ou miroir ;
+- cache de texture par URL publique ;
+- fallbacks non bloquants ;
+- libération des textures lors de la destruction ;
+- chemins compatibles avec le sous-répertoire GitHub Pages ;
+- précache PWA des fichiers SVG et WebP.
+
+Le manifeste pilote contient notamment :
+
+- ombre au sol ;
+- fallbacks de tuile, mur et obstacle ;
+- effet d’impact technique ;
+- Brünhilda et Gobelin Bricoleur en WebP ;
+- deux sols Bastognac ;
+- deux orientations de mur ;
+- un tonneau Bastognac.
+
+Les textures restent indépendantes du gameplay. Une panne de manifeste ou d’asset conserve un plateau jouable grâce aux formes vectorielles de secours.
+
+### UI et orchestration
+
 - `packages/ui` fournit menus, sélection des héros, HUD, commandes tactiques et boutons de phase ;
-- `apps/game/src/main.ts` orchestre contenu, moteur, renderer, UI et sauvegarde.
+- `apps/game/src/main.ts` orchestre contenu, moteur, renderer, UI et sauvegarde ;
+- le bouton de lancement reste désactivé jusqu’à la fin de l’initialisation du renderer et des sauvegardes ;
+- les commandes DOM restent disponibles même si l’interaction canvas échoue.
+
+### Fondation audio
+
+`packages/audio` existe déjà sous la forme d’un socle minimal de réglages et d’un `AudioDirector`. Il n’est pas encore connecté à `apps/game`, ne charge aucun média sonore et ne participe pas à la boucle de jeu. L’intégration audio réelle reste une cible ultérieure.
 
 ### Plateforme
 
 - PWA Vite installable et offline-first ;
 - sauvegardes IndexedDB versionnées ;
 - migration défensive des anciennes sauvegardes ;
-- Vitest pour le moteur, le contenu et la sauvegarde ;
+- Vitest pour le moteur, le contenu, le renderer et la sauvegarde ;
 - Playwright sur build de production, en desktop et mobile paysage ;
 - GitHub Actions pour formatage, contenu, types, tests, build, sécurité et artefacts ;
 - GitHub Pages pour le déploiement.
 
-## Direction du Sprint 2 : renderer 2D isométrique
+## Projection de référence
 
-Le Sprint 2 remplace la projection orthogonale provisoire par une projection isométrique, sans modifier la grille logique.
-
-```text
-RoomState logique
-colonnes, lignes, obstacles, unités
-              │
-              ▼
-packages/renderer
-projection grille → écran
-tri de profondeur
-sprites et overlays
-              │
-              ▼
-canvas PixiJS isométrique
-```
-
-### Invariants
-
-- le moteur conserve `GridPosition { column, row }` ;
-- les règles de déplacement, portée, ligne de vue, IA et sauvegarde ne connaissent pas l’isométrie ;
-- le renderer possède la projection, le picking, la caméra, le tri et les animations visuelles ;
-- le DOM conserve les commandes accessibles et le HUD ;
-- PixiJS reste le moteur de rendu ;
-- aucune dépendance 3D, aucun rig et aucune animation squelettique ne sont introduits.
-
-### Projection de référence
+Pour une case logique `(column, row)` :
 
 ```text
 screenX = originX + (column - row) × tileWidth / 2
 screenY = originY + (column + row) × tileHeight / 2
 ```
 
-Les dimensions exactes sont validées par prototype. Le ratio de départ recommandé pour les tuiles est 2:1.
+Le gabarit retenu est une tuile 128 × 64, soit un ratio 2:1.
 
-### Assets et profondeur
+## Profondeur et ancrages
 
-Le renderer doit gérer :
+Les éléments sont répartis dans des couches explicites et utilisent une profondeur stable dérivée de leur position projetée.
 
-- tuiles de sol ;
-- murs et bords ;
-- obstacles ;
-- personnages 2D ;
-- ombres ;
-- overlays de déplacement et d’attaque ;
-- effets légers ;
-- ordre de profondeur stable.
+- les tuiles restent dans la couche sol ;
+- les obstacles et combattants utilisent la couche objets ;
+- les murs utilisent la couche premier plan ;
+- les informations de salle utilisent la couche interface ;
+- les sprites sont ancrés au contact avec le sol ;
+- leur illustration peut dépasser de la case sans modifier leur position logique.
 
-Les sprites sont ancrés au point de contact avec le sol. Leur illustration peut dépasser de la case sans changer leur position logique.
+## Animations
 
-### Animation volontairement légère
+Le renderer accepte des personnages fixes ou très légèrement animés. Le Sprint 2 utilise des sprites fixes.
 
-Les personnages restent fixes ou très légèrement animés : interpolation de déplacement, respiration, impulsion d’attaque, recul, flash, petite variation d’échelle ou rotation. Le projet n’utilise pas de rig.
-
-La décision complète est consignée dans [ADR-0006 — Plateau 2D isométrique sous PixiJS](../adr/0006-isometric-2d-renderer.md).
+Les futures animations légères pourront utiliser interpolation, translation, échelle, rotation ou opacité, sans rig ni animation squelettique. Elles doivent rester indépendantes des résultats métier et ne jamais retarder une action tactique.
 
 ## Frontières externes
 
@@ -149,7 +170,7 @@ Drive conserve les règles humaines, le lore, les images maîtres, les tableaux 
 
 ### Figma et FigJam
 
-FigJam contient le diagramme d’architecture. Figma doit accueillir les écrans, composants, gabarits isométriques, dimensions de tuiles, points d’ancrage et états visuels lorsque les droits d’édition sont disponibles.
+FigJam contient le diagramme d’architecture. Figma accueille les fondations visuelles et certains gabarits isométriques. Le handoff versionné dans `design/isometric` reste la référence exploitable par le code lorsque les droits ou quotas Figma limitent la production.
 
 Le code reste fonctionnel sans connexion à Figma.
 
@@ -161,44 +182,47 @@ L’API OpenAI peut assister des outils privés de préparation de contenu, de Q
 
 ```text
 apps/
-  game/                 PWA et composition de l’application
+  game/                 PWA, composition et assets publics runtime
 packages/
   engine/               règles pures et état de partie
   content-schema/       schémas et validations Zod
-  renderer/             rendu PixiJS, puis projection isométrique au Sprint 2
+  renderer/             projection isométrique, picking, profondeur et assets
   ui/                   interface DOM accessible
   save/                 persistance et migrations IndexedDB
   common/               types et utilitaires partagés
+  audio/                fondation de réglages, non intégrée à la boucle de jeu
 content/
   bastognac/            contenu validé du vertical slice
+design/
+  isometric/            tokens, gabarits et handoff du pipeline graphique
 tools/
-  validators/           validation du contenu et du dépôt
+  validators/           validation du contenu, du dépôt et des assets
 tests/
   e2e/                  parcours Playwright
-docs/                   produit, architecture, ADR et sprints
+docs/                   produit, architecture, audits, ADR et sprints
 ```
 
-## Éléments cibles non encore créés
+## Éléments cibles non encore créés ou non encore intégrés
 
-- renderer isométrique et pipeline d’assets ;
-- package audio ;
-- importeur complet Gargottex ;
-- pipeline d’optimisation des médias ;
-- catalogue complet Bastognac ;
 - Brouhaha et décor interactif ;
+- intégration audio réelle, mixage et médias sonores ;
+- importeur complet Gargottex ;
+- pipeline industriel d’optimisation des médias ;
+- catalogue complet Bastognac ;
+- compétences définitives ;
 - campagne, loot et progression.
 
-Ils seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
+Ils seront ajoutés ou activés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
 
 ## Choix technologiques
 
 - TypeScript strict ;
 - Vite pour le développement et le build ;
 - PWA installable et offline-first ;
-- PixiJS pour le rendu 2D WebGL orthogonal puis isométrique ;
+- PixiJS pour le rendu 2D isométrique ;
 - DOM/CSS pour les menus et interfaces accessibles ;
 - IndexedDB pour les sauvegardes ;
-- Zod pour les schémas de contenu ;
+- Zod pour les schémas de contenu et d’assets ;
 - Vitest pour les tests unitaires ;
 - Playwright pour les parcours navigateur ;
 - GitHub Actions pour la qualité et le déploiement.

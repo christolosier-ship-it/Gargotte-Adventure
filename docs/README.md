@@ -15,14 +15,18 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Structure du dépôt](architecture/repository-structure.md)
 - [Salle tactique](architecture/tactical-room.md)
 - [Décisions d’architecture](adr/README.md)
-- [ADR-0006 — Plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
+- [ADR-0006 - Plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 
 ## Sprints
 
-- [Sprint 0 — cadrage historique](sprints/sprint-0.md)
-- [Sprint 0 — rapport de clôture](sprints/sprint-0-completion.md)
-- [Sprint 1 — rapport de clôture](sprints/sprint-1.md)
-- [Sprint 2 — Plateau isométrique et pipeline graphique](sprints/sprint-2.md)
+- [Sprint 0 - cadrage historique](sprints/sprint-0.md)
+- [Sprint 0 - rapport de clôture](sprints/sprint-0-completion.md)
+- [Sprint 1 - rapport de clôture](sprints/sprint-1.md)
+- [Sprint 2 - rapport de clôture](sprints/sprint-2.md)
+
+## Audits
+
+- [Audit d’alignement du Sprint 2](audits/sprint-2-alignment.md)
 
 ## Design et sources externes
 
@@ -34,7 +38,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 ## Sécurité
 
 - [Gestion des secrets](security/secrets.md)
-- [ADR-0003 — Aucun secret ou appel OpenAI dans le client](adr/0003-no-client-secrets.md)
+- [ADR-0003 - Aucun secret ou appel OpenAI dans le client](adr/0003-no-client-secrets.md)
 
 ## Rôle des différentes sources
 
@@ -58,14 +62,14 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 
 ## État documentaire
 
-Après la décision isométrique :
+Après la clôture du Sprint 2 :
 
-- README aligné sur la version jouable du Sprint 1 ;
-- roadmap réordonnée avec le rendu isométrique en Sprint 2 ;
-- architecture actuelle distinguée de la projection isométrique planifiée ;
-- rapports Sprint 0 et Sprint 1 consolidés ;
-- Sprint 2 cadré avec critères d’acceptation ;
+- README aligné sur la salle isométrique actuelle ;
+- roadmap mise à jour avec le Sprint 2 terminé et le Sprint 3 prochain ;
+- architecture générale alignée sur le renderer et le pipeline d’assets livrés ;
+- rapports Sprint 0, Sprint 1 et Sprint 2 consolidés ;
+- audit d’alignement du Sprint 2 ajouté ;
 - index ADR complet jusqu’à ADR-0006 ;
-- gabarits isométriques et contraintes d’assets documentés ;
-- rapport Sprint 1 présent dans Google Drive ;
-- aucun rig, moteur 3D ou animation squelettique prévu.
+- gabarits isométriques et contraintes d’assets actualisés ;
+- suivi détaillé présent dans Google Drive ;
+- aucun rig, moteur 3D ou animation squelettique introduit.
