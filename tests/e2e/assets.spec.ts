@@ -49,8 +49,9 @@ const bringPointIntoViewport = async (
           : 0;
     if (Math.abs(deltaY) < 1) return point;
     await page.evaluate((offset) => window.scrollBy(0, offset), deltaY);
-    await page.evaluate(() =>
-      new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
     );
   }
   const point = await resolvePoint();
