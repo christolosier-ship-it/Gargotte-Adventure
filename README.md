@@ -68,6 +68,7 @@ packages/renderer            projection isométrique, assets, picking et profond
 packages/ui                  menus, HUD et commandes accessibles
 packages/save                sauvegardes IndexedDB et migrations
 packages/common              types et utilitaires partagés
+packages/audio               fondation de réglages audio, non connectée à la boucle de jeu
 content/bastognac            paquet de contenu du vertical slice
 design/isometric             tokens, gabarits et handoff graphique
 apps/game/public/assets      exports runtime SVG et WebP
