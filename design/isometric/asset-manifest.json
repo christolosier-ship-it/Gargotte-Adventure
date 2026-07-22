@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "status": "design-foundations",
+  "version": 2,
+  "status": "runtime-integrated",
   "figma": {
     "fileKey": "Fx1ZqDlMwsfdfdyjDYJDBE",
     "url": "https://www.figma.com/design/Fx1ZqDlMwsfdfdyjDYJDBE",
@@ -20,7 +20,7 @@
       "driveFileName": "Brunhilda.PNG",
       "role": "hero-pilot",
       "runtimeReady": true,
-      "requiredWork": [
+      "completedWork": [
         "remove-background",
         "crop-transparent-canvas",
         "set-ground-anchor",
@@ -43,7 +43,7 @@
       "driveFileName": "bestiaire_creatures_standards.pdf",
       "role": "enemy-pilot",
       "runtimeReady": true,
-      "requiredWork": [
+      "completedWork": [
         "extract-original-image",
         "remove-background",
         "crop-transparent-canvas",
@@ -74,29 +74,34 @@
         "attackable",
         "blocked"
       ],
-      "status": "figma-ready"
+      "status": "runtime-integrated"
     },
     {
       "id": "wall",
       "figmaNodeId": "7:10",
       "runtimePath": "assets/isometric/walls",
-      "states": ["left", "right"],
-      "status": "figma-ready"
+      "states": ["south-east", "north-east"],
+      "status": "runtime-integrated"
     },
     {
       "id": "ground-shadow",
       "runtimePath": "assets/isometric/common/ground-shadow.svg",
-      "status": "specified"
+      "status": "runtime-integrated"
     },
     {
-      "id": "barrel-placeholder",
-      "runtimePath": "assets/isometric/props/barrel-placeholder.svg",
-      "status": "specified"
+      "id": "fallback-obstacle",
+      "runtimePath": "assets/isometric/props/fallback-obstacle.svg",
+      "status": "runtime-integrated"
     },
     {
-      "id": "impact-placeholder",
-      "runtimePath": "assets/isometric/fx/impact-placeholder.svg",
-      "status": "specified"
+      "id": "impact-test",
+      "runtimePath": "assets/isometric/fx/impact-test.svg",
+      "status": "technical-probe"
+    },
+    {
+      "id": "bastognac-barrel",
+      "runtimePath": "assets/isometric/props/bastognac-barrel.svg",
+      "status": "runtime-integrated"
     }
   ],
   "runtimeExport": {
@@ -117,9 +122,8 @@
       "north-west": "north-east"
     }
   },
-  "remainingFigmaWork": [
+  "optionalFigmaBacklog": [
     "ground-shadow-component",
-    "barrel-placeholder-component",
     "character-source-cards",
     "reference-board-frame",
     "codex-handoff-page"
