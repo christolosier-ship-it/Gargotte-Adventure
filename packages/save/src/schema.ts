@@ -55,7 +55,7 @@ function validateCombatant(
       path: ["hp"],
       message: "hp doit être inférieur ou égal à maxHp",
     });
-  if (combatant.alive !== (combatant.hp > 0))
+  if (combatant.alive !== combatant.hp > 0)
     context.addIssue({
       code: "custom",
       path: ["alive"],
@@ -137,9 +137,7 @@ export const roomStateSchema = z
 
     if (
       room.activeHeroId &&
-      !room.heroes.some(
-        (hero) => hero.id === room.activeHeroId && hero.alive,
-      )
+      !room.heroes.some((hero) => hero.id === room.activeHeroId && hero.alive)
     )
       context.addIssue({
         code: "custom",
