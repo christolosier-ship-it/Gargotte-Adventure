@@ -19,13 +19,22 @@
       "driveFileId": "1PVT0BKb_zf9f3A01gFneRvdXxYYe3hKG",
       "driveFileName": "Brunhilda.PNG",
       "role": "hero-pilot",
-      "runtimeReady": false,
+      "runtimeReady": true,
       "requiredWork": [
         "remove-background",
         "crop-transparent-canvas",
         "set-ground-anchor",
         "export-webp"
-      ]
+      ],
+      "runtimePath": "assets/isometric/characters/brunhilda.webp",
+      "dimensions": {
+        "width": 128,
+        "height": 192
+      },
+      "bytes": 11364,
+      "sha256": "8c474cc2c5a8c41801b2e6d484eea19c1662758b3d6571ddd91ec40073d82fb9",
+      "orientation": "omni",
+      "mirrored": false
     },
     {
       "id": "gobelin-bricoleur",
@@ -33,14 +42,23 @@
       "driveFileId": "1tydL8kQSblMp8N1nsP0xgVxIEE-pCCXy",
       "driveFileName": "bestiaire_creatures_standards.pdf",
       "role": "enemy-pilot",
-      "runtimeReady": false,
+      "runtimeReady": true,
       "requiredWork": [
         "extract-original-image",
         "remove-background",
         "crop-transparent-canvas",
         "set-ground-anchor",
         "export-webp"
-      ]
+      ],
+      "runtimePath": "assets/isometric/characters/gobelin-bricoleur.webp",
+      "dimensions": {
+        "width": 128,
+        "height": 192
+      },
+      "bytes": 12064,
+      "sha256": "4fb8c4b7278d99c069bd54777e2fd87ae47f58ccbac4842cb19c21e0b59492c2",
+      "orientation": "omni",
+      "mirrored": false
     }
   ],
   "components": [

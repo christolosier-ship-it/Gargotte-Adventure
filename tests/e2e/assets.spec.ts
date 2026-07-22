@@ -1,4 +1,67 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
+
+const canvasPointForCell = async (
+  page: Page,
+  position: { column: number; row: number },
+  nudge: { x: number; y: number } = { x: 0, y: 0 },
+) => {
+  const canvas = page.getByRole("img", {
+    name: /Plateau tactique PixiJS/i,
+  });
+  return canvas.evaluate(
+    (element, { position: target, nudge: offset }) => {
+      const projection = JSON.parse(element.dataset.projection ?? "{}");
+      const camera = JSON.parse(element.dataset.camera ?? "{}");
+      const rect = element.getBoundingClientRect();
+      const localX =
+        projection.originX +
+        ((target.column - target.row) * projection.tileWidth) / 2 +
+        offset.x;
+      const localY =
+        projection.originY +
+        ((target.column + target.row) * projection.tileHeight) / 2 +
+        offset.y;
+      return {
+        x: rect.left + camera.offsetX + localX * camera.scale,
+        y: rect.top + camera.offsetY + localY * camera.scale,
+      };
+    },
+    { position, nudge },
+  );
+};
+
+const combatantAssetStatus = async (page: Page, combatantId: string) => {
+  const canvas = page.getByRole("img", {
+    name: /Plateau tactique PixiJS/i,
+  });
+  return canvas.evaluate(
+    (element, id) => element.getAttribute(`data-asset-${id}`),
+    combatantId,
+  );
+};
+
+const expectBrunhildaMoved = async (page: Page) => {
+  const canvas = page.getByRole("img", {
+    name: /Plateau tactique PixiJS/i,
+  });
+  await expect
+    .poll(async () =>
+      canvas.evaluate((element) => {
+        const heroes = JSON.parse(element.dataset.heroes ?? "[]");
+        const brunhilda = heroes.find(
+          (hero: { id: string }) => hero.id === "brunhilda",
+        );
+        return {
+          position: brunhilda?.position,
+          actionsRemaining: brunhilda?.actionsRemaining,
+        };
+      }),
+    )
+    .toEqual({
+      position: { column: 1, row: 0 },
+      actionsRemaining: 2,
+    });
+};
 
 test("reste jouable lorsqu’une texture technique manque réellement", async ({
   page,
@@ -34,40 +97,114 @@ test("reste jouable lorsqu’une texture technique manque réellement", async ({
   await page
     .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
     .click();
-  const point = await canvas.evaluate((element) => {
-    const projection = JSON.parse(element.dataset.projection ?? "{}");
-    const camera = JSON.parse(element.dataset.camera ?? "{}");
-    const rect = element.getBoundingClientRect();
-    const column = 1;
-    const row = 0;
-    const localX =
-      projection.originX + ((column - row) * projection.tileWidth) / 2;
-    const localY =
-      projection.originY + ((column + row) * projection.tileHeight) / 2;
-    return {
-      x: rect.left + camera.offsetX + localX * camera.scale,
-      y: rect.top + camera.offsetY + localY * camera.scale,
-    };
+  const point = await canvasPointForCell(page, { column: 1, row: 0 });
+
+  if (isMobile) await page.touchscreen.tap(point.x, point.y);
+  else await page.mouse.click(point.x, point.y);
+
+  await expectBrunhildaMoved(page);
+});
+
+test("charge les sprites pilotes après un manifeste volontairement retardé", async ({
+  page,
+}) => {
+  const pageErrors: string[] = [];
+  page.on("pageerror", (error) => pageErrors.push(error.message));
+  await page.route("**/assets/isometric/manifest.json", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 350));
+    await route.continue();
   });
 
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+
+  await expect.poll(() => combatantAssetStatus(page, "brunhilda")).toBe("webp");
+  await expect
+    .poll(() => combatantAssetStatus(page, "gobelin-bricoleur"))
+    .toBe("webp");
+  expect(pageErrors).toEqual([]);
+
+  const brunhildaResponse = await page.request.get(
+    "./assets/isometric/characters/brunhilda.webp",
+  );
+  const gobelinResponse = await page.request.get(
+    "./assets/isometric/characters/gobelin-bricoleur.webp",
+  );
+  expect(brunhildaResponse).toBeOK();
+  expect(gobelinResponse).toBeOK();
+});
+
+test("sélectionne Brünhilda en touchant directement sa silhouette WebP", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  const canvas = page.getByRole("img", {
+    name: /Plateau tactique PixiJS/i,
+  });
+  await expect.poll(() => combatantAssetStatus(page, "brunhilda")).toBe("webp");
+
+  const point = await canvasPointForCell(
+    page,
+    { column: 0, row: 0 },
+    { x: 0, y: -48 },
+  );
   if (isMobile) await page.touchscreen.tap(point.x, point.y);
   else await page.mouse.click(point.x, point.y);
 
   await expect
     .poll(async () =>
-      canvas.evaluate((element) => {
-        const heroes = JSON.parse(element.dataset.heroes ?? "[]");
-        const brunhilda = heroes.find(
-          (hero: { id: string }) => hero.id === "brunhilda",
-        );
-        return {
-          position: brunhilda?.position,
-          actionsRemaining: brunhilda?.actionsRemaining,
-        };
-      }),
+      canvas.evaluate((element) => element.dataset.activeHero ?? ""),
     )
-    .toEqual({
-      position: { column: 1, row: 0 },
-      actionsRemaining: 2,
-    });
+    .toBe("brunhilda");
 });
+
+for (const pilot of [
+  {
+    id: "brunhilda",
+    file: "brunhilda.webp",
+    otherId: "gobelin-bricoleur",
+  },
+  {
+    id: "gobelin-bricoleur",
+    file: "gobelin-bricoleur.webp",
+    otherId: "brunhilda",
+  },
+] as const) {
+  test(`conserve les placeholders et le picking si ${pilot.file} échoue`, async ({
+    page,
+    isMobile,
+  }) => {
+    const pageErrors: string[] = [];
+    page.on("pageerror", (error) => pageErrors.push(error.message));
+    await page.route(
+      `**/assets/isometric/characters/${pilot.file}`,
+      async (route) => route.abort("failed"),
+    );
+
+    await page.goto("./");
+    await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+    const canvas = page.getByRole("img", {
+      name: /Plateau tactique PixiJS/i,
+    });
+
+    await expect
+      .poll(() => combatantAssetStatus(page, pilot.id))
+      .toBe("texture-error");
+    await expect
+      .poll(() => combatantAssetStatus(page, pilot.otherId))
+      .toBe("webp");
+    await expect(canvas).toBeVisible();
+
+    await page
+      .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
+      .click();
+    const point = await canvasPointForCell(page, { column: 1, row: 0 });
+    if (isMobile) await page.touchscreen.tap(point.x, point.y);
+    else await page.mouse.click(point.x, point.y);
+
+    await expectBrunhildaMoved(page);
+    expect(pageErrors).toEqual([]);
+  });
+}
