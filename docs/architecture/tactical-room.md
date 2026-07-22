@@ -190,11 +190,11 @@ Chaque segment possède un identifiant stable, par exemple `north:4` ou `east:2`
 Seuls les deux murs situés à l’arrière de la vue courante sont rendus :
 
 | Rotation | Murs physiques visibles |
-| ---: | --- |
-| 0° | nord + ouest |
-| 90° | nord + est |
-| 180° | sud + est |
-| 270° | sud + ouest |
+| -------: | ----------------------- |
+|       0° | nord + ouest            |
+|      90° | nord + est              |
+|     180° | sud + est               |
+|     270° | sud + ouest             |
 
 Les murs devenus proches de l’utilisateur ne sont pas instanciés. Ils ne sont ni conservés devant les unités ni remplacés par une transparence.
 
