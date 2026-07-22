@@ -2,10 +2,7 @@ import { Container, Graphics, Text } from "pixi.js";
 import type { Combatant, HeroState } from "@gargotte/engine";
 import tokens from "../../../../design/isometric/tokens.json";
 import { assetStatusKey } from "../catalog";
-import {
-  isometricPlaceholderTokenGeometry,
-  stableDepth,
-} from "../projection";
+import { isometricPlaceholderTokenGeometry, stableDepth } from "../projection";
 import { addAssetSprite } from "./asset-sprite";
 import type { SceneRenderContext } from "./context";
 import { combatantHitArea } from "./primitives";
