@@ -67,9 +67,9 @@ describe("vue caméra isométrique", () => {
   });
 
   it("conserve des identifiants physiques stables pour les futurs éléments muraux", () => {
-    expect(roomWallSegments(dimensions, "north").map((wall) => wall.id)).toEqual(
-      Array.from({ length: 8 }, (_, index) => `north:${index}`),
-    );
+    expect(
+      roomWallSegments(dimensions, "north").map((wall) => wall.id),
+    ).toEqual(Array.from({ length: 8 }, (_, index) => `north:${index}`));
     expect(roomWallSegments(dimensions, "east").map((wall) => wall.id)).toEqual(
       Array.from({ length: 4 }, (_, index) => `east:${index}`),
     );
@@ -101,10 +101,26 @@ describe("vue caméra isométrique", () => {
   it("fait suivre un élément mural fictif à son mur physique", () => {
     const northDoor = roomWallSegments(dimensions, "north")[4];
     expect(northDoor?.id).toBe("north:4");
-    expect(visibleWallSegments(dimensions, 0).some((wall) => wall.id === northDoor?.id)).toBe(true);
-    expect(visibleWallSegments(dimensions, 90).some((wall) => wall.id === northDoor?.id)).toBe(true);
-    expect(visibleWallSegments(dimensions, 180).some((wall) => wall.id === northDoor?.id)).toBe(false);
-    expect(visibleWallSegments(dimensions, 270).some((wall) => wall.id === northDoor?.id)).toBe(false);
+    expect(
+      visibleWallSegments(dimensions, 0).some(
+        (wall) => wall.id === northDoor?.id,
+      ),
+    ).toBe(true);
+    expect(
+      visibleWallSegments(dimensions, 90).some(
+        (wall) => wall.id === northDoor?.id,
+      ),
+    ).toBe(true);
+    expect(
+      visibleWallSegments(dimensions, 180).some(
+        (wall) => wall.id === northDoor?.id,
+      ),
+    ).toBe(false);
+    expect(
+      visibleWallSegments(dimensions, 270).some(
+        (wall) => wall.id === northDoor?.id,
+      ),
+    ).toBe(false);
   });
 
   it("fait correspondre les côtés physiques aux côtés visuels attendus", () => {
