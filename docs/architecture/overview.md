@@ -116,6 +116,10 @@ Les textures restent indépendantes du gameplay. Une panne de manifeste ou d’a
 - le bouton de lancement reste désactivé jusqu’à la fin de l’initialisation du renderer et des sauvegardes ;
 - les commandes DOM restent disponibles même si l’interaction canvas échoue.
 
+### Fondation audio
+
+`packages/audio` existe déjà sous la forme d’un socle minimal de réglages et d’un `AudioDirector`. Il n’est pas encore connecté à `apps/game`, ne charge aucun média sonore et ne participe pas à la boucle de jeu. L’intégration audio réelle reste une cible ultérieure.
+
 ### Plateforme
 
 - PWA Vite installable et offline-first ;
@@ -186,6 +190,7 @@ packages/
   ui/                   interface DOM accessible
   save/                 persistance et migrations IndexedDB
   common/               types et utilitaires partagés
+  audio/                fondation de réglages, non intégrée à la boucle de jeu
 content/
   bastognac/            contenu validé du vertical slice
 design/
@@ -197,17 +202,17 @@ tests/
 docs/                   produit, architecture, audits, ADR et sprints
 ```
 
-## Éléments cibles non encore créés
+## Éléments cibles non encore créés ou non encore intégrés
 
 - Brouhaha et décor interactif ;
-- package audio ;
+- intégration audio réelle, mixage et médias sonores ;
 - importeur complet Gargottex ;
 - pipeline industriel d’optimisation des médias ;
 - catalogue complet Bastognac ;
 - compétences définitives ;
 - campagne, loot et progression.
 
-Ils seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
+Ils seront ajoutés ou activés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
 
 ## Choix technologiques
 
