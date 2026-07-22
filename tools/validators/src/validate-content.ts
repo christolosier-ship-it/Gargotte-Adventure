@@ -5,10 +5,7 @@ import {
   parseDungeon,
   parseTacticalRoom,
 } from "@gargotte/content-schema";
-import {
-  assetBudgets,
-  validateRuntimeAssetManifest,
-} from "@gargotte/renderer";
+import { assetBudgets, validateRuntimeAssetManifest } from "@gargotte/renderer";
 
 const packDirectory = resolve("content/bastognac");
 const manifest = parseContentManifest(
