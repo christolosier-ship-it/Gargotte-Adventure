@@ -1,13 +1,7 @@
 export { createTabletopRenderer } from "./tabletop-renderer";
 export type { TabletopRenderer, TacticalHighlights } from "./types";
-export {
-  alternatingAssetId,
-  assetStatusKey,
-} from "./catalog";
-export type {
-  AssetPreloadRequest,
-  TabletopAssetCatalog,
-} from "./catalog";
+export { alternatingAssetId, assetStatusKey } from "./catalog";
+export type { AssetPreloadRequest, TabletopAssetCatalog } from "./catalog";
 export {
   buildRoomProjection,
   calculateIsometricGridBounds,
