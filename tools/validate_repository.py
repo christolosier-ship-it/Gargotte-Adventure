@@ -79,7 +79,7 @@ def iter_text_files() -> list[Path]:
 
 def read_webp_dimensions(path: Path) -> tuple[int, int] | None:
     data = path.read_bytes()
-    if len(data) < 30 or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
+    if len(data) < 20 or data[:4] != b"RIFF" or data[8:12] != b"WEBP":
         return None
     offset = 12
     while offset + 8 <= len(data):
@@ -89,6 +89,19 @@ def read_webp_dimensions(path: Path) -> tuple[int, int] | None:
         if chunk == b"VP8X" and payload + 10 <= len(data):
             width = 1 + int.from_bytes(data[payload + 4 : payload + 7], "little")
             height = 1 + int.from_bytes(data[payload + 7 : payload + 10], "little")
+            return width, height
+        if chunk == b"VP8 " and payload + 10 <= len(data):
+            if data[payload + 3 : payload + 6] != b"\x9d\x01\x2a":
+                return None
+            width = struct.unpack("<H", data[payload + 6 : payload + 8])[0] & 0x3FFF
+            height = struct.unpack("<H", data[payload + 8 : payload + 10])[0] & 0x3FFF
+            return width, height
+        if chunk == b"VP8L" and payload + 5 <= len(data):
+            if data[payload] != 0x2F:
+                return None
+            bits = int.from_bytes(data[payload + 1 : payload + 5], "little")
+            width = 1 + (bits & 0x3FFF)
+            height = 1 + ((bits >> 14) & 0x3FFF)
             return width, height
         offset = payload + size + (size % 2)
     return None
@@ -164,11 +177,18 @@ def validate_isometric_assets(errors: list[str]) -> None:
                 errors.append(f"{asset_id}: poids {size} octets > budget {budget}")
             if suffix == ".webp":
                 dimensions = read_webp_dimensions(file_path)
-                expected = (asset.get("dimensions", {}).get("width"), asset.get("dimensions", {}).get("height"))
+                expected = (
+                    asset.get("dimensions", {}).get("width"),
+                    asset.get("dimensions", {}).get("height"),
+                )
                 if dimensions is None:
                     errors.append(f"{asset_id}: format WebP invalide ({path_value})")
                 elif dimensions != expected:
-                    errors.append(f"{asset_id}: dimensions WebP {dimensions[0]}×{dimensions[1]} incohérentes avec le manifeste {expected[0]}×{expected[1]} ({path_value})")
+                    errors.append(
+                        f"{asset_id}: dimensions WebP "
+                        f"{dimensions[0]}×{dimensions[1]} incohérentes avec le "
+                        f"manifeste {expected[0]}×{expected[1]} ({path_value})"
+                    )
 
         asset_budget = int(asset.get("budgetBytes", 0))
         category_limit = (
