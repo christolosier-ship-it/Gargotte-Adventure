@@ -18,6 +18,7 @@ Gargotte-Adventure/
 │       ├── public/assets/isometric/
 │       └── src/
 ├── packages/
+│   ├── audio/
 │   ├── common/
 │   ├── content-schema/
 │   ├── engine/
@@ -132,6 +133,17 @@ Persistance IndexedDB :
 
 Types, constantes et utilitaires partagés qui ne relèvent pas directement des règles tactiques.
 
+### `packages/audio`
+
+Socle minimal déjà présent :
+
+- type de réglages audio ;
+- volume principal borné entre 0 et 1 ;
+- état muet ;
+- `AudioDirector` de configuration.
+
+Ce package n’est pas encore importé par `apps/game`, ne charge aucun média et ne produit aucun son. Il constitue une fondation inactive, pas une fonctionnalité audio livrée.
+
 ### `design/isometric`
 
 Handoff graphique versionné :
@@ -211,20 +223,21 @@ Le moteur ne dépend d’aucune couche applicative.
 
 Le renderer dépend des types sérialisables du moteur, mais le moteur ne connaît ni le renderer, ni le manifeste d’assets.
 
+`packages/audio` ne possède actuellement aucun consommateur applicatif. Une dépendance depuis `apps/game` ne sera ajoutée que lors d’une intégration audio testée.
+
 ## Extensions cibles
 
 Ces dossiers sont prévus mais ne doivent être créés que lorsqu’un sprint les rend utiles :
 
 ```text
-packages/
-  audio/                mixage, musique et effets sonores
-
 tools/
   content-importer/     conversion des exports Gargottex
   asset-pipeline/       optimisation industrielle des médias
 ```
 
 Le registre et la validation runtime des assets isométriques existent déjà dans `packages/renderer` et `tools/validate_repository.py`. Un futur `tools/asset-pipeline` ne sera créé que pour automatiser une production plus importante.
+
+L’intégration audio réelle, les médias sonores et le mixage restent également des cibles futures, mais le package `packages/audio` existe déjà comme fondation minimale.
 
 D’autres packages ne seront ajoutés que si une responsabilité stable ne peut pas rester dans un module existant.
 
