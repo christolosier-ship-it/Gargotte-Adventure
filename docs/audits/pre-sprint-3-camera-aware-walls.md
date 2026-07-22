@@ -9,11 +9,11 @@ Une validation sur iPad a montré que la vue initiale dessinait le mur sud au pr
 La salle possède quatre côtés physiques permanents : nord, est, sud et ouest. La caméra n’affiche que les deux côtés situés à l’arrière de la vue courante.
 
 | Rotation | Murs physiques rendus |
-| ---: | --- |
-| 0° | nord + ouest |
-| 90° | nord + est |
-| 180° | sud + est |
-| 270° | sud + ouest |
+| -------: | --------------------- |
+|       0° | nord + ouest          |
+|      90° | nord + est            |
+|     180° | sud + est             |
+|     270° | sud + ouest           |
 
 Les murs devenus proches de l’utilisateur ne sont pas rendus et ne sont pas remplacés par une transparence. Les deux murs visibles sont projetés sur les côtés nord et ouest de la vue isométrique.
 
