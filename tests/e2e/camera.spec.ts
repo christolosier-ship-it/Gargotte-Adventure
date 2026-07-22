@@ -29,7 +29,9 @@ const readScene = async (page: Page): Promise<CanvasScene> =>
   canvasLocator(page).evaluate((element) => ({
     rotation: Number(element.dataset.viewRotation) as CameraRotation,
     visibleWalls: JSON.parse(element.dataset.visibleWalls ?? "[]") as string[],
-    wallSegments: JSON.parse(element.dataset.wallSegments ?? "[]") as CanvasScene["wallSegments"],
+    wallSegments: JSON.parse(
+      element.dataset.wallSegments ?? "[]",
+    ) as CanvasScene["wallSegments"],
     heroes: JSON.parse(element.dataset.heroes ?? "[]") as CanvasScene["heroes"],
   }));
 
@@ -134,9 +136,7 @@ test("n'affiche que les deux murs arrière pendant quatre rotations", async ({
         .click();
   }
 
-  await page
-    .getByRole("button", { name: /Pivoter la caméra de 90°/ })
-    .click();
+  await page.getByRole("button", { name: /Pivoter la caméra de 90°/ }).click();
   await expect.poll(async () => (await readScene(page)).rotation).toBe(0);
   await expect(page.getByText("Vue : 0°")).toBeVisible();
 });
@@ -150,9 +150,7 @@ test("conserve le picking logique après une rotation de 90°", async ({
   await page
     .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
     .click();
-  await page
-    .getByRole("button", { name: /Pivoter la caméra de 90°/ })
-    .click();
+  await page.getByRole("button", { name: /Pivoter la caméra de 90°/ }).click();
   await expect.poll(async () => (await readScene(page)).rotation).toBe(90);
 
   const target = { column: 1, row: 0 };
@@ -168,9 +166,7 @@ test("réinitialise la caméra sans modifier la salle sauvegardée", async ({
 }) => {
   await page.goto("./");
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
-  await page
-    .getByRole("button", { name: /Pivoter la caméra de 90°/ })
-    .click();
+  await page.getByRole("button", { name: /Pivoter la caméra de 90°/ }).click();
   await expect.poll(async () => (await readScene(page)).rotation).toBe(90);
   const beforeReload = (await readScene(page)).heroes.map((hero) => ({
     id: hero.id,
