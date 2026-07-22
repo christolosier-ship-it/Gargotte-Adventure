@@ -170,9 +170,8 @@ function renderTacticalActions(): void {
 }
 
 const render = (
-  saveText = storedRoom && storedRoom !== "legacy"
-    ? "Salle restaurée"
-    : "Prête",
+  saveText =
+    storedRoom && storedRoom !== "legacy" ? "Salle restaurée" : "Prête",
 ) => {
   const active = room?.heroes.find((hero) => hero.id === room?.activeHeroId);
   shell.update({
@@ -180,6 +179,8 @@ const render = (
     tacticalPhase: room?.phase ?? null,
     expeditionNumber: state.expeditionNumber,
     canContinue: Boolean(room),
+    canRotateCamera: Boolean(room),
+    cameraRotation: renderer.getCameraRotation(),
     saveText,
     actions: active?.actionsRemaining ?? 0,
     activeHero: active?.name ?? null,
@@ -265,6 +266,13 @@ shell.continueButton.addEventListener("click", () => {
     shell.appendEvent("Reprise de la salle sauvegardée.");
     render("Salle restaurée");
   }
+});
+
+shell.rotateCameraButton.addEventListener("click", () => {
+  if (!room) return;
+  const rotation = renderer.rotateCamera();
+  shell.cameraStatus.textContent = `Vue : ${rotation}°`;
+  shell.appendEvent(`Caméra pivotée à ${rotation}°.`);
 });
 
 shell.endActivationButton.addEventListener("click", () => {
