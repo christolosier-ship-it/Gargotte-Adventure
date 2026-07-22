@@ -1,15 +1,14 @@
 import { Polygon } from "pixi.js";
-import { samePosition, type GridPosition, type RoomState } from "@gargotte/engine";
+import {
+  samePosition,
+  type GridPosition,
+  type RoomState,
+} from "@gargotte/engine";
 import tokens from "../../../../design/isometric/tokens.json";
 import { isometricTileGeometry } from "../projection";
 
 export type TileState =
-  | "base"
-  | "alternate"
-  | "reachable"
-  | "selected"
-  | "attackable"
-  | "blocked";
+  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
 
 export const tileHitArea = new Polygon([
   0,
@@ -23,20 +22,10 @@ export const tileHitArea = new Polygon([
 ]);
 
 export const combatantHitArea = new Polygon([
-  -48,
-  -96,
-  48,
-  -96,
-  48,
-  12,
-  -48,
-  12,
+  -48, -96, 48, -96, 48, 12, -48, 12,
 ]);
 
-export const tileStyle: Record<
-  TileState,
-  { color: number; alpha: number }
-> = {
+export const tileStyle: Record<TileState, { color: number; alpha: number }> = {
   base: { color: tokenNumber(tokens.color.primitive.stoneDark), alpha: 1 },
   alternate: { color: tokenNumber(tokens.color.primitive.stoneMid), alpha: 1 },
   reachable: {
