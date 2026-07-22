@@ -28,7 +28,9 @@ test("reste jouable lorsqu’une texture technique manque réellement", async ({
   await enterRoom(page);
   const canvas = canvasLocator(page);
   await expect
-    .poll(async () => canvas.evaluate((element) => element.dataset.assetManifest))
+    .poll(async () =>
+      canvas.evaluate((element) => element.dataset.assetManifest),
+    )
     .toBe("loaded");
   await expect.poll(() => requestWasBlocked).toBe(true);
   await expect.poll(() => assetErrors.length).toBeGreaterThan(0);
