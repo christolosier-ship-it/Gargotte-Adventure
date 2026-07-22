@@ -1,7 +1,4 @@
-import {
-  parseDungeon,
-  parseTacticalRoom,
-} from "@gargotte/content-schema";
+import { parseDungeon, parseTacticalRoom } from "@gargotte/content-schema";
 import type { TabletopAssetCatalog } from "@gargotte/renderer";
 import dungeonData from "../../../content/bastognac/dungeon.json";
 import roomData from "../../../content/bastognac/sprint-1-room.json";
@@ -12,10 +9,7 @@ export const bastognacRoom = parseTacticalRoom(roomData);
 export const bastognacAssetCatalog: TabletopAssetCatalog = {
   canvasLabel: "Plateau tactique PixiJS de Bastognac",
   roomTitle: "BASTOGNAC · SALLE TACTIQUE",
-  floorAssetIds: [
-    "tile.bastognac-floor-a",
-    "tile.bastognac-floor-b",
-  ],
+  floorAssetIds: ["tile.bastognac-floor-a", "tile.bastognac-floor-b"],
   wallAssetId: "wall.bastognac",
   obstacleAssetId: "prop.bastognac-barrel",
   groundShadowAssetId: "common.ground-shadow",
