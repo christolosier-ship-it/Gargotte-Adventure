@@ -1,6 +1,10 @@
 import type { RoomState } from "@gargotte/engine";
 import type { IsometricBounds } from "../projection";
-import { visibleBackSides, type GridDimensions, type VisibleWallSegment } from "../view";
+import {
+  visibleBackSides,
+  type GridDimensions,
+  type VisibleWallSegment,
+} from "../view";
 import type { SceneRenderContext } from "./context";
 
 export function setCombatantAssetStatus(
@@ -30,7 +34,9 @@ export function exposeSceneState(
   context.canvas.dataset.turn = String(state.turn);
   context.canvas.dataset.activeHero = state.activeHeroId ?? "";
   context.canvas.dataset.viewRotation = String(context.rotation);
-  context.canvas.dataset.roomDimensions = JSON.stringify(context.roomDimensions);
+  context.canvas.dataset.roomDimensions = JSON.stringify(
+    context.roomDimensions,
+  );
   context.canvas.dataset.viewDimensions = JSON.stringify(viewedDimensions);
   context.canvas.dataset.visibleWalls = JSON.stringify(
     visibleBackSides(context.rotation),
