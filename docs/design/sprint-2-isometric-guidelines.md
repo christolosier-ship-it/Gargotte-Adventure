@@ -1,8 +1,10 @@
-# Design Sprint 2 — Gabarits isométriques
+# Design Sprint 2 - Gabarits isométriques
 
 ## Statut
 
-Direction validée, assets définitifs non encore produits.
+Direction validée et prototype pilote livré.
+
+Les gabarits, tokens et règles d’ancrage sont versionnés dans le dépôt. Les assets pilotes de Brünhilda, du Gobelin Bricoleur et de l’environnement Bastognac sont intégrés dans la PWA.
 
 ## Intention
 
@@ -20,16 +22,16 @@ Le plateau doit évoquer un petit diorama tactique lisible, chaleureux et légè
 
 ## Tuile de référence
 
-La première hypothèse à prototyper est :
+Le gabarit runtime validé est :
 
 - largeur : 128 px ;
 - hauteur : 64 px ;
 - centre logique au centre du losange ;
 - grille dessinée et grille interactive alignées ;
 - marge transparente autorisée pour les objets hauts ;
-- export WebP ou PNG transparent selon le besoin.
+- export runtime SVG ou WebP uniquement.
 
-Ces dimensions ne deviennent définitives qu’après test sur téléphone et tablette.
+Les sources maîtres peuvent utiliser d’autres formats sur Google Drive, mais le dépôt public runtime ne reçoit ni PNG, ni PDF, ni PSD.
 
 ## Personnages
 
@@ -45,7 +47,11 @@ Les personnages sont des illustrations 2D, pas des modèles animés.
 - débordement vertical autorisé ;
 - cohérence stricte d’échelle entre héros et créatures.
 
+Le prototype Sprint 2 utilise une orientation omnidirectionnelle pour Brünhilda et le Gobelin Bricoleur, avec un canvas commun 128 × 192 et un ancrage autour de 92 % de la hauteur.
+
 ### Micro-animations
+
+Les personnages peuvent rester fixes. Les micro-animations suivantes sont autorisées lorsqu’elles servent une interaction réelle :
 
 - respiration ou flottement de très faible amplitude ;
 - interpolation pendant le déplacement ;
@@ -55,19 +61,21 @@ Les personnages sont des illustrations 2D, pas des modèles animés.
 - aucune animation squelettique ;
 - aucun rig.
 
-## Décor
+Aucune micro-animation n’est obligatoire pour valider le prototype graphique.
 
-Le prototype utilise seulement :
+## Décor pilote
 
-- un sol ;
-- un mur ou bord ;
-- un obstacle ;
+Le Sprint 2 livre :
+
+- deux variantes de sol Bastognac ;
+- deux orientations de mur ;
+- un tonneau statique utilisé comme obstacle ;
 - une ombre ;
-- un overlay atteignable ;
-- un overlay attaquable ;
-- un effet d’impact.
+- des overlays atteignable, sélectionné, attaquable et bloqué ;
+- un effet d’impact technique disponible dans le manifeste ;
+- des fallbacks vectoriels.
 
-Le Brouhaha, les tonneaux, tables, grilles, torches et réactions en chaîne arrivent après stabilisation du renderer isométrique.
+Le tonneau du Sprint 2 est uniquement une représentation visuelle d’un obstacle logique. Les tonneaux interactifs, tables, grilles, torches, piliers et réactions en chaîne appartiennent au Sprint 3.
 
 ## Lisibilité tactique
 
@@ -82,13 +90,13 @@ Chaque état doit rester identifiable malgré la richesse du décor :
 - victoire ;
 - défaite.
 
-Les overlays ne doivent pas dépendre uniquement d’une variation subtile de couleur.
+Les overlays ne doivent pas dépendre uniquement d’une variation subtile de couleur. Le prototype utilise une combinaison de remplissage, contour, épaisseur et contraste.
 
 ## Occlusion
 
 Les éléments hauts peuvent masquer temporairement une unité, mais jamais rendre une action essentielle impossible.
 
-Solutions autorisées :
+Solutions retenues ou autorisées :
 
 - transparence contextuelle ;
 - réduction d’opacité ;
@@ -96,7 +104,9 @@ Solutions autorisées :
 - masquage temporaire d’un mur ;
 - priorité visuelle aux unités sélectionnées.
 
-## États à formaliser dans Figma
+Le prototype réduit l’opacité des murs lorsqu’ils recouvrent une position active, atteignable ou attaquable. Les murs restent non interactifs.
+
+## États à maintenir dans les futures maquettes
 
 1. salle isométrique vide ;
 2. héros sélectionné ;
@@ -110,7 +120,7 @@ Solutions autorisées :
 10. téléphone paysage ;
 11. tablette paysage.
 
-## Composants et gabarits Figma
+## Composants et gabarits
 
 - tuile isométrique ;
 - grille de placement ;
@@ -126,16 +136,27 @@ Solutions autorisées :
 - effet d’impact ;
 - HUD existant adapté au nouvel encombrement visuel.
 
-## Convention de nommage proposée
+Les fondations Figma sont partielles à cause des limites du plan Starter. Les fichiers versionnés dans `design/isometric` et le manifeste runtime constituent le handoff technique de référence.
+
+## Convention de nommage runtime
 
 ```text
-assets/isometric/tiles/<theme>/<asset>.webp
-assets/isometric/props/<theme>/<asset>.webp
-assets/isometric/characters/<id>/<orientation>.webp
-assets/isometric/effects/<effect>.webp
+apps/game/public/assets/isometric/tiles/<asset>.svg
+apps/game/public/assets/isometric/walls/<asset>.svg
+apps/game/public/assets/isometric/props/<asset>.svg
+apps/game/public/assets/isometric/characters/<asset>.webp
+apps/game/public/assets/isometric/fx/<asset>.svg
 ```
 
-Le nommage définitif doit être synchronisé avec le manifeste d’assets implémenté pendant le Sprint 2.
+Les identifiants logiques restent indépendants des chemins et sont déclarés dans le manifeste runtime.
+
+## Budget
+
+- 1 Mio maximum pour le pilote complet ;
+- 250 Kio maximum par sprite pilote ;
+- 100 Kio maximum par asset technique ou environnemental ;
+- SVG et WebP uniquement ;
+- cache partagé pour éviter les chargements en double.
 
 ## Critère de réussite visuel
 
