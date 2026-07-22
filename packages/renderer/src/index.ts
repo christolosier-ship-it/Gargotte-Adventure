@@ -45,12 +45,7 @@ export interface TabletopRenderer {
 }
 
 type TileState =
-  | "base"
-  | "alternate"
-  | "reachable"
-  | "selected"
-  | "attackable"
-  | "blocked";
+  "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
 type SceneLayers = Record<
   "backdrop" | "floor" | "object" | "foreground" | "interface",
   Container
@@ -261,10 +256,7 @@ export async function createTabletopRenderer(
     onLoaded?: () => void;
   }): Promise<void> {
     const manifestLoaded = await manifestReady;
-    if (
-      options.generation !== renderGeneration ||
-      options.container.destroyed
-    )
+    if (options.generation !== renderGeneration || options.container.destroyed)
       return;
     if (!manifestLoaded) {
       setEnvironmentAssetStatus(options.statusKey, "manifest-missing");
@@ -274,10 +266,7 @@ export async function createTabletopRenderer(
       options.assetId,
       options.orientation ?? "omni",
     );
-    if (
-      options.generation !== renderGeneration ||
-      options.container.destroyed
-    )
+    if (options.generation !== renderGeneration || options.container.destroyed)
       return;
     if (!result.ok) {
       setEnvironmentAssetStatus(options.statusKey, result.reason);
@@ -374,11 +363,7 @@ export async function createTabletopRenderer(
     obstacle.eventMode = "none";
     obstacle.label = `obstacle:${position.column},${position.row}`;
     obstacle.position.set(screen.x, screen.y);
-    obstacle.zIndex = stableDepth(
-      screen.y,
-      currentProjection.tileHeight,
-      100,
-    );
+    obstacle.zIndex = stableDepth(screen.y, currentProjection.tileHeight, 100);
     const fallback = new Graphics()
       .roundRect(-22, -46, 44, 58, 8)
       .fill({
