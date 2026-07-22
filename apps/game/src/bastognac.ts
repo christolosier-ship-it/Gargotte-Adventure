@@ -22,6 +22,7 @@ export const bastognacAssetCatalog: TabletopAssetCatalog = {
     { id: "tile.fallback" },
     { id: "wall.fallback", orientation: "south-east" },
     { id: "prop.fallback-obstacle" },
+    { id: "fx.impact-test" },
     { id: "tile.bastognac-floor-a" },
     { id: "tile.bastognac-floor-b" },
     { id: "wall.bastognac", orientation: "south-east" },
