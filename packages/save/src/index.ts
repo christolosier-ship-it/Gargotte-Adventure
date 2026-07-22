@@ -1,9 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { GameState, RoomState } from "@gargotte/engine";
-import {
-  parseSavedGameState,
-  parseSavedRoomPayload,
-} from "./schema";
+import { parseSavedGameState, parseSavedRoomPayload } from "./schema";
 
 interface SaveRecord {
   id: string;
