@@ -1,5 +1,9 @@
 import { Graphics, Text } from "pixi.js";
-import { samePosition, type GridPosition, type RoomState } from "@gargotte/engine";
+import {
+  samePosition,
+  type GridPosition,
+  type RoomState,
+} from "@gargotte/engine";
 import { defaultCameraMargins, type IsometricBounds } from "../projection";
 import type { TacticalHighlights } from "../types";
 import type { VisibleWallSegment } from "../view";
@@ -40,9 +44,7 @@ export function renderRoomScene(
   context.layers.interface.addChild(title);
 
   const attackablePositions = state.enemies
-    .filter(
-      (enemy) => enemy.alive && highlights.attackable.includes(enemy.id),
-    )
+    .filter((enemy) => enemy.alive && highlights.attackable.includes(enemy.id))
     .map((enemy) => enemy.position);
 
   for (let row = 0; row < state.height; row += 1)
