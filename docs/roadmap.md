@@ -8,8 +8,8 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 | ------------------------------------------ | ---------- | ------------------------------------------------------------------------------ |
 | Sprint 0 — Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
 | Sprint 1 — Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
-| Sprint 2 — Plateau isométrique             | Prochain   | Même salle jouable en 2D isométrique avec pipeline graphique minimal           |
-| Sprint 3 — Brouhaha et décor               | À venir    | Le plateau devient un système vivant, interactif et explicable                 |
+| Sprint 2 — Plateau isométrique             | ✅ Terminé | Même salle jouable en 2D isométrique avec pipeline graphique minimal           |
+| Sprint 3 — Brouhaha et décor               | Prochain   | Le plateau devient un système vivant, interactif et explicable                 |
 | Sprint 4 — Héros et créatures de Bastognac | À venir    | Rôles, compétences et comportements définitifs                                 |
 | Sprint 5 — Donjon complet et finition      | À venir    | Cinq étages, loot, boss, médias enrichis, audio, accessibilité et performances |
 
@@ -49,29 +49,33 @@ Livré :
 
 **Sortie obtenue :** une salle jouable de bout en bout, sauvegardable et reproductible sur navigateur.
 
-## Sprint 2 — Plateau isométrique et pipeline graphique
+## Sprint 2 — Plateau isométrique et pipeline graphique ✅
 
-Objectif : donner au jeu sa direction visuelle cible avant d’ajouter le Brouhaha et les nombreux objets interactifs.
+Objectif atteint : donner au jeu sa direction visuelle cible avant d’ajouter le Brouhaha et les nombreux objets interactifs.
 
-Périmètre :
+Livré :
 
 - projection 2D isométrique sous PixiJS ;
 - grille logique et moteur tactique inchangés ;
 - picking et interactions tactiles fiables ;
 - caméra et redimensionnement adaptés au paysage ;
 - tri de profondeur stable ;
+- couches explicites pour fond, sol, objets, premier plan et interface ;
+- murs non bloquants avec réduction d’opacité sur les positions importantes ;
 - tuiles, murs, obstacles, ombres et overlays isométriques ;
-- personnages en sprites 2D fixes ou très légèrement animés ;
-- aucune 3D, aucun rig et aucune animation squelettique ;
-- premier pipeline versionné d’assets ;
-- Brünhilda et un gobelin comme assets pilotes ;
+- pipeline versionné d’assets avec manifeste validé, cache centralisé et fallbacks ;
+- Brünhilda et le Gobelin Bricoleur comme sprites pilotes ;
 - placeholders compatibles pour le reste du casting ;
-- tests de projection, picking, profondeur et non-régression du gameplay ;
-- mesure du poids des textures et des performances mobile.
+- premier environnement Bastognac avec deux sols, deux murs et un tonneau ;
+- budgets et poids d’assets documentés ;
+- tests de projection, picking, profondeur, fallbacks et non-régression du gameplay ;
+- validation desktop et mobile paysage.
 
-**Sortie attendue :** la salle Sprint 1 reste identique du point de vue des règles, mais devient jouable avec une présentation isométrique cohérente et un pipeline graphique réutilisable.
+Les micro-animations procédurales restent volontairement facultatives : le Sprint 2 a validé le renderer et le pipeline sans devenir un chantier d’animation. Elles pourront être ajoutées progressivement lorsqu’elles servent une interaction ou un effet du Sprint 3.
 
-Le cadrage détaillé se trouve dans [Sprint 2 — Plateau isométrique et pipeline graphique](sprints/sprint-2.md).
+**Sortie obtenue :** la salle Sprint 1 conserve exactement les mêmes règles et sauvegardes, mais elle est désormais jouable avec une présentation isométrique cohérente et un pipeline graphique réutilisable.
+
+Le cadrage détaillé et le rapport de clôture se trouvent dans [Sprint 2 — Plateau isométrique et pipeline graphique](sprints/sprint-2.md).
 
 ## Sprint 3 — Brouhaha et décor
 
