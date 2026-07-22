@@ -111,9 +111,7 @@ export class GameController {
     this.renderer.onEnemySelected(this.handleAttack);
 
     this.shell.startButton.disabled = false;
-    this.render(
-      this.roomWasRestored ? "Salle restaurée" : "Prête",
-    );
+    this.render(this.roomWasRestored ? "Salle restaurée" : "Prête");
     this.shell.appendEvent(`${this.dungeon.name} chargé · ${BUILD_LABEL}.`);
   }
 
@@ -245,7 +243,10 @@ export class GameController {
 
   private readonly handleHeroSelection = (heroId: string): void => {
     if (!this.room) return;
-    this.applyResult(selectHero(this.room, heroId), `Héros sélectionné: ${heroId}.`);
+    this.applyResult(
+      selectHero(this.room, heroId),
+      `Héros sélectionné: ${heroId}.`,
+    );
   };
 
   private readonly handleMove = (position: GridPosition): void => {
