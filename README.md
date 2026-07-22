@@ -6,7 +6,7 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 
 ## État du projet
 
-**Sprint 1 — Boucle tactique d’une salle : livré**
+**Sprint 2 - Plateau isométrique et pipeline graphique : livré**
 
 La version actuelle permet de :
 
@@ -17,28 +17,29 @@ La version actuelle permet de :
 - résoudre un tour ennemi explicable et reproductible ;
 - gagner ou perdre la salle ;
 - sauvegarder et reprendre la partie avec IndexedDB ;
-- jouer au clavier, à la souris ou sur écran tactile en paysage.
+- jouer au clavier, à la souris ou sur écran tactile en paysage ;
+- utiliser un plateau 2D isométrique PixiJS avec caméra responsive ;
+- sélectionner les cases et combattants directement sur le canvas ;
+- afficher des sols, murs, obstacles et sprites pilotes Bastognac ;
+- rester jouable grâce aux fallbacks si un asset ne charge pas.
 
-Les personnages, statistiques, obstacles et ennemis du scénario restent provisoires.
+Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, les statistiques, les compétences et une partie du bestiaire restent provisoires.
 
-## Prochaine étape
+## Prochaine étape théorique
 
-**Sprint 2 — Plateau 2D isométrique et pipeline graphique**
+**Sprint 3 - Brouhaha et décor interactif**
 
-Le prochain sprint doit conserver exactement la même logique tactique tout en remplaçant la grille orthogonale provisoire par un plateau isométrique sous PixiJS.
+Le prochain sprint doit exploiter le socle isométrique pour introduire :
 
-La direction retenue est :
+- la jauge de Brouhaha 0-12 ;
+- les événements et seuils associés ;
+- les objets interactifs ;
+- les réactions en chaîne ;
+- un journal explicatif enrichi ;
+- les nouveaux états de sauvegarde ;
+- les premiers effets visuels et sonores liés au décor.
 
-- grille logique 2D inchangée ;
-- projection isométrique gérée uniquement par le renderer ;
-- personnages en sprites 2D fixes ou très légèrement animés ;
-- aucun rig, squelette, modèle 3D ou moteur 3D ;
-- tuiles, murs, obstacles, ombres et overlays adaptés ;
-- tri de profondeur et interactions tactiles fiables ;
-- premier pipeline versionné d’assets ;
-- Brünhilda et un gobelin comme assets pilotes.
-
-Le Brouhaha et le décor interactif sont repoussés au Sprint 3 afin d’être construits directement sur ce socle visuel.
+Le démarrage du Sprint 3 reste précédé d’une phase d’ajustements produit et visuels sur la version Sprint 2.
 
 ## Héros disponibles
 
@@ -63,12 +64,14 @@ Le Brouhaha et le décor interactif sont repoussés au Sprint 3 afin d’être c
 apps/game                    composition de la PWA et orchestration
 packages/engine              moteur déterministe et salle tactique
 packages/content-schema      validation Zod du contenu
-packages/renderer            plateau PixiJS, projection isométrique prévue au Sprint 2
+packages/renderer            projection isométrique, assets, picking et profondeur PixiJS
 packages/ui                  menus, HUD et commandes accessibles
 packages/save                sauvegardes IndexedDB et migrations
 packages/common              types et utilitaires partagés
 content/bastognac            paquet de contenu du vertical slice
-tools/validators             validation du dépôt et du contenu
+design/isometric             tokens, gabarits et handoff graphique
+apps/game/public/assets      exports runtime SVG et WebP
+tools/validators             validation du dépôt, du contenu et des assets
 tests/e2e                    parcours Playwright desktop et mobile
 ```
 
@@ -104,7 +107,7 @@ npx playwright install --with-deps chromium
 npm run test:e2e
 ```
 
-La commande suivante exécute les contrôles de formatage, contenu, types, tests unitaires et build :
+La commande suivante exécute les contrôles de formatage, contenu, types, tests unitaires, build et validation du dépôt :
 
 ```bash
 npm run check
@@ -120,10 +123,11 @@ Les tests Playwright utilisent le build de production servi par Vite Preview, su
 - [Architecture de la salle tactique](docs/architecture/tactical-room.md)
 - [Structure réelle et cible du dépôt](docs/architecture/repository-structure.md)
 - [Roadmap](docs/roadmap.md)
-- [Sprint 1 — rapport de clôture](docs/sprints/sprint-1.md)
-- [Sprint 2 — plateau isométrique](docs/sprints/sprint-2.md)
+- [Sprint 1 - rapport de clôture](docs/sprints/sprint-1.md)
+- [Sprint 2 - rapport de clôture](docs/sprints/sprint-2.md)
+- [Audit d’alignement du Sprint 2](docs/audits/sprint-2-alignment.md)
 - [Gabarits isométriques](docs/design/sprint-2-isometric-guidelines.md)
-- [ADR-0006 — Plateau 2D isométrique](docs/adr/0006-isometric-2d-renderer.md)
+- [ADR-0006 - Plateau 2D isométrique](docs/adr/0006-isometric-2d-renderer.md)
 - [Sécurité et secrets](docs/security/secrets.md)
 - [Décisions d’architecture](docs/adr/README.md)
 - [Contribution](CONTRIBUTING.md)
