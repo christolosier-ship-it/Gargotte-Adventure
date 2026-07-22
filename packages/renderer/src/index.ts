@@ -64,6 +64,16 @@ const tileHitArea = new Polygon([
   -isometricTileGeometry.halfTileWidth,
   0,
 ]);
+const combatantHitArea = new Polygon([
+  -48,
+  -96,
+  48,
+  -96,
+  48,
+  12,
+  -48,
+  12,
+]);
 const tileStyle: Record<TileState, { color: number; alpha: number }> = {
   base: { color: tokenNumber(tokens.color.primitive.stoneDark), alpha: 1 },
   alternate: { color: tokenNumber(tokens.color.primitive.stoneMid), alpha: 1 },
@@ -234,6 +244,7 @@ export async function createTabletopRenderer(
     const token = new Container();
     token.eventMode = "static";
     token.cursor = "pointer";
+    token.hitArea = combatantHitArea;
     token.label = `${combatant.kind}:${combatant.id}`;
     token.zIndex = stableDepth(
       screen.y,
