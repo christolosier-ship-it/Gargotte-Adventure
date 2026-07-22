@@ -2,7 +2,11 @@ import { Container, Graphics, type Sprite } from "pixi.js";
 import type { GridPosition } from "@gargotte/engine";
 import tokens from "../../../../design/isometric/tokens.json";
 import { alternatingAssetId, assetStatusKey } from "../catalog";
-import { gridToScreen, isometricTileGeometry, stableDepth } from "../projection";
+import {
+  gridToScreen,
+  isometricTileGeometry,
+  stableDepth,
+} from "../projection";
 import type { VisibleWallSegment } from "../view";
 import { addAssetSprite } from "./asset-sprite";
 import type { SceneRenderContext } from "./context";
