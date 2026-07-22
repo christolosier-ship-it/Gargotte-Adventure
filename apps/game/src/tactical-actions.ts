@@ -79,7 +79,9 @@ export function renderTacticalActions(
     const enemy = room.enemies.find((candidate) => candidate.id === enemyId);
     if (!enemy) continue;
     container.append(
-      createActionButton(`Attaquer ${enemy.name}`, () => handlers.attack(enemyId)),
+      createActionButton(`Attaquer ${enemy.name}`, () =>
+        handlers.attack(enemyId),
+      ),
     );
   }
 }
