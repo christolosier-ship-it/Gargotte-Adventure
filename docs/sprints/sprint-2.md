@@ -158,8 +158,12 @@ L’interpolation de déplacement, l’impulsion d’attaque, le flash d’impac
 - absence de baseline quantitative de fluidité ;
 - gabarits Figma incomplets à cause des limites du plan Starter ;
 - effet d’impact technique présent dans le manifeste mais pas encore utilisé dans la boucle de jeu ;
+- badge visible encore libellé `Sprint 1` ;
+- `APP_VERSION` encore défini à `0.0.0-sprint-0` et paquet npm encore en `0.0.0` ;
 - noms historiques de certains workflows et artefacts CI encore liés aux Sprints 0 et 1 ;
 - captures visuelles de référence à consolider après les ajustements produit.
+
+`packages/audio` existe déjà comme fondation minimale, mais n’est pas connecté à la boucle de jeu et ne constitue pas encore une fonctionnalité audio.
 
 Ces éléments ne remettent pas en cause les critères de sortie du Sprint 2.
 
