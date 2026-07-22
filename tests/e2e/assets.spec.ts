@@ -119,12 +119,15 @@ test("charge les sprites pilotes après un manifeste volontairement retardé", a
     .poll(() => combatantAssetStatus(page, "gobelin-bricoleur"))
     .toBe("webp");
   expect(pageErrors).toEqual([]);
-  await expect(
-    page.request.get("./assets/isometric/characters/brunhilda.webp"),
-  ).resolves.toBeOK();
-  await expect(
-    page.request.get("./assets/isometric/characters/gobelin-bricoleur.webp"),
-  ).resolves.toBeOK();
+
+  const brunhildaResponse = await page.request.get(
+    "./assets/isometric/characters/brunhilda.webp",
+  );
+  const gobelinResponse = await page.request.get(
+    "./assets/isometric/characters/gobelin-bricoleur.webp",
+  );
+  expect(brunhildaResponse).toBeOK();
+  expect(gobelinResponse).toBeOK();
 });
 
 for (const pilot of [
