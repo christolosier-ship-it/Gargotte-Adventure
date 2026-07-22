@@ -1,5 +1,12 @@
-import { Application, Container, Graphics, Polygon, Text } from "pixi.js";
-import { IsometricAssetRegistry } from "./assets";
+import {
+  Application,
+  Container,
+  Graphics,
+  Polygon,
+  Sprite,
+  Text,
+} from "pixi.js";
+import { IsometricAssetRegistry, type RuntimeAsset } from "./assets";
 import type {
   Combatant,
   GridPosition,
@@ -37,6 +44,15 @@ type SceneLayers = Record<
   "backdrop" | "floor" | "object" | "foreground" | "interface",
   Container
 >;
+
+const combatantSpriteAssets: Readonly<Record<string, string>> = {
+  brunhilda: "character.brunhilda",
+  "gobelin-bricoleur": "character.gobelin-bricoleur",
+};
+const characterSpriteTargetHeight = 96;
+export function characterSpriteScale(asset: RuntimeAsset): number {
+  return characterSpriteTargetHeight / asset.dimensions.height;
+}
 
 const tileHitArea = new Polygon([
   0,
@@ -135,6 +151,7 @@ export async function createTabletopRenderer(
     { width: 1, height: 1 },
     currentProjection,
   );
+  let renderGeneration = 0;
   const listeners = {
     cell: [] as ((position: GridPosition) => void)[],
     hero: [] as ((id: string) => void)[],
@@ -205,6 +222,7 @@ export async function createTabletopRenderer(
     active: boolean,
     attackable: boolean,
     tieBreaker: number,
+    generation: number,
   ): void {
     const screen = projectedPosition(combatant.position);
     const token = new Container();
@@ -255,6 +273,31 @@ export async function createTabletopRenderer(
     token.addChild(shadow, body, label, hp);
     token.position.set(screen.x, screen.y);
     layers.object.addChild(token);
+
+    const assetId = combatantSpriteAssets[combatant.id];
+    if (!assetId) return;
+    void assets.textureFor(assetId, "south-east").then((result) => {
+      if (generation !== renderGeneration || token.destroyed) return;
+      if (!result.ok) {
+        app.canvas.dataset[`asset_${combatant.id}`] = result.reason;
+        return;
+      }
+      if (!result.texture) {
+        app.canvas.dataset[`asset_${combatant.id}`] = "placeholder";
+        return;
+      }
+      const sprite = new Sprite(result.texture);
+      sprite.label = `sprite:${combatant.id}`;
+      sprite.eventMode = "none";
+      sprite.anchor.set(result.asset.anchor.x, result.asset.anchor.y);
+      const scale = characterSpriteScale(result.asset);
+      sprite.scale.set(result.mirrored ? -scale : scale, scale);
+      sprite.position.set(0, 0);
+      token.addChildAt(sprite, 1);
+      body.visible = false;
+      label.visible = false;
+      app.canvas.dataset[`asset_${combatant.id}`] = "webp";
+    });
   }
 
   function drawWalls(state: RoomState, focus: GridPosition[]): void {
@@ -305,6 +348,7 @@ export async function createTabletopRenderer(
     highlights: TacticalHighlights = { reachable: [], attackable: [] },
   ): void {
     clearLayers();
+    renderGeneration += 1;
     currentProjection = buildRoomProjection(state);
     currentBounds = calculateIsometricGridBounds(state, currentProjection);
     app.canvas.dataset.phase = state.phase;
@@ -382,7 +426,13 @@ export async function createTabletopRenderer(
     state.heroes
       .filter((candidate) => candidate.alive)
       .forEach((hero, index) =>
-        drawToken(hero, hero.id === state.activeHeroId, false, index),
+        drawToken(
+          hero,
+          hero.id === state.activeHeroId,
+          false,
+          index,
+          renderGeneration,
+        ),
       );
     state.enemies
       .filter((candidate) => candidate.alive)
@@ -392,6 +442,7 @@ export async function createTabletopRenderer(
           false,
           highlights.attackable.includes(enemy.id),
           index,
+          renderGeneration,
         ),
       );
     const active = state.heroes.find((hero) => hero.id === state.activeHeroId);

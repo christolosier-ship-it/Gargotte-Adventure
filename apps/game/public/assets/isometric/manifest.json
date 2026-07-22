@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "version": "2B.1.0",
+  "version": "2B.2.0",
   "basePath": "assets/isometric/",
   "budgets": {
     "pilotTotalBytes": 1048576,
@@ -13,8 +13,14 @@
       "category": "common",
       "path": "assets/isometric/common/ground-shadow.svg",
       "format": "svg",
-      "dimensions": { "width": 96, "height": 32 },
-      "anchor": { "x": 0.5, "y": 0.5 },
+      "dimensions": {
+        "width": 96,
+        "height": 32
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
       "orientation": "omni",
       "fallbackId": "common.ground-shadow",
       "budgetBytes": 102400,
@@ -25,8 +31,14 @@
       "category": "tile",
       "path": "assets/isometric/tiles/fallback-tile.svg",
       "format": "svg",
-      "dimensions": { "width": 128, "height": 64 },
-      "anchor": { "x": 0.5, "y": 0.5 },
+      "dimensions": {
+        "width": 128,
+        "height": 64
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
       "orientation": "omni",
       "fallbackId": "tile.fallback",
       "budgetBytes": 102400,
@@ -37,10 +49,19 @@
       "category": "wall",
       "path": "assets/isometric/walls/fallback-wall.svg",
       "format": "svg",
-      "dimensions": { "width": 128, "height": 128 },
-      "anchor": { "x": 0.5, "y": 0.75 },
+      "dimensions": {
+        "width": 128,
+        "height": 128
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
       "orientation": "south-east",
-      "mirrorOf": { "orientation": "north-east", "axis": "horizontal" },
+      "mirrorOf": {
+        "orientation": "north-east",
+        "axis": "horizontal"
+      },
       "fallbackId": "wall.fallback",
       "budgetBytes": 102400,
       "required": true
@@ -50,8 +71,14 @@
       "category": "prop",
       "path": "assets/isometric/props/fallback-obstacle.svg",
       "format": "svg",
-      "dimensions": { "width": 96, "height": 96 },
-      "anchor": { "x": 0.5, "y": 0.75 },
+      "dimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.75
+      },
       "orientation": "omni",
       "fallbackId": "prop.fallback-obstacle",
       "budgetBytes": 102400,
@@ -62,11 +89,53 @@
       "category": "fx",
       "path": "assets/isometric/fx/impact-test.svg",
       "format": "svg",
-      "dimensions": { "width": 96, "height": 96 },
-      "anchor": { "x": 0.5, "y": 0.5 },
+      "dimensions": {
+        "width": 96,
+        "height": 96
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.5
+      },
       "orientation": "omni",
       "fallbackId": "fx.impact-test",
       "budgetBytes": 102400,
+      "required": false
+    },
+    {
+      "id": "character.brunhilda",
+      "category": "character",
+      "path": "assets/isometric/characters/brunhilda.webp",
+      "format": "webp",
+      "dimensions": {
+        "width": 128,
+        "height": 192
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "orientation": "omni",
+      "fallbackId": "tile.fallback",
+      "budgetBytes": 256000,
+      "required": false
+    },
+    {
+      "id": "character.gobelin-bricoleur",
+      "category": "character",
+      "path": "assets/isometric/characters/gobelin-bricoleur.webp",
+      "format": "webp",
+      "dimensions": {
+        "width": 128,
+        "height": 192
+      },
+      "anchor": {
+        "x": 0.5,
+        "y": 0.92
+      },
+      "orientation": "omni",
+      "fallbackId": "tile.fallback",
+      "budgetBytes": 256000,
       "required": false
     }
   ]
