@@ -170,8 +170,9 @@ function renderTacticalActions(): void {
 }
 
 const render = (
-  saveText =
-    storedRoom && storedRoom !== "legacy" ? "Salle restaurée" : "Prête",
+  saveText = storedRoom && storedRoom !== "legacy"
+    ? "Salle restaurée"
+    : "Prête",
 ) => {
   const active = room?.heroes.find((hero) => hero.id === room?.activeHeroId);
   shell.update({
