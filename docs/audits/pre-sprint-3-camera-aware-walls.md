@@ -91,10 +91,11 @@ Ce contrôle :
 - manifeste et assets inchangés ;
 - aucune mécanique du Sprint 3 ajoutée.
 
-## Suivi
+## Clôture
 
-- Issue : #27 ;
-- Pull Request : #28 ;
-- branche : `fix/pre-sprint-3-camera-aware-walls`.
+- Issue : #27, clôturée comme terminée ;
+- Pull Request : #28, fusionnée par squash ;
+- branche : `fix/pre-sprint-3-camera-aware-walls` ;
+- commit de fusion : `ffe99bcee2da0fa48838d9028a48107c257108b3`.
 
-Le commit de fusion et le verdict CI final seront ajoutés lors de la clôture du lot.
+La validation finale est entièrement verte : formatage, contenu, TypeScript strict, tests unitaires, build, validation du dépôt, Repository quality, Playwright desktop et Playwright mobile paysage.
