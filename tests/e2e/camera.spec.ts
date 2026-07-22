@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 
 type CameraRotation = 0 | 90 | 180 | 270;
+type ScreenPoint = { x: number; y: number };
 
 type CanvasScene = {
   rotation: CameraRotation;
@@ -38,7 +39,7 @@ const readScene = async (page: Page): Promise<CanvasScene> =>
 const pointForLogicalCell = async (
   page: Page,
   position: { column: number; row: number },
-) =>
+): Promise<ScreenPoint> =>
   canvasLocator(page).evaluate((element, logicalPosition) => {
     const projection = JSON.parse(element.dataset.projection ?? "{}");
     const camera = JSON.parse(element.dataset.camera ?? "{}");
@@ -73,6 +74,33 @@ const pointForLogicalCell = async (
       y: rect.top + camera.offsetY + localY * camera.scale,
     };
   }, position);
+
+const bringPointIntoViewport = async (
+  page: Page,
+  resolvePoint: () => Promise<ScreenPoint>,
+): Promise<ScreenPoint> => {
+  const viewport = page.viewportSize();
+  if (!viewport) return resolvePoint();
+  const margin = 48;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const point = await resolvePoint();
+    const deltaY =
+      point.y < margin
+        ? point.y - margin
+        : point.y > viewport.height - margin
+          ? point.y - (viewport.height - margin)
+          : 0;
+    if (Math.abs(deltaY) < 1) return point;
+    await page.evaluate((offset) => window.scrollBy(0, offset), deltaY);
+    await page.evaluate(() =>
+      new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
+  }
+  const point = await resolvePoint();
+  expect(point.y).toBeGreaterThanOrEqual(margin);
+  expect(point.y).toBeLessThanOrEqual(viewport.height - margin);
+  return point;
+};
 
 const expectBrunhildaAt = async (
   page: Page,
@@ -154,7 +182,9 @@ test("conserve le picking logique après une rotation de 90°", async ({
   await expect.poll(async () => (await readScene(page)).rotation).toBe(90);
 
   const target = { column: 1, row: 0 };
-  const point = await pointForLogicalCell(page, target);
+  const point = await bringPointIntoViewport(page, () =>
+    pointForLogicalCell(page, target),
+  );
   if (isMobile) await page.touchscreen.tap(point.x, point.y);
   else await page.mouse.click(point.x, point.y);
 
