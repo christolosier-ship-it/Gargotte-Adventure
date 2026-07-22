@@ -118,7 +118,9 @@ export async function createTabletopRenderer(
   host.replaceChildren(app.canvas);
 
   const assets = new IsometricAssetRegistry();
-  void assets.loadManifest().then(async (loaded) => {
+  app.canvas.dataset.assetManifest = "loading";
+  const manifestReady = assets.loadManifest();
+  void manifestReady.then(async (loaded) => {
     app.canvas.dataset.assetManifest = loaded ? "loaded" : "fallback";
     await Promise.allSettled([
       assets.textureFor("tile.fallback"),
@@ -157,6 +159,10 @@ export async function createTabletopRenderer(
     hero: [] as ((id: string) => void)[],
     enemy: [] as ((id: string) => void)[],
   };
+
+  function setCombatantAssetStatus(combatantId: string, status: string): void {
+    app.canvas.setAttribute(`data-asset-${combatantId}`, status);
+  }
 
   function clearLayers(): void {
     for (const layer of Object.values(layers))
@@ -276,14 +282,22 @@ export async function createTabletopRenderer(
 
     const assetId = combatantSpriteAssets[combatant.id];
     if (!assetId) return;
-    void assets.textureFor(assetId, "south-east").then((result) => {
+    setCombatantAssetStatus(combatant.id, "loading");
+    void (async () => {
+      const manifestLoaded = await manifestReady;
+      if (generation !== renderGeneration || token.destroyed) return;
+      if (!manifestLoaded) {
+        setCombatantAssetStatus(combatant.id, "manifest-missing");
+        return;
+      }
+      const result = await assets.textureFor(assetId, "south-east");
       if (generation !== renderGeneration || token.destroyed) return;
       if (!result.ok) {
-        app.canvas.dataset[`asset_${combatant.id}`] = result.reason;
+        setCombatantAssetStatus(combatant.id, result.reason);
         return;
       }
       if (!result.texture) {
-        app.canvas.dataset[`asset_${combatant.id}`] = "placeholder";
+        setCombatantAssetStatus(combatant.id, "placeholder");
         return;
       }
       const sprite = new Sprite(result.texture);
@@ -296,7 +310,11 @@ export async function createTabletopRenderer(
       token.addChildAt(sprite, 1);
       body.visible = false;
       label.visible = false;
-      app.canvas.dataset[`asset_${combatant.id}`] = "webp";
+      setCombatantAssetStatus(combatant.id, "webp");
+    })().catch((error: unknown) => {
+      if (generation !== renderGeneration || token.destroyed) return;
+      console.error(`[assets] sprite échoué: ${combatant.id}`, error);
+      setCombatantAssetStatus(combatant.id, "texture-error");
     });
   }
 
