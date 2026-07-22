@@ -70,7 +70,9 @@ export async function canvasPointForLogicalCell(
       const projection = JSON.parse(element.dataset.projection ?? "{}");
       const camera = JSON.parse(element.dataset.camera ?? "{}");
       const dimensions = JSON.parse(element.dataset.roomDimensions ?? "{}");
-      const rotation = Number(element.dataset.viewRotation ?? 0) as CameraRotation;
+      const rotation = Number(
+        element.dataset.viewRotation ?? 0,
+      ) as CameraRotation;
       const rect = element.getBoundingClientRect();
       const viewed =
         rotation === 90
