@@ -24,9 +24,7 @@ export function alternatingAssetId(
   position: GridPosition,
   assetIds: readonly [string, string],
 ): string {
-  return (position.column + position.row) % 2 === 0
-    ? assetIds[0]
-    : assetIds[1];
+  return (position.column + position.row) % 2 === 0 ? assetIds[0] : assetIds[1];
 }
 
 export function assetStatusKey(
