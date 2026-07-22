@@ -69,7 +69,9 @@ test("conserve le picking logique après une rotation de 90°", async ({
   await enterRoom(page);
   await activateBrunhilda(page);
   await page.getByRole("button", { name: /Pivoter la caméra de 90°/ }).click();
-  await expect.poll(async () => (await readCanvasState(page)).rotation).toBe(90);
+  await expect
+    .poll(async () => (await readCanvasState(page)).rotation)
+    .toBe(90);
 
   const target = { column: 1, row: 0 };
   const point = await bringPointIntoViewport(page, () =>
@@ -84,7 +86,9 @@ test("réinitialise la caméra sans modifier la salle sauvegardée", async ({
 }) => {
   await enterRoom(page);
   await page.getByRole("button", { name: /Pivoter la caméra de 90°/ }).click();
-  await expect.poll(async () => (await readCanvasState(page)).rotation).toBe(90);
+  await expect
+    .poll(async () => (await readCanvasState(page)).rotation)
+    .toBe(90);
   const beforeReload = (await readCanvasState(page)).heroes.map((hero) => ({
     id: hero.id,
     position: hero.position,
