@@ -29,6 +29,16 @@ import {
   stableDepth,
   type IsometricProjection,
 } from "./projection";
+import {
+  logicalToView,
+  nextCameraRotation,
+  viewDimensions,
+  visibleBackSides,
+  visibleWallSegments,
+  type CameraRotation,
+  type GridDimensions,
+  type VisibleWallSegment,
+} from "./view";
 
 export interface TacticalHighlights {
   reachable: GridPosition[];
@@ -39,6 +49,8 @@ export interface TabletopRenderer {
   destroy(): void;
   setExpeditionActive(active: boolean): void;
   renderRoom(state: RoomState, highlights?: TacticalHighlights): void;
+  rotateCamera(): CameraRotation;
+  getCameraRotation(): CameraRotation;
   onCellSelected(listener: (position: GridPosition) => void): void;
   onHeroSelected(listener: (heroId: string) => void): void;
   onEnemySelected(listener: (enemyId: string) => void): void;
@@ -47,7 +59,7 @@ export interface TabletopRenderer {
 type TileState =
   "base" | "alternate" | "reachable" | "selected" | "attackable" | "blocked";
 type SceneLayers = Record<
-  "backdrop" | "floor" | "object" | "foreground" | "interface",
+  "backdrop" | "floor" | "backWall" | "object" | "foreground" | "interface",
   Container
 >;
 
@@ -58,6 +70,7 @@ type EnvironmentStatusKey =
   | "wall-bastognac-north-east"
   | "prop-bastognac-barrel";
 
+const emptyHighlights: TacticalHighlights = { reachable: [], attackable: [] };
 const combatantSpriteAssets: Readonly<Record<string, string>> = {
   brunhilda: "character.brunhilda",
   "gobelin-bricoleur": "character.gobelin-bricoleur",
@@ -184,6 +197,7 @@ export async function createTabletopRenderer(
   const layers: SceneLayers = {
     backdrop: new Container(),
     floor: new Container(),
+    backWall: new Container(),
     object: new Container(),
     foreground: new Container(),
     interface: new Container(),
@@ -194,6 +208,8 @@ export async function createTabletopRenderer(
     stage.addChild(layer);
   }
 
+  let currentRotation: CameraRotation = 0;
+  let currentRoomDimensions: GridDimensions = { width: 1, height: 1 };
   let currentProjection: IsometricProjection = buildRoomProjection({
     width: 1,
     height: 1,
@@ -202,6 +218,8 @@ export async function createTabletopRenderer(
     { width: 1, height: 1 },
     currentProjection,
   );
+  let currentState: RoomState | null = null;
+  let currentHighlights: TacticalHighlights = emptyHighlights;
   let renderGeneration = 0;
   const listeners = {
     cell: [] as ((position: GridPosition) => void)[],
@@ -226,8 +244,12 @@ export async function createTabletopRenderer(
         child.destroy({ children: true });
   }
 
+  function viewPosition(position: GridPosition): GridPosition {
+    return logicalToView(position, currentRoomDimensions, currentRotation);
+  }
+
   function projectedPosition(position: GridPosition) {
-    return gridToScreen(position, currentProjection);
+    return gridToScreen(viewPosition(position), currentProjection);
   }
 
   function tileState(
@@ -493,51 +515,28 @@ export async function createTabletopRenderer(
     });
   }
 
-  function drawWalls(
-    state: RoomState,
-    focus: GridPosition[],
-    generation: number,
-  ): void {
-    const faded = (position: GridPosition) =>
-      focus.some((candidate) => samePosition(candidate, position));
-    for (let column = 0; column < state.width; column += 1)
-      drawWall(
-        { column, row: state.height - 1 },
-        "south-east",
-        faded({ column, row: state.height - 1 }),
-        generation,
-      );
-    for (let row = 0; row < state.height; row += 1)
-      drawWall(
-        { column: 0, row },
-        "north-east",
-        faded({ column: 0, row }),
-        generation,
-      );
-  }
-
-  function drawWall(
-    position: GridPosition,
-    orientation: "south-east" | "north-east",
-    faded: boolean,
-    generation: number,
-  ): void {
-    const screen = projectedPosition(position);
+  function wallFallbackPoints(segment: VisibleWallSegment): number[] {
     const w = isometricTileGeometry.halfTileWidth;
     const h = tokens.geometry.wallHeight;
     const t = isometricTileGeometry.halfTileHeight;
-    const points =
-      orientation === "south-east"
-        ? [-w, 0, 0, t, 0, t - h, -w, -h]
-        : [w, 0, 0, t, 0, t - h, w, -h];
+    return segment.viewSide === "north"
+      ? [0, -t, w, 0, w, -h, 0, -t - h]
+      : [0, -t, -w, 0, -w, -h, 0, -t - h];
+  }
+
+  function drawWall(segment: VisibleWallSegment, generation: number): void {
+    const screen = gridToScreen(segment.viewPosition, currentProjection);
     const wall = new Container();
     wall.eventMode = "none";
-    wall.label = `wall:${orientation}:${position.column},${position.row}`;
+    wall.label = `wall:${segment.id}:${segment.viewSide}`;
     wall.position.set(screen.x, screen.y);
-    wall.alpha = faded ? 0.3 : 1;
-    wall.zIndex = stableDepth(screen.y, currentProjection.tileHeight, 700);
+    wall.zIndex = stableDepth(
+      screen.y,
+      currentProjection.tileHeight,
+      segment.index,
+    );
     const fallback = new Graphics()
-      .poly(points)
+      .poly(wallFallbackPoints(segment))
       .fill({
         color: tokenNumber(tokens.color.primitive.woodDark),
         alpha: 0.82,
@@ -549,29 +548,29 @@ export async function createTabletopRenderer(
       });
     fallback.eventMode = "none";
     wall.addChild(fallback);
-    layers.foreground.addChild(wall);
+    layers.backWall.addChild(wall);
 
     const statusKey: EnvironmentStatusKey =
-      orientation === "south-east"
+      segment.orientation === "south-east"
         ? "wall-bastognac-south-east"
         : "wall-bastognac-north-east";
     setEnvironmentAssetStatus(statusKey, "loading");
     void addEnvironmentSprite({
       assetId: environmentAssetIds.wall,
-      orientation,
+      orientation: segment.orientation,
       statusKey,
       container: wall,
       generation,
       insertAt: 1,
       configure(sprite, _asset, mirrored) {
-        const direction = orientation === "south-east" ? -1 : 1;
+        const direction = segment.viewSide === "north" ? 1 : -1;
         sprite.scale.set(
           mirrored ? -wallSpriteScale : wallSpriteScale,
           wallSpriteScale,
         );
         sprite.position.set(
           direction * isometricTileGeometry.halfTileWidth * 0.5,
-          isometricTileGeometry.halfTileHeight * 0.5,
+          -isometricTileGeometry.halfTileHeight * 0.5,
         );
       },
       onLoaded() {
@@ -579,27 +578,31 @@ export async function createTabletopRenderer(
       },
     }).catch((error: unknown) => {
       if (generation !== renderGeneration || wall.destroyed) return;
-      console.error(`[assets] mur Bastognac échoué: ${orientation}`, error);
+      console.error(`[assets] mur Bastognac échoué: ${segment.id}`, error);
       setEnvironmentAssetStatus(statusKey, "texture-error");
     });
   }
 
-  function renderRoom(
+  function exposeSceneState(
     state: RoomState,
-    highlights: TacticalHighlights = { reachable: [], attackable: [] },
+    wallSegments: VisibleWallSegment[],
+    viewedDimensions: GridDimensions,
   ): void {
-    clearLayers();
-    renderGeneration += 1;
-    const generation = renderGeneration;
-    currentProjection = buildRoomProjection(state);
-    currentBounds = calculateIsometricGridBounds(state, currentProjection);
     app.canvas.dataset.phase = state.phase;
     app.canvas.dataset.turn = String(state.turn);
     app.canvas.dataset.activeHero = state.activeHeroId ?? "";
+    app.canvas.dataset.viewRotation = String(currentRotation);
+    app.canvas.dataset.roomDimensions = JSON.stringify(currentRoomDimensions);
+    app.canvas.dataset.viewDimensions = JSON.stringify(viewedDimensions);
+    app.canvas.dataset.visibleWalls = JSON.stringify(
+      visibleBackSides(currentRotation),
+    );
+    app.canvas.dataset.wallSegments = JSON.stringify(wallSegments);
     app.canvas.dataset.heroes = JSON.stringify(
       state.heroes.map((hero) => ({
         id: hero.id,
         position: hero.position,
+        viewPosition: viewPosition(hero.position),
         hp: hero.hp,
         actionsRemaining: hero.actionsRemaining,
         activationCompleted: hero.activationCompleted,
@@ -609,12 +612,39 @@ export async function createTabletopRenderer(
       state.enemies.map((enemy) => ({
         id: enemy.id,
         position: enemy.position,
+        viewPosition: viewPosition(enemy.position),
         hp: enemy.hp,
         alive: enemy.alive,
       })),
     );
     app.canvas.dataset.projection = JSON.stringify(currentProjection);
     app.canvas.dataset.bounds = JSON.stringify(currentBounds);
+  }
+
+  function renderRoom(
+    state: RoomState,
+    highlights: TacticalHighlights = emptyHighlights,
+  ): void {
+    currentState = state;
+    currentHighlights = highlights;
+    clearLayers();
+    renderGeneration += 1;
+    const generation = renderGeneration;
+    currentRoomDimensions = { width: state.width, height: state.height };
+    const viewedDimensions = viewDimensions(
+      currentRoomDimensions,
+      currentRotation,
+    );
+    currentProjection = buildRoomProjection(viewedDimensions);
+    currentBounds = calculateIsometricGridBounds(
+      viewedDimensions,
+      currentProjection,
+    );
+    const wallSegments = visibleWallSegments(
+      currentRoomDimensions,
+      currentRotation,
+    );
+    exposeSceneState(state, wallSegments, viewedDimensions);
 
     const backdrop = new Graphics()
       .roundRect(
@@ -657,19 +687,24 @@ export async function createTabletopRenderer(
           tileState(
             state,
             position,
-            highlights.reachable.some((p) => samePosition(p, position)),
+            highlights.reachable.some((candidate) =>
+              samePosition(candidate, position),
+            ),
             state.heroes.some(
               (hero) =>
                 hero.alive &&
                 hero.id === state.activeHeroId &&
                 samePosition(hero.position, position),
             ),
-            attackablePositions.some((p) => samePosition(p, position)),
+            attackablePositions.some((candidate) =>
+              samePosition(candidate, position),
+            ),
           ),
           generation,
         );
       }
 
+    wallSegments.forEach((segment) => drawWall(segment, generation));
     state.heroes
       .filter((candidate) => candidate.alive)
       .forEach((hero, index) =>
@@ -693,16 +728,6 @@ export async function createTabletopRenderer(
         ),
       );
 
-    const active = state.heroes.find((hero) => hero.id === state.activeHeroId);
-    drawWalls(
-      state,
-      [
-        ...(active ? [active.position] : []),
-        ...highlights.reachable,
-        ...attackablePositions,
-      ],
-      generation,
-    );
     host.dataset.displayObjects = String(
       Object.values(layers).reduce(
         (sum, layer) => sum + layer.children.length,
@@ -733,6 +758,14 @@ export async function createTabletopRenderer(
     },
     setExpeditionActive() {},
     renderRoom,
+    rotateCamera() {
+      currentRotation = nextCameraRotation(currentRotation);
+      if (currentState) renderRoom(currentState, currentHighlights);
+      return currentRotation;
+    },
+    getCameraRotation() {
+      return currentRotation;
+    },
     onCellSelected(listener) {
       listeners.cell.push(listener);
     },
@@ -764,6 +797,25 @@ export type {
   ScreenPosition,
   Viewport,
 } from "./projection";
+export {
+  logicalToView,
+  nextCameraRotation,
+  roomWallSegments,
+  transformRoomSide,
+  viewDimensions,
+  viewToLogical,
+  visibleBackSides,
+  visibleWallSegments,
+} from "./view";
+export type {
+  BackWallViewSide,
+  CameraRotation,
+  GridDimensions,
+  PhysicalWallSegment,
+  RoomSide,
+  VisibleWallSegment,
+  WallAssetOrientation,
+} from "./view";
 export {
   IsometricAssetRegistry,
   assetBudgets,

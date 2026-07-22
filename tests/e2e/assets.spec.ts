@@ -1,10 +1,12 @@
 import { expect, test, type Page } from "@playwright/test";
 
+type ScreenPoint = { x: number; y: number };
+
 const canvasPointForCell = async (
   page: Page,
   position: { column: number; row: number },
   nudge: { x: number; y: number } = { x: 0, y: 0 },
-) => {
+): Promise<ScreenPoint> => {
   const canvas = page.getByRole("img", {
     name: /Plateau tactique PixiJS/i,
   });
@@ -28,6 +30,34 @@ const canvasPointForCell = async (
     },
     { position, nudge },
   );
+};
+
+const bringPointIntoViewport = async (
+  page: Page,
+  resolvePoint: () => Promise<ScreenPoint>,
+): Promise<ScreenPoint> => {
+  const viewport = page.viewportSize();
+  if (!viewport) return resolvePoint();
+  const margin = 48;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const point = await resolvePoint();
+    const deltaY =
+      point.y < margin
+        ? point.y - margin
+        : point.y > viewport.height - margin
+          ? point.y - (viewport.height - margin)
+          : 0;
+    if (Math.abs(deltaY) < 1) return point;
+    await page.evaluate((offset) => window.scrollBy(0, offset), deltaY);
+    await page.evaluate(
+      () =>
+        new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    );
+  }
+  const point = await resolvePoint();
+  expect(point.y).toBeGreaterThanOrEqual(margin);
+  expect(point.y).toBeLessThanOrEqual(viewport.height - margin);
+  return point;
 };
 
 const combatantAssetStatus = async (page: Page, combatantId: string) => {
@@ -97,7 +127,10 @@ test("reste jouable lorsqu’une texture technique manque réellement", async ({
   await page
     .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
     .click();
-  const point = await canvasPointForCell(page, { column: 1, row: 0 });
+  const target = { column: 1, row: 0 };
+  const point = await bringPointIntoViewport(page, () =>
+    canvasPointForCell(page, target),
+  );
 
   if (isMobile) await page.touchscreen.tap(point.x, point.y);
   else await page.mouse.click(point.x, point.y);
@@ -145,10 +178,8 @@ test("sélectionne Brünhilda en touchant directement sa silhouette WebP", async
   });
   await expect.poll(() => combatantAssetStatus(page, "brunhilda")).toBe("webp");
 
-  const point = await canvasPointForCell(
-    page,
-    { column: 0, row: 0 },
-    { x: 0, y: -48 },
+  const point = await bringPointIntoViewport(page, () =>
+    canvasPointForCell(page, { column: 0, row: 0 }, { x: 0, y: -48 }),
   );
   if (isMobile) await page.touchscreen.tap(point.x, point.y);
   else await page.mouse.click(point.x, point.y);
@@ -200,7 +231,10 @@ for (const pilot of [
     await page
       .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
       .click();
-    const point = await canvasPointForCell(page, { column: 1, row: 0 });
+    const target = { column: 1, row: 0 };
+    const point = await bringPointIntoViewport(page, () =>
+      canvasPointForCell(page, target),
+    );
     if (isMobile) await page.touchscreen.tap(point.x, point.y);
     else await page.mouse.click(point.x, point.y);
 

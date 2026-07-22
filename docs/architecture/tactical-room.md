@@ -6,8 +6,8 @@ La salle tactique est divisée en cinq responsabilités :
 
 1. **Contenu** (`content/bastognac` et `packages/content-schema`) : définition et validation du scénario.
 2. **Moteur** (`packages/engine/src/tactical`) : grille, déplacements, ligne de vue, combat, tours, IA, événements et erreurs métier.
-3. **Renderer PixiJS** (`packages/renderer`) : projection isométrique de `RoomState`, assets et remontée des intentions de sélection.
-4. **UI DOM** (`packages/ui`) : sélection des héros, HUD, boutons de phase, commandes accessibles et journal.
+3. **Renderer PixiJS** (`packages/renderer`) : projection isométrique de `RoomState`, transformation de vue, assets et remontée des intentions de sélection.
+4. **UI DOM** (`packages/ui`) : sélection des héros, HUD, boutons de phase, rotation de contrôle, commandes accessibles et journal.
 5. **Sauvegarde** (`packages/save`) : persistance IndexedDB versionnée et restauration défensive.
 
 `apps/game/src/main.ts` relie ces responsabilités. Il ne décide pas si un déplacement, une attaque ou un changement de phase est valide.
@@ -32,7 +32,7 @@ Les héros ajoutent :
 - actions restantes ;
 - activation terminée ou disponible.
 
-L’état ne contient aucune coordonnée écran, texture, orientation visuelle ou référence PixiJS.
+L’état ne contient aucune coordonnée écran, texture, orientation de caméra ou référence PixiJS.
 
 ## Phases
 
@@ -71,7 +71,7 @@ Le joueur ne peut pas appeler directement le tour ennemi pendant `heroes-turn`. 
 
 ## Grille et déplacement
 
-La salle pilote utilise une grille 8 × 4. Le renderer peut néanmoins calculer sa projection et sa caméra depuis d’autres dimensions.
+La salle pilote utilise une grille 8 × 4. Le renderer calcule néanmoins sa projection, ses murs et sa caméra depuis n’importe quelles dimensions valides.
 
 Le moteur fournit :
 
@@ -159,7 +159,46 @@ screenX = originX + (column - row) × tileWidth / 2
 screenY = originY + (column + row) × tileHeight / 2
 ```
 
-Les bornes de la salle, le scale et le centrage sont recalculés depuis les dimensions réelles du `RoomState` et du viewport.
+Les bornes de la salle, le scale et le centrage sont recalculés depuis les dimensions visuelles et le viewport.
+
+La caméra de contrôle possède quatre orientations : `0°`, `90°`, `180°` et `270°`. La rotation ne modifie jamais les coordonnées logiques. Elle transforme uniquement les positions avant projection.
+
+À `90°` et `270°`, largeur et hauteur visuelles sont échangées. La transformation inverse permet de retrouver exactement la position logique d’origine.
+
+### Référentiels
+
+Le renderer distingue :
+
+1. **espace logique** : positions de `RoomState` ;
+2. **espace physique de salle** : quatre côtés permanents et segments muraux stables ;
+3. **espace de vue** : positions transformées selon la caméra ;
+4. **espace écran** : projection isométrique et fit responsive.
+
+Les tuiles, overlays, héros, ennemis, obstacles et murs passent par la même transformation de vue.
+
+### Murs périphériques
+
+La salle possède quatre côtés physiques : nord, est, sud et ouest.
+
+Chaque côté est découpé depuis les dimensions de la salle :
+
+- nord et sud : `width` segments ;
+- est et ouest : `height` segments.
+
+Chaque segment possède un identifiant stable, par exemple `north:4` ou `east:2`. Les futures portes, fenêtres, grilles et décorations pourront être rattachées à ce couple côté-segment sans dépendre de l’angle de caméra.
+
+Seuls les deux murs situés à l’arrière de la vue courante sont rendus :
+
+| Rotation | Murs physiques visibles |
+| -------: | ----------------------- |
+|       0° | nord + ouest            |
+|      90° | nord + est              |
+|     180° | sud + est               |
+|     270° | sud + ouest             |
+
+Les murs devenus proches de l’utilisateur ne sont pas instanciés. Ils ne sont ni conservés devant les unités ni remplacés par une transparence.
+
+Les deux murs visibles sont projetés sur les côtés nord et ouest de l’image et utilisent les deux orientations graphiques existantes. Leur ancrage repose sur les arêtes extérieures des tuiles, pas sur un décalage arbitraire depuis le centre de case.
 
 ### Couches
 
@@ -167,11 +206,14 @@ Le plateau distingue :
 
 1. fond ;
 2. sol ;
-3. objets et combattants ;
-4. premier plan et murs ;
-5. interface canvas.
+3. murs arrière ;
+4. objets et combattants ;
+5. premier plan réservé aux effets futurs ;
+6. interface canvas.
 
-Le tri interne utilise une profondeur stable dérivée de la position projetée et d’un offset de catégorie.
+La couche `backWall` est située entre le sol et les objets. Les murs périphériques visibles restent donc derrière les héros, ennemis et obstacles.
+
+Le tri interne des objets utilise une profondeur stable dérivée de la position projetée et d’un offset de catégorie.
 
 ### Picking
 
@@ -179,11 +221,10 @@ Le tri interne utilise une profondeur stable dérivée de la position projetée 
 - les combattants possèdent une zone tactile explicite ;
 - les textures et leurs pixels transparents ne décident jamais du picking ;
 - clic et toucher produisent les mêmes intentions métier que les commandes DOM ;
+- les cellules conservent leur position logique comme donnée d’événement après rotation ;
 - murs et obstacles visuels utilisent `eventMode = none`.
 
-### Occlusion
-
-Les murs peuvent devenir semi-transparents lorsqu’ils recouvrent une position active, atteignable ou attaquable. Cette réduction d’opacité n’a aucun effet sur les collisions ou la ligne de vue.
+Le test navigateur amène le point ciblé dans le viewport avant de cliquer ou toucher, puis recalcule sa position. Cette règle protège les écrans paysage où le canvas peut être plus haut que la fenêtre visible.
 
 ### Assets et fallbacks
 
@@ -221,6 +262,8 @@ Les mêmes actions sont exposées sous forme de commandes DOM nommées :
 - terminer le tour des héros ;
 - résoudre le tour ennemi.
 
+Un bouton provisoire `Pivoter la caméra de 90°` modifie uniquement la présentation. Il ne consomme aucune action et reste séparé des commandes tactiques.
+
 Ces commandes servent l’accessibilité clavier et offrent une voie de jeu indépendante du canvas.
 
 Le bouton de lancement reste désactivé jusqu’à la fin de l’initialisation du renderer et des sauvegardes.
@@ -246,7 +289,7 @@ Le chargement :
 - rejette sans planter une version incompatible ;
 - rejette les données corrompues.
 
-Le Sprint 2 conserve la sauvegarde version 1, car aucune donnée visuelle n’est persistée dans `RoomState`.
+La sauvegarde reste en version 1. L’orientation de caméra n’est pas persistée et revient à `0°` après rechargement.
 
 ## Contenu Bastognac actuel
 
@@ -276,6 +319,9 @@ Brünhilda et le Gobelin Bricoleur disposent d’un sprite pilote. Les autres co
 - validation du contenu ;
 - sauvegarde, migration et corruption ;
 - projection, conversion inverse, caméra et profondeur ;
+- transformations 0°, 90°, 180° et 270° ;
+- dimensions visuelles rectangulaires ;
+- côtés arrière et segments muraux stables ;
 - manifeste, registre, cache, fallbacks, poids et dimensions.
 
 ### Playwright
@@ -287,9 +333,13 @@ Sur build de production :
 - activation ;
 - déplacement et consommation d’action ;
 - clic et toucher réels sur le canvas ;
+- picking logique après rotation ;
+- quatre orientations successives ;
+- deux murs physiques visibles par orientation ;
 - verrouillage des phases ;
 - tour ennemi ;
 - sauvegarde et restauration exacte ;
+- retour de la caméra à 0° après rechargement ;
 - victoire reproductible ;
 - service worker et assets précachés ;
 - chargement des sprites et de l’environnement ;
@@ -298,8 +348,9 @@ Sur build de production :
 
 ## Limites actuelles
 
-La version après Sprint 2 n’implémente pas encore :
+La version stabilisée avant le Sprint 3 n’implémente pas encore :
 
+- portes, fenêtres ou grilles décrites dans le contenu ;
 - Brouhaha ;
 - objets interactifs ;
 - réactions du décor ;
