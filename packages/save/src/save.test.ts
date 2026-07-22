@@ -30,6 +30,39 @@ async function putRawSave(id: string, state: unknown): Promise<void> {
   database.close();
 }
 
+function createTestRoom() {
+  return createRoomState({
+    scenarioId: "s",
+    width: 8,
+    height: 4,
+    obstacles: [{ column: 3, row: 1 }],
+    heroes: [
+      {
+        id: "h",
+        name: "H",
+        position: { column: 2, row: 0 },
+        hp: 7,
+        maxHp: 10,
+        atk: 4,
+        def: 1,
+        range: 1,
+      },
+    ],
+    enemies: [
+      {
+        id: "e",
+        name: "E",
+        position: { column: 4, row: 0 },
+        hp: 2,
+        maxHp: 5,
+        atk: 2,
+        def: 0,
+        range: 1,
+      },
+    ],
+  });
+}
+
 beforeEach(async () => {
   await clearRoomState();
   await clearGameState();
@@ -41,40 +74,16 @@ describe("sauvegarde locale", () => {
     await saveGameState(state);
     await expect(loadGameState()).resolves.toEqual(state);
   });
+
+  it("rejette un état d'application incomplet malgré une phase plausible", async () => {
+    await putRawSave("autosave", { phase: "menu" });
+    await expect(loadGameState()).resolves.toBeNull();
+  });
 });
 
 describe("sauvegarde tactique", () => {
   it("restaure exactement une salle après plusieurs actions", async () => {
-    const initial = createRoomState({
-      scenarioId: "s",
-      width: 8,
-      height: 4,
-      obstacles: [{ column: 3, row: 1 }],
-      heroes: [
-        {
-          id: "h",
-          name: "H",
-          position: { column: 2, row: 0 },
-          hp: 7,
-          maxHp: 10,
-          atk: 4,
-          def: 1,
-          range: 1,
-        },
-      ],
-      enemies: [
-        {
-          id: "e",
-          name: "E",
-          position: { column: 4, row: 0 },
-          hp: 2,
-          maxHp: 5,
-          atk: 2,
-          def: 0,
-          range: 1,
-        },
-      ],
-    });
+    const initial = createTestRoom();
     const room = {
       ...initial,
       activeHeroId: "h",
@@ -108,6 +117,36 @@ describe("sauvegarde tactique", () => {
     });
     await expect(loadRoomState()).resolves.toBeNull();
     await putRawSave("room-autosave", "pas un objet");
+    await expect(loadRoomState()).resolves.toBeNull();
+  });
+
+  it("rejette une corruption profonde des combattants et coordonnées", async () => {
+    const initial = createTestRoom();
+    await putRawSave("room-autosave", {
+      kind: "tactical-room",
+      version: 1,
+      room: {
+        ...initial,
+        heroes: [
+          {
+            ...initial.heroes[0],
+            hp: 99,
+            position: { column: 99, row: 0 },
+          },
+        ],
+      },
+      selectedHeroIds: ["h"],
+    });
+    await expect(loadRoomState()).resolves.toBeNull();
+  });
+
+  it("rejette une sélection absente de la salle", async () => {
+    await putRawSave("room-autosave", {
+      kind: "tactical-room",
+      version: 1,
+      room: createTestRoom(),
+      selectedHeroIds: ["fantome"],
+    });
     await expect(loadRoomState()).resolves.toBeNull();
   });
 
