@@ -104,21 +104,21 @@ Pull Request #24, commit `07d0b8320f9869e76504d38d0558ccd91d4e2db6`.
 
 ## Matrice des critères d’acceptation
 
-| Critère | Résultat | Preuve principale |
-| --- | --- | --- |
-| Salle Sprint 1 jouable de bout en bout en isométrie | ✅ | tests Playwright desktop et mobile |
-| Moteur, dégâts, portée, ligne de vue et IA inchangés | ✅ | aucun changement de `packages/engine` dans les lots graphiques |
-| Sauvegarde compatible | ✅ | sauvegarde version 1 conservée et tests de reprise verts |
-| Picking aligné sur la grille logique | ✅ | hit areas polygonales et clic/toucher réels |
-| Profondeur stable | ✅ | couches explicites et `stableDepth` testé |
-| Objets hauts non bloquants | ✅ | murs non interactifs et opacité contextuelle |
-| Commandes DOM toujours disponibles | ✅ | mêmes handlers que le canvas |
-| Lisibilité téléphone et tablette paysage | ✅ | matrice Playwright desktop/mobile paysage |
-| Pipeline d’assets versionné | ✅ | manifeste `2B.3.0`, Zod et registre centralisé |
-| Formats et budgets contrôlés | ✅ | SVG/WebP uniquement et validation automatique |
-| Assets pilotes Bastognac | ✅ | Brünhilda, gobelin, sols, murs et tonneau |
-| Fallbacks non bloquants | ✅ | tests de panne réseau et salle toujours jouable |
-| Aucun rig ou moteur 3D | ✅ | aucune dépendance 3D introduite |
+| Critère                                              | Résultat | Preuve principale                                              |
+| ---------------------------------------------------- | -------- | -------------------------------------------------------------- |
+| Salle Sprint 1 jouable de bout en bout en isométrie  | ✅       | tests Playwright desktop et mobile                             |
+| Moteur, dégâts, portée, ligne de vue et IA inchangés | ✅       | aucun changement de `packages/engine` dans les lots graphiques |
+| Sauvegarde compatible                                | ✅       | sauvegarde version 1 conservée et tests de reprise verts       |
+| Picking aligné sur la grille logique                 | ✅       | hit areas polygonales et clic/toucher réels                    |
+| Profondeur stable                                    | ✅       | couches explicites et `stableDepth` testé                      |
+| Objets hauts non bloquants                           | ✅       | murs non interactifs et opacité contextuelle                   |
+| Commandes DOM toujours disponibles                   | ✅       | mêmes handlers que le canvas                                   |
+| Lisibilité téléphone et tablette paysage             | ✅       | matrice Playwright desktop/mobile paysage                      |
+| Pipeline d’assets versionné                          | ✅       | manifeste `2B.3.0`, Zod et registre centralisé                 |
+| Formats et budgets contrôlés                         | ✅       | SVG/WebP uniquement et validation automatique                  |
+| Assets pilotes Bastognac                             | ✅       | Brünhilda, gobelin, sols, murs et tonneau                      |
+| Fallbacks non bloquants                              | ✅       | tests de panne réseau et salle toujours jouable                |
+| Aucun rig ou moteur 3D                               | ✅       | aucune dépendance 3D introduite                                |
 
 ## Assets pilotes
 
