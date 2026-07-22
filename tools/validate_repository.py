@@ -5,8 +5,8 @@ from __future__ import annotations
 
 import json
 import re
-import sys
 import struct
+import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -28,9 +28,11 @@ REQUIRED_FILES = (
     ".editorconfig",
     ".github/CODEOWNERS",
     ".github/PULL_REQUEST_TEMPLATE.md",
+    "docs/README.md",
     "docs/product/vision.md",
     "docs/architecture/overview.md",
     "docs/architecture/repository-structure.md",
+    "docs/architecture/runtime.md",
     "docs/roadmap.md",
     "docs/sprints/sprint-0.md",
     "docs/security/secrets.md",
@@ -64,6 +66,32 @@ TEXT_SUFFIXES = {
     ".env",
 }
 
+PACKAGE_IMPORT_PATTERN = re.compile(
+    r'(?:from\s+|import\s+)["\'](@gargotte/[a-z-]+)["\']'
+)
+ALLOWED_PACKAGE_DEPENDENCIES = {
+    "audio": set(),
+    "common": set(),
+    "content-schema": set(),
+    "engine": {"common"},
+    "renderer": {"common", "engine"},
+    "save": {"engine"},
+    "ui": {"engine"},
+}
+SOURCE_LINE_LIMITS = {
+    "apps/game/src/main.ts": 80,
+    "packages/renderer/src/index.ts": 120,
+}
+GENERAL_SOURCE_LINE_LIMIT = 350
+DOCUMENTATION_INDEX_REFERENCES = (
+    "architecture/overview.md",
+    "architecture/repository-structure.md",
+    "architecture/runtime.md",
+    "architecture/tactical-room.md",
+    "design/sprint-2b3-bastognac-environment.md",
+    "external/sprint-2-drive-content.md",
+)
+
 
 def iter_text_files() -> list[Path]:
     files: list[Path] = []
@@ -74,6 +102,17 @@ def iter_text_files() -> list[Path]:
             continue
         if path.suffix.lower() in TEXT_SUFFIXES or path.name.startswith(".env"):
             files.append(path)
+    return files
+
+
+def iter_typescript_source_files() -> list[Path]:
+    files: list[Path] = []
+    for root_name in ("apps", "packages", "tools", "tests"):
+        root = ROOT / root_name
+        if not root.exists():
+            continue
+        files.extend(path for path in root.rglob("*.ts") if path.is_file())
+        files.extend(path for path in root.rglob("*.tsx") if path.is_file())
     return files
 
 
@@ -227,6 +266,108 @@ def validate_isometric_assets(errors: list[str]) -> None:
         errors.append(f"Lot pilote 2B.1 trop lourd : {total} octets > {total_budget}")
 
 
+def validate_package_boundaries(errors: list[str]) -> None:
+    dependency_graph: dict[str, set[str]] = {
+        package: set() for package in ALLOWED_PACKAGE_DEPENDENCIES
+    }
+    for path in iter_typescript_source_files():
+        relative = path.relative_to(ROOT)
+        if len(relative.parts) < 3 or relative.parts[0] != "packages":
+            continue
+        package = relative.parts[1]
+        if package not in ALLOWED_PACKAGE_DEPENDENCIES:
+            continue
+        content = path.read_text(encoding="utf-8")
+        for alias in PACKAGE_IMPORT_PATTERN.findall(content):
+            target = alias.split("/", 1)[1]
+            if target == package:
+                continue
+            dependency_graph[package].add(target)
+            if target not in ALLOWED_PACKAGE_DEPENDENCIES[package]:
+                errors.append(
+                    f"Frontière de package interdite : {relative} importe {alias}"
+                )
+
+    visiting: set[str] = set()
+    visited: set[str] = set()
+
+    def visit(package: str, path: list[str]) -> None:
+        if package in visiting:
+            errors.append(
+                "Cycle de packages détecté : " + " -> ".join([*path, package])
+            )
+            return
+        if package in visited:
+            return
+        visiting.add(package)
+        for dependency in dependency_graph.get(package, set()):
+            if dependency in dependency_graph:
+                visit(dependency, [*path, package])
+        visiting.remove(package)
+        visited.add(package)
+
+    for package in dependency_graph:
+        visit(package, [])
+
+
+def validate_source_structure(errors: list[str]) -> None:
+    for path in iter_typescript_source_files():
+        relative = path.relative_to(ROOT).as_posix()
+        if ".test." in path.name or relative.startswith("tests/"):
+            continue
+        lines = len(path.read_text(encoding="utf-8").splitlines())
+        limit = SOURCE_LINE_LIMITS.get(relative, GENERAL_SOURCE_LINE_LIMIT)
+        if lines > limit:
+            errors.append(f"Module trop volumineux : {relative} ({lines} lignes > {limit})")
+
+    renderer_root = ROOT / "packages/renderer/src"
+    for path in renderer_root.rglob("*.ts"):
+        if ".test." in path.name:
+            continue
+        content = path.read_text(encoding="utf-8").lower()
+        if "bastognac" in content:
+            errors.append(
+                "Le renderer générique connaît encore Bastognac : "
+                f"{path.relative_to(ROOT)}"
+            )
+
+    main_path = ROOT / "apps/game/src/main.ts"
+    if main_path.is_file() and "@gargotte/engine" in main_path.read_text(
+        encoding="utf-8"
+    ):
+        errors.append("main.ts doit rester un point d’entrée sans logique moteur")
+
+    if (ROOT / "public/icon.svg").exists():
+        errors.append("Icône publique dupliquée : public/icon.svg")
+
+
+def validate_design_tokens(errors: list[str]) -> None:
+    token_json = ROOT / "design/isometric/tokens.json"
+    token_css = ROOT / "design/isometric/tokens.css"
+    if not token_json.is_file() or not token_css.is_file():
+        return
+    try:
+        tokens = json.loads(token_json.read_text(encoding="utf-8"))
+    except json.JSONDecodeError as exc:
+        errors.append(f"Tokens isométriques JSON invalides : {exc}")
+        return
+    css = token_css.read_text(encoding="utf-8").lower()
+    primitives = tokens.get("color", {}).get("primitive", {})
+    for name, value in primitives.items():
+        if isinstance(value, str) and value.lower() not in css:
+            errors.append(f"Token couleur absent de tokens.css : {name}={value}")
+
+
+def validate_documentation_index(errors: list[str]) -> None:
+    index = ROOT / "docs/README.md"
+    if not index.is_file():
+        return
+    content = index.read_text(encoding="utf-8")
+    for reference in DOCUMENTATION_INDEX_REFERENCES:
+        if reference not in content:
+            errors.append(f"Document absent de l’index docs/README.md : {reference}")
+
+
 def main() -> int:
     errors: list[str] = []
 
@@ -252,6 +393,10 @@ def main() -> int:
                 errors.append(f"Secret potentiel ({label}) : {path.relative_to(ROOT)}")
 
     validate_isometric_assets(errors)
+    validate_package_boundaries(errors)
+    validate_source_structure(errors)
+    validate_design_tokens(errors)
+    validate_documentation_index(errors)
 
     if errors:
         print("Validation du dépôt échouée :")
@@ -259,7 +404,10 @@ def main() -> int:
             print(f"- {error}")
         return 1
 
-    print("Validation réussie : structure présente, UTF-8 valide, aucun secret détecté.")
+    print(
+        "Validation réussie : structure, frontières, UTF-8, secrets, assets et "
+        "documentation cohérents."
+    )
     return 0
 
 
