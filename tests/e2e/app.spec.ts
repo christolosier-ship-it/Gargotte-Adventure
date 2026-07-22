@@ -73,9 +73,9 @@ test("joue un déplacement, verrouille les phases et restaure la salle", async (
   await page
     .getByRole("button", { name: "Terminer le tour des héros" })
     .click();
-  await expect.poll(async () => (await readCanvasState(page)).phase).toBe(
-    "enemy-turn",
-  );
+  await expect
+    .poll(async () => (await readCanvasState(page)).phase)
+    .toBe("enemy-turn");
   await expect(
     page.getByRole("button", { name: "Résoudre le tour ennemi" }),
   ).toBeEnabled();
@@ -154,9 +154,9 @@ test("atteint une victoire reproductible", async ({ page }) => {
   await page
     .getByRole("button", { name: "Attaquer Gobelin Bricoleur" })
     .click();
-  await expect.poll(async () => (await readCanvasState(page)).phase).toBe(
-    "victory",
-  );
+  await expect
+    .poll(async () => (await readCanvasState(page)).phase)
+    .toBe("victory");
   await expect(page.getByText("Victoire")).toBeVisible();
   await expect(page.getByText("Salle nettoyée !")).toBeVisible();
 });
@@ -225,7 +225,9 @@ test("démarre avec les assets techniques et expose le manifeste runtime", async
   const canvas = canvasLocator(page);
   await expect(canvas).toBeVisible();
   await expect
-    .poll(async () => canvas.evaluate((element) => element.dataset.assetManifest))
+    .poll(async () =>
+      canvas.evaluate((element) => element.dataset.assetManifest),
+    )
     .toBe("loaded");
   const manifest = await page.request.get("./assets/isometric/manifest.json");
   expect(manifest.ok()).toBe(true);
@@ -242,9 +244,7 @@ test("reste jouable quand une texture manquante déclenche un fallback non fatal
   await enterRoom(page);
   await expect
     .poll(async () =>
-      canvasLocator(page).evaluate(
-        (element) => element.dataset.assetManifest,
-      ),
+      canvasLocator(page).evaluate((element) => element.dataset.assetManifest),
     )
     .toBe("loaded");
   await activateBrunhilda(page);
