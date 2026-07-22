@@ -6,7 +6,7 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 
 ## État du projet
 
-**Sprint 1 — Boucle tactique d’une salle : livré**
+**Sprint 2 — Plateau 2D isométrique et pipeline graphique : livré**
 
 La version actuelle permet de :
 
@@ -17,28 +17,33 @@ La version actuelle permet de :
 - résoudre un tour ennemi explicable et reproductible ;
 - gagner ou perdre la salle ;
 - sauvegarder et reprendre la partie avec IndexedDB ;
-- jouer au clavier, à la souris ou sur écran tactile en paysage.
+- jouer au clavier, à la souris ou sur écran tactile en paysage ;
+- afficher la salle en projection isométrique 2D sous PixiJS ;
+- conserver un picking fiable et une caméra responsive ;
+- charger des assets versionnés avec cache, budgets et fallbacks ;
+- afficher Brünhilda, le Gobelin Bricoleur et un premier environnement Bastognac.
 
-Les personnages, statistiques, obstacles et ennemis du scénario restent provisoires.
+Les statistiques, compétences et comportements définitifs restent provisoires. Le reste du casting utilise encore des placeholders compatibles avec le pipeline graphique.
 
 ## Prochaine étape
 
-**Sprint 2 — Plateau 2D isométrique et pipeline graphique**
+**Sprint 3 — Brouhaha et décor interactif**
 
-Le prochain sprint doit conserver exactement la même logique tactique tout en remplaçant la grille orthogonale provisoire par un plateau isométrique sous PixiJS.
+Le prochain sprint doit transformer le plateau isométrique en système vivant et tactique, tout en conservant le caractère déterministe du moteur.
 
-La direction retenue est :
+Le périmètre cible comprend :
 
-- grille logique 2D inchangée ;
-- projection isométrique gérée uniquement par le renderer ;
-- personnages en sprites 2D fixes ou très légèrement animés ;
-- aucun rig, squelette, modèle 3D ou moteur 3D ;
-- tuiles, murs, obstacles, ombres et overlays adaptés ;
-- tri de profondeur et interactions tactiles fiables ;
-- premier pipeline versionné d’assets ;
-- Brünhilda et un gobelin comme assets pilotes.
+- jauge de Brouhaha de 0 à 12 ;
+- engagement de combat et génération de bruit ;
+- réduction du bruit après un tour calme ;
+- événements impairs liés au décor ;
+- événements pairs provoquant des renforts ;
+- tables, tonneaux, grilles, torches et piliers interactifs ;
+- réactions en chaîne lisibles ;
+- journal d’événements explicatif ;
+- sauvegarde et reprise des nouveaux états.
 
-Le Brouhaha et le décor interactif sont repoussés au Sprint 3 afin d’être construits directement sur ce socle visuel.
+Les compétences définitives, le bestiaire complet, le loot et la progression restent réservés aux sprints suivants.
 
 ## Héros disponibles
 
@@ -63,7 +68,7 @@ Le Brouhaha et le décor interactif sont repoussés au Sprint 3 afin d’être c
 apps/game                    composition de la PWA et orchestration
 packages/engine              moteur déterministe et salle tactique
 packages/content-schema      validation Zod du contenu
-packages/renderer            plateau PixiJS, projection isométrique prévue au Sprint 2
+packages/renderer            plateau PixiJS, projection isométrique et assets runtime
 packages/ui                  menus, HUD et commandes accessibles
 packages/save                sauvegardes IndexedDB et migrations
 packages/common              types et utilitaires partagés
@@ -121,7 +126,7 @@ Les tests Playwright utilisent le build de production servi par Vite Preview, su
 - [Structure réelle et cible du dépôt](docs/architecture/repository-structure.md)
 - [Roadmap](docs/roadmap.md)
 - [Sprint 1 — rapport de clôture](docs/sprints/sprint-1.md)
-- [Sprint 2 — plateau isométrique](docs/sprints/sprint-2.md)
+- [Sprint 2 — rapport de clôture](docs/sprints/sprint-2.md)
 - [Gabarits isométriques](docs/design/sprint-2-isometric-guidelines.md)
 - [ADR-0006 — Plateau 2D isométrique](docs/adr/0006-isometric-2d-renderer.md)
 - [Sécurité et secrets](docs/security/secrets.md)
