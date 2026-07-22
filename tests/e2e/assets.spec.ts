@@ -3,25 +3,31 @@ import { expect, test, type Page } from "@playwright/test";
 const canvasPointForCell = async (
   page: Page,
   position: { column: number; row: number },
+  nudge: { x: number; y: number } = { x: 0, y: 0 },
 ) => {
   const canvas = page.getByRole("img", {
     name: /Plateau tactique PixiJS/i,
   });
-  return canvas.evaluate((element, target) => {
-    const projection = JSON.parse(element.dataset.projection ?? "{}");
-    const camera = JSON.parse(element.dataset.camera ?? "{}");
-    const rect = element.getBoundingClientRect();
-    const localX =
-      projection.originX +
-      ((target.column - target.row) * projection.tileWidth) / 2;
-    const localY =
-      projection.originY +
-      ((target.column + target.row) * projection.tileHeight) / 2;
-    return {
-      x: rect.left + camera.offsetX + localX * camera.scale,
-      y: rect.top + camera.offsetY + localY * camera.scale,
-    };
-  }, position);
+  return canvas.evaluate(
+    (element, { position: target, nudge: offset }) => {
+      const projection = JSON.parse(element.dataset.projection ?? "{}");
+      const camera = JSON.parse(element.dataset.camera ?? "{}");
+      const rect = element.getBoundingClientRect();
+      const localX =
+        projection.originX +
+        ((target.column - target.row) * projection.tileWidth) / 2 +
+        offset.x;
+      const localY =
+        projection.originY +
+        ((target.column + target.row) * projection.tileHeight) / 2 +
+        offset.y;
+      return {
+        x: rect.left + camera.offsetX + localX * camera.scale,
+        y: rect.top + camera.offsetY + localY * camera.scale,
+      };
+    },
+    { position, nudge },
+  );
 };
 
 const combatantAssetStatus = async (page: Page, combatantId: string) => {
@@ -126,6 +132,32 @@ test("charge les sprites pilotes après un manifeste volontairement retardé", a
   );
   expect(brunhildaResponse).toBeOK();
   expect(gobelinResponse).toBeOK();
+});
+
+test("sélectionne Brünhilda en touchant directement sa silhouette WebP", async ({
+  page,
+  isMobile,
+}) => {
+  await page.goto("./");
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  const canvas = page.getByRole("img", {
+    name: /Plateau tactique PixiJS/i,
+  });
+  await expect.poll(() => combatantAssetStatus(page, "brunhilda")).toBe("webp");
+
+  const point = await canvasPointForCell(
+    page,
+    { column: 0, row: 0 },
+    { x: 0, y: -48 },
+  );
+  if (isMobile) await page.touchscreen.tap(point.x, point.y);
+  else await page.mouse.click(point.x, point.y);
+
+  await expect
+    .poll(async () =>
+      canvas.evaluate((element) => element.dataset.activeHero ?? ""),
+    )
+    .toBe("brunhilda");
 });
 
 for (const pilot of [
