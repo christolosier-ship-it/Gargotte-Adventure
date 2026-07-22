@@ -20,7 +20,7 @@ Interaction joueur
       └─ commande DOM accessible
               │
               ▼
-      orchestrateur apps/game
+      contrôleur apps/game
               │
               ▼
       validation dans le moteur
@@ -32,24 +32,22 @@ Interaction joueur
       ├─► projection et rendu isométrique PixiJS
       ├─► mise à jour du HUD
       ├─► journal d’événements
-      └─► sauvegarde IndexedDB
+      └─► file de sauvegarde IndexedDB
 ```
 
 Les interactions PixiJS et les commandes DOM utilisent les mêmes handlers. L’interface n’implémente donc pas une seconde version des règles.
 
-## État actuel après le Sprint 2
+## État actuel après le désendettement pré-Sprint 3
 
 ### Contenu
 
-Le scénario `content/bastognac/sprint-1-room.json` définit :
+`apps/game/src/bastognac.ts` charge et valide au runtime de développement comme en production :
 
-- une grille 8 × 4 ;
-- les obstacles ;
-- les quatre héros officiels avec des statistiques provisoires ;
-- deux gobelins provisoires ;
-- les positions initiales.
+- `content/bastognac/dungeon.json` ;
+- `content/bastognac/sprint-1-room.json` ;
+- le catalogue visuel propre à Bastognac.
 
-Le contenu est validé par Zod avant la création du `RoomState`.
+Le scénario définit une grille 8 × 4, les obstacles, les quatre héros officiels, deux gobelins provisoires et les positions initiales. Les schémas Zod empêchent qu’un contenu invalide atteigne le contrôleur.
 
 ### Moteur
 
@@ -66,6 +64,19 @@ Le contenu est validé par Zod avant la création du `RoomState`.
 
 Le moteur conserve exclusivement des coordonnées `GridPosition { column, row }`. Il ne connaît ni l’isométrie, ni les dimensions des tuiles, ni les assets.
 
+### Composition applicative
+
+`apps/game/src/main.ts` est un point d’entrée minimal. Les responsabilités sont distribuées :
+
+- `bootstrap.ts` assemble contenu, UI, renderer, sauvegarde et contrôleur ;
+- `game-controller.ts` traite les intentions et le cycle de jeu ;
+- `tactical-actions.ts` génère les commandes DOM dynamiques ;
+- `persistence-controller.ts` restaure la session et sérialise les écritures ;
+- `pwa-install.ts` gère l’installation ;
+- `bastognac.ts` constitue la frontière entre le donjon et les composants génériques.
+
+Cette séparation évite que les futures mécaniques Brouhaha et décor interactif soient ajoutées directement dans le point d’entrée.
+
 ### Renderer isométrique
 
 `packages/renderer` projette `RoomState` sur un plateau PixiJS 2D isométrique :
@@ -73,15 +84,30 @@ Le moteur conserve exclusivement des coordonnées `GridPosition { column, row }`
 - projection grille vers écran et conversion inverse ;
 - tuiles 128 × 64 ;
 - caméra responsive et centrage ;
+- rotation 0°, 90°, 180° et 270° ;
 - hit areas polygonales ;
 - picking par clic et toucher ;
 - tri de profondeur déterministe ;
-- couches fond, sol, objets, premier plan et interface ;
-- murs hauts non interactifs ;
-- occlusion contextuelle par réduction d’opacité ;
+- murs arrière uniquement ;
 - obstacles et combattants ancrés au point de contact au sol ;
 - overlays atteignable, sélectionné, attaquable et bloqué ;
 - destruction des objets graphiques lors des reconstructions.
+
+Le renderer est générique. Il reçoit un `TabletopAssetCatalog` fourni par l’application et ne contient aucun identifiant de donjon, de héros ou de créature.
+
+Son implémentation est séparée entre :
+
+- cycle de vie PixiJS et caméra ;
+- catalogue ;
+- contexte de scène ;
+- diagnostics ;
+- chargement asynchrone des sprites ;
+- primitives ;
+- environnement ;
+- combattants ;
+- composition de salle.
+
+Les couches actives sont : fond, sol, murs arrière, objets et interface canvas. Une couche vide n’est pas conservée par anticipation.
 
 ### Pipeline d’assets
 
@@ -97,38 +123,36 @@ Le renderer utilise un pipeline versionné :
 - chemins compatibles avec le sous-répertoire GitHub Pages ;
 - précache PWA des fichiers SVG et WebP.
 
-Le manifeste pilote contient notamment :
+Le manifeste pilote contient notamment ombre au sol, fallbacks techniques, effet d’impact de contrôle, Brünhilda, Gobelin Bricoleur, deux sols, deux orientations de mur et un tonneau.
 
-- ombre au sol ;
-- fallbacks de tuile, mur et obstacle ;
-- effet d’impact technique ;
-- Brünhilda et Gobelin Bricoleur en WebP ;
-- deux sols Bastognac ;
-- deux orientations de mur ;
-- un tonneau Bastognac.
+Les formes PixiJS locales constituent le dernier niveau de secours jouable. Les assets déclarés servent de textures optimisées et de références de résolution.
 
-Les textures restent indépendantes du gameplay. Une panne de manifeste ou d’asset conserve un plateau jouable grâce aux formes vectorielles de secours.
+### UI
 
-### UI et orchestration
+`packages/ui` fournit la coque DOM accessible, le sélecteur de héros, le HUD, les boutons de phase et le journal. Le template HTML, les contrats TypeScript et la logique de mise à jour sont séparés.
 
-- `packages/ui` fournit menus, sélection des héros, HUD, commandes tactiques et boutons de phase ;
-- `apps/game/src/main.ts` orchestre contenu, moteur, renderer, UI et sauvegarde ;
-- le bouton de lancement reste désactivé jusqu’à la fin de l’initialisation du renderer et des sauvegardes ;
-- les commandes DOM restent disponibles même si l’interaction canvas échoue.
+Les commandes tactiques variables selon l’état restent dans `apps/game/src/tactical-actions.ts`, car elles traduisent un état moteur en intentions applicatives.
+
+### Sauvegardes
+
+`packages/save` utilise une connexion IndexedDB réutilisée et des schémas Zod profonds. Le chargement vérifie notamment versions, coordonnées, combattants, PV, actions, occupation, héros actif et sélection de l’équipe.
+
+Les données incompatibles ou corrompues sont rejetées avant d’atteindre le moteur ou le renderer. L’application sérialise les écritures successives pour empêcher les courses entre autosauvegardes.
 
 ### Fondation audio
 
-`packages/audio` existe déjà sous la forme d’un socle minimal de réglages et d’un `AudioDirector`. Il n’est pas encore connecté à `apps/game`, ne charge aucun média sonore et ne participe pas à la boucle de jeu. L’intégration audio réelle reste une cible ultérieure.
+`packages/audio` reste un socle minimal de réglages et d’`AudioDirector`. Il n’est pas encore connecté à la boucle de jeu et ne charge aucun média sonore.
 
 ### Plateforme
 
 - PWA Vite installable et offline-first ;
 - sauvegardes IndexedDB versionnées ;
-- migration défensive des anciennes sauvegardes ;
-- Vitest pour le moteur, le contenu, le renderer et la sauvegarde ;
-- Playwright sur build de production, en desktop et mobile paysage ;
-- GitHub Actions pour formatage, contenu, types, tests, build, sécurité et artefacts ;
-- GitHub Pages pour le déploiement.
+- Vitest pour moteur, contenu, renderer et sauvegarde ;
+- Playwright sur build de production, desktop et mobile paysage ;
+- helpers canvas mutualisés ;
+- GitHub Actions pour qualité et déploiement ;
+- validation automatique des frontières de packages, tailles de modules, tokens, documentation, secrets et assets ;
+- GitHub Pages pour la publication.
 
 ## Projection de référence
 
@@ -141,113 +165,66 @@ screenY = originY + (column + row) × tileHeight / 2
 
 Le gabarit retenu est une tuile 128 × 64, soit un ratio 2:1.
 
-## Profondeur et ancrages
-
-Les éléments sont répartis dans des couches explicites et utilisent une profondeur stable dérivée de leur position projetée.
-
-- les tuiles restent dans la couche sol ;
-- les obstacles et combattants utilisent la couche objets ;
-- les murs utilisent la couche premier plan ;
-- les informations de salle utilisent la couche interface ;
-- les sprites sont ancrés au contact avec le sol ;
-- leur illustration peut dépasser de la case sans modifier leur position logique.
-
-## Animations
-
-Le renderer accepte des personnages fixes ou très légèrement animés. Le Sprint 2 utilise des sprites fixes.
-
-Les futures animations légères pourront utiliser interpolation, translation, échelle, rotation ou opacité, sans rig ni animation squelettique. Elles doivent rester indépendantes des résultats métier et ne jamais retarder une action tactique.
-
 ## Frontières externes
 
 ### Gargottex
 
-Gargottex demeure la source de vérité éditoriale. À terme, le jeu consommera des paquets de contenu normalisés, validés et versionnés issus de Gargottex.
+Gargottex demeure la source de vérité éditoriale. À terme, le jeu consommera des paquets normalisés, validés et versionnés issus de Gargottex.
 
 ### Google Drive
 
-Drive conserve les règles humaines, le lore, les images maîtres, les tableaux de conception et les archives. Ces fichiers ne sont jamais chargés directement par la PWA en production.
+Drive conserve les règles humaines, le lore, les images maîtres, les tableaux de conception et les comptes rendus. Ces fichiers ne sont jamais chargés directement par la PWA.
 
 ### Figma et FigJam
 
-FigJam contient le diagramme d’architecture. Figma accueille les fondations visuelles et certains gabarits isométriques. Le handoff versionné dans `design/isometric` reste la référence exploitable par le code lorsque les droits ou quotas Figma limitent la production.
-
-Le code reste fonctionnel sans connexion à Figma.
+Figma accueille les fondations visuelles. Le handoff versionné dans `design/isometric` reste la référence exploitable par le code. Les tokens CSS de ce dossier sont chargés par le runtime et leur cohérence avec les tokens JSON est contrôlée.
 
 ### OpenAI API
 
-L’API OpenAI peut assister des outils privés de préparation de contenu, de QA ou de développement. Elle ne fait pas partie de la boucle de jeu et ne doit jamais être appelée directement depuis la PWA publique.
+L’API OpenAI peut assister des outils privés de préparation ou de QA. Elle ne fait pas partie de la boucle de jeu et ne doit jamais être appelée directement depuis la PWA publique.
 
 ## Structure actuelle du dépôt
 
 ```text
-apps/
-  game/                 PWA, composition et assets publics runtime
-packages/
-  engine/               règles pures et état de partie
-  content-schema/       schémas et validations Zod
-  renderer/             projection isométrique, picking, profondeur et assets
-  ui/                   interface DOM accessible
-  save/                 persistance et migrations IndexedDB
-  common/               types et utilitaires partagés
-  audio/                fondation de réglages, non intégrée à la boucle de jeu
-content/
-  bastognac/            contenu validé du vertical slice
-design/
-  isometric/            tokens, gabarits et handoff du pipeline graphique
-tools/
-  validators/           validation du contenu, du dépôt et des assets
-tests/
-  e2e/                  parcours Playwright
-docs/                   produit, architecture, audits, ADR et sprints
+apps/game                 composition de la PWA et catalogue Bastognac
+packages/engine           règles pures et état de partie
+packages/content-schema   schémas du contenu
+packages/renderer         projection, scène PixiJS et assets génériques
+packages/ui               interface DOM accessible
+packages/save             persistance et validation des sauvegardes
+packages/common           utilitaires partagés minimaux
+packages/audio            fondation inactive
+design/isometric          tokens, gabarits et handoff graphique
+content/bastognac         contenu du vertical slice
+tools/validators          validation TypeScript du contenu
+tools/validate_repository.py garde-fous du dépôt
+tests/e2e                 parcours Playwright et helpers canvas
+docs                      produit, architecture, audits, ADR et sprints
 ```
 
-## Éléments cibles non encore créés ou non encore intégrés
+## Éléments cibles non encore intégrés
 
 - Brouhaha et décor interactif ;
-- intégration audio réelle, mixage et médias sonores ;
+- intégration audio réelle ;
 - importeur complet Gargottex ;
 - pipeline industriel d’optimisation des médias ;
 - catalogue complet Bastognac ;
 - compétences définitives ;
 - campagne, loot et progression.
 
-Ils seront ajoutés ou activés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
+Ils seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
 
-## Choix technologiques
+## Propriétés attendues
 
-- TypeScript strict ;
-- Vite pour le développement et le build ;
-- PWA installable et offline-first ;
-- PixiJS pour le rendu 2D isométrique ;
-- DOM/CSS pour les menus et interfaces accessibles ;
-- IndexedDB pour les sauvegardes ;
-- Zod pour les schémas de contenu et d’assets ;
-- Vitest pour les tests unitaires ;
-- Playwright pour les parcours navigateur ;
-- GitHub Actions pour la qualité et le déploiement.
-
-WebAssembly et la véritable 3D ne sont pas introduits. Ils ne seront évalués qu’après mesure d’un besoin réel.
-
-## Propriétés attendues du moteur
-
-- déterministe à entrée identique ;
-- sérialisable ;
-- testable sans navigateur ;
-- indépendant du framerate ;
-- capable de produire un journal d’événements ;
-- compatible avec la reprise de partie ;
-- versionné pour permettre les migrations de sauvegarde ;
-- indépendant de la projection visuelle et des contenus particuliers d’un donjon.
-
-## Sécurité
-
-- aucune évaluation de code provenant des fichiers de contenu ;
-- schémas stricts et listes blanches d’effets ;
-- aucune clé API dans le bundle client ;
-- dépendances verrouillées ;
-- scan automatisé des motifs de secrets ;
-- sauvegardes sans donnée sensible par défaut.
+- moteur déterministe à entrée identique ;
+- état sérialisable et versionné ;
+- règles testables sans navigateur ;
+- rendu indépendant des décisions métier ;
+- sauvegardes validées avant utilisation ;
+- packages sans cycles ;
+- modules principaux de taille bornée ;
+- aucun secret dans le client ;
+- aucune dépendance 3D ou WebAssembly sans besoin mesuré.
 
 ## Diagramme
 
