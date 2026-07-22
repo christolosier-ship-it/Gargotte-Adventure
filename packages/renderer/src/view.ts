@@ -98,10 +98,14 @@ export function transformRoomSide(
   const order: readonly RoomSide[] = ["north", "east", "south", "west"];
   const sideIndex = order.indexOf(side);
   const quarterTurns = rotation / 90;
-  return order[(sideIndex - quarterTurns + order.length) % order.length] ?? side;
+  return (
+    order[(sideIndex - quarterTurns + order.length) % order.length] ?? side
+  );
 }
 
-export function visibleBackSides(rotation: CameraRotation): readonly RoomSide[] {
+export function visibleBackSides(
+  rotation: CameraRotation,
+): readonly RoomSide[] {
   switch (rotation) {
     case 90:
       return ["north", "east"];
@@ -118,9 +122,10 @@ export function roomWallSegments(
   dimensions: GridDimensions,
   side: RoomSide,
 ): PhysicalWallSegment[] {
-  const length = side === "north" || side === "south"
-    ? dimensions.width
-    : dimensions.height;
+  const length =
+    side === "north" || side === "south"
+      ? dimensions.width
+      : dimensions.height;
   return Array.from({ length }, (_, index) => ({
     id: `${side}:${index}`,
     side,
@@ -151,8 +156,7 @@ export function visibleWallSegments(
         ...segment,
         viewPosition: logicalToView(segment.position, dimensions, rotation),
         viewSide: transformedSide,
-        orientation:
-          transformedSide === "north" ? "south-east" : "north-east",
+        orientation: transformedSide === "north" ? "south-east" : "north-east",
       };
     }),
   );
