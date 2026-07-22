@@ -27,6 +27,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 ## Audits
 
 - [Audit d’alignement du Sprint 2](audits/sprint-2-alignment.md)
+- [Stabilisation pré-Sprint 3 - murs arrière et rotation caméra](audits/pre-sprint-3-camera-aware-walls.md)
 
 ## Design et sources externes
 
@@ -62,13 +63,15 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 
 ## État documentaire
 
-Après la clôture du Sprint 2 :
+Après la clôture du Sprint 2 et la stabilisation pré-Sprint 3 :
 
 - README aligné sur la salle isométrique actuelle ;
 - roadmap mise à jour avec le Sprint 2 terminé et le Sprint 3 prochain ;
 - architecture générale alignée sur le renderer et le pipeline d’assets livrés ;
+- murs périphériques documentés comme quatre côtés physiques dont seuls les deux côtés arrière sont rendus ;
+- rotation de contrôle 0°, 90°, 180° et 270° documentée sans modification du moteur ni de la sauvegarde ;
 - rapports Sprint 0, Sprint 1 et Sprint 2 consolidés ;
-- audit d’alignement du Sprint 2 ajouté ;
+- audits d’alignement et de stabilisation ajoutés ;
 - index ADR complet jusqu’à ADR-0006 ;
 - gabarits isométriques et contraintes d’assets actualisés ;
 - suivi détaillé présent dans Google Drive ;
