@@ -112,9 +112,7 @@ test("charge les sprites pilotes après un manifeste volontairement retardé", a
   await page.goto("./");
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
 
-  await expect
-    .poll(() => combatantAssetStatus(page, "brunhilda"))
-    .toBe("webp");
+  await expect.poll(() => combatantAssetStatus(page, "brunhilda")).toBe("webp");
   await expect
     .poll(() => combatantAssetStatus(page, "gobelin-bricoleur"))
     .toBe("webp");
