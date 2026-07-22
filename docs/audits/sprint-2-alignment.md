@@ -19,11 +19,14 @@ L’audit ne modifie pas le code de production. Les corrections proposées porte
 - `docs/design/sprint-2-isometric-guidelines.md` ;
 - `docs/adr/0006-isometric-2d-renderer.md` ;
 - `docs/architecture/overview.md` ;
+- `docs/architecture/repository-structure.md` ;
 - `docs/architecture/tactical-room.md` ;
 - `design/isometric/runtime-pipeline.md` ;
 - manifeste runtime des assets ;
 - renderer, projection et registre d’assets ;
+- moteur, sauvegarde, UI, constantes de version et fondation audio ;
 - tests unitaires et Playwright ;
+- workflows GitHub Actions ;
 - Issues #14, #16, #19, #21 et #23 ;
 - Pull Requests #15, #17, #18, #20, #22 et #24 ;
 - rapport de suivi Google Drive.
@@ -124,6 +127,14 @@ Avant correction :
 
 Correction : mise à jour dans la branche `docs/close-sprint-2-audit`.
 
+### Description inexacte du package audio
+
+Sévérité : faible, documentaire.
+
+`packages/audio` existe déjà avec des réglages et un `AudioDirector`, mais il n’est pas connecté à la PWA et ne produit aucun son. La documentation le présentait à tort comme un package non encore créé.
+
+Correction : le package est désormais décrit comme une fondation inactive. L’intégration audio, le mixage et les médias sonores restent futurs.
+
 ### Performance non quantifiée
 
 Sévérité : moyenne, non bloquante.
@@ -153,6 +164,14 @@ Sévérité : faible.
 Un asset technique d’impact est présent et précaché, mais il n’est pas encore relié aux événements de combat.
 
 Recommandation : l’intégrer avec les premiers effets du Sprint 3 ou avec les compétences définitives, plutôt que d’ajouter une animation isolée sans système d’effets.
+
+### Métadonnées de version obsolètes
+
+Sévérité : faible, visible.
+
+La PWA affiche encore un badge `Sprint 1`, `APP_VERSION` vaut encore `0.0.0-sprint-0` et le paquet npm reste en version `0.0.0`.
+
+Ces valeurs ne modifient ni le gameplay ni le build, mais elles brouillent l’identification de la version réellement testée. Elles doivent être corrigées pendant la phase d’ajustements produit précédant le Sprint 3.
 
 ### Noms historiques dans la CI
 
