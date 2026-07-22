@@ -123,9 +123,7 @@ export function roomWallSegments(
   side: RoomSide,
 ): PhysicalWallSegment[] {
   const length =
-    side === "north" || side === "south"
-      ? dimensions.width
-      : dimensions.height;
+    side === "north" || side === "south" ? dimensions.width : dimensions.height;
   return Array.from({ length }, (_, index) => ({
     id: `${side}:${index}`,
     side,
