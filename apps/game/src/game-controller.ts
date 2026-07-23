@@ -17,6 +17,8 @@ import {
   reachablePositions,
   reduceGameState,
   selectHero,
+  type BrouhahaEffectDefinition,
+  type BrouhahaResult,
   type CreatureDefinition,
   type DomainEvent,
   type GameState,
@@ -27,6 +29,12 @@ import {
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
+import {
+  brouhahaControlActions,
+  describeBrouhahaEvent,
+  executeBrouhahaControl,
+  type BrouhahaControlId,
+} from "./brouhaha-controller";
 import {
   PersistenceController,
   type RestoredSession,
@@ -44,6 +52,7 @@ interface GameControllerOptions {
   dungeon: DungeonDefinition;
   roomDefinition: TacticalRoomDefinition;
   creatureDefinitions: CreatureDefinition[];
+  brouhahaEffects: BrouhahaEffectDefinition[];
   restored: RestoredSession;
 }
 
@@ -53,6 +62,7 @@ export class GameController {
   private readonly dungeon: DungeonDefinition;
   private readonly roomDefinition: TacticalRoomDefinition;
   private readonly creatureDefinitions: CreatureDefinition[];
+  private readonly brouhahaEffects: BrouhahaEffectDefinition[];
   private readonly events = new EventBus();
   private readonly persistence = new PersistenceController();
   private readonly defaultHeroId: string;
@@ -68,6 +78,7 @@ export class GameController {
     this.dungeon = options.dungeon;
     this.roomDefinition = options.roomDefinition;
     this.creatureDefinitions = options.creatureDefinitions;
+    this.brouhahaEffects = options.brouhahaEffects;
     const defaultHeroId = options.roomDefinition.heroes[0]?.id;
     if (!defaultHeroId)
       throw new Error("Aucun héros disponible dans le scénario.");
@@ -165,6 +176,13 @@ export class GameController {
     const active = this.room?.heroes.find(
       (hero) => hero.id === this.room?.activeHeroId,
     );
+    const latestBrouhaha = this.room?.brouhaha.history.at(-1);
+    const latestEffectNames = latestBrouhaha
+      ? latestBrouhaha.effectIds.map(
+          (id) =>
+            this.brouhahaEffects.find((effect) => effect.id === id)?.name ?? id,
+        )
+      : [];
     this.shell.update({
       phase: this.state.phase,
       tacticalPhase: this.room?.phase ?? null,
@@ -176,6 +194,9 @@ export class GameController {
       actions: active?.actionsRemaining ?? 0,
       activeHero: active?.name ?? null,
       selectedHeroIds: this.selectedHeroIds,
+      brouhahaLevel: this.room?.brouhaha.level ?? 0,
+      brouhahaMax: 12,
+      brouhahaEffects: latestEffectNames,
     });
     renderTacticalActions(
       this.shell.tacticalActions,
@@ -185,10 +206,12 @@ export class GameController {
         move: this.handleMove,
         attack: this.handleAttack,
         spawn: this.handleScriptedSpawn,
+        brouhaha: this.handleBrouhahaControl,
       },
       this.room
         ? availableScriptedSpawns(this.room, this.roomDefinition.scriptedSpawns)
         : [],
+      brouhahaControlActions,
     );
     if (this.room) this.renderer.renderRoom(this.room, this.highlights());
   }
@@ -293,6 +316,20 @@ export class GameController {
     );
   };
 
+  private readonly handleBrouhahaControl = (
+    controlId: BrouhahaControlId,
+  ): void => {
+    if (!this.room) return;
+    this.applyBrouhahaResult(
+      executeBrouhahaControl(
+        this.room,
+        this.brouhahaEffects,
+        this.dungeon.id,
+        controlId,
+      ),
+    );
+  };
+
   private applySpawnResult(result: SpawnResult): void {
     const changed = result.state !== this.room;
     this.room = result.state;
@@ -301,6 +338,16 @@ export class GameController {
     );
     if (changed) this.persist();
     else this.render("Apparition refusée");
+  }
+
+  private applyBrouhahaResult(result: BrouhahaResult): void {
+    const changed = result.state !== this.room;
+    this.room = result.state;
+    result.events.forEach((event) =>
+      this.shell.appendEvent(this.tacticalEventMessage(event)),
+    );
+    if (changed) this.persist();
+    else this.render("Brouhaha inchangé");
   }
 
   private applyResult(
@@ -327,7 +374,11 @@ export class GameController {
   }
 
   private tacticalEventMessage(event: TacticalEvent): string {
-    return describeSpawnEvent(event, this.creatureDefinitions) ?? event.type;
+    return (
+      describeBrouhahaEvent(event) ??
+      describeSpawnEvent(event, this.creatureDefinitions) ??
+      event.type
+    );
   }
 
   private eventMessage(event: DomainEvent): string {
