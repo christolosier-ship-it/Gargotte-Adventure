@@ -12,11 +12,13 @@ export interface TabletopAssetCatalog {
   floorAssetIds: readonly [string, string];
   wallAssetId: string;
   obstacleAssetId: string;
+  interactableAssetIds?: Readonly<Record<string, string>>;
   groundShadowAssetId?: string;
   combatantAssetIds: Readonly<Record<string, string>>;
   preload?: readonly AssetPreloadRequest[];
   characterTargetHeight?: number;
   obstacleTargetHeight?: number;
+  interactableTargetHeight?: number;
   wallScale?: number;
 }
 
