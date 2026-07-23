@@ -48,7 +48,7 @@ describe("catalogue de Brouhaha", () => {
     expect(() =>
       parseBrouhahaEffectCatalog({
         ...effects,
-        effects: [effects.effects[0], effects.effects[0]],
+        effects: [effects.effects[0]!, effects.effects[0]!],
       }),
     ).toThrow();
     expect(() =>
