@@ -74,7 +74,10 @@ export function spawnCreatures(
     );
 
   const { valid, details } = validSpawnPoints(state, request);
-  if (request.failureMode === "all-or-nothing" && valid.length < request.quantity)
+  if (
+    request.failureMode === "all-or-nothing" &&
+    valid.length < request.quantity
+  )
     return rejectedResult(
       state,
       request,
@@ -103,11 +106,7 @@ export function spawnCreatures(
   const created: CreatureInstance[] = [];
 
   for (const point of selectedPoints) {
-    const generated = nextInstanceId(
-      definition.id,
-      nextSequence,
-      existingIds,
-    );
+    const generated = nextInstanceId(definition.id, nextSequence, existingIds);
     nextSequence = generated.nextSequence;
     existingIds.add(generated.id);
     created.push({
