@@ -8,10 +8,7 @@ import {
 } from "@gargotte/engine";
 
 export type BrouhahaControlId =
-  | "combat-engage"
-  | "objet-casse"
-  | "explosion"
-  | "tour-calme";
+  "combat-engage" | "objet-casse" | "explosion" | "tour-calme";
 
 export interface BrouhahaControlAction {
   id: BrouhahaControlId;
