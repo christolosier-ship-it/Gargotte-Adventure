@@ -4,11 +4,13 @@ import {
   reachablePositions,
   type BrouhahaEffectDefinition,
   type GameState,
+  type InteractableDefinition,
   type RoomState,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
 import { brouhahaControlActions } from "./brouhaha-controller";
+import { availableInteractableActions } from "./interactable-controller";
 import { availableScriptedSpawns } from "./scripted-spawn-controller";
 import {
   renderTacticalActions,
@@ -23,6 +25,7 @@ interface GameViewOptions {
   selectedHeroIds: readonly string[];
   saveText: string;
   brouhahaEffects: readonly BrouhahaEffectDefinition[];
+  interactableDefinitions: readonly InteractableDefinition[];
   roomDefinition: TacticalRoomDefinition;
   handlers: TacticalActionHandlers;
 }
@@ -67,6 +70,12 @@ export function renderGameView(options: GameViewOptions): void {
         )
       : [],
     brouhahaControlActions,
+    options.room
+      ? availableInteractableActions(
+          options.room,
+          options.interactableDefinitions,
+        )
+      : [],
   );
 
   if (options.room)
