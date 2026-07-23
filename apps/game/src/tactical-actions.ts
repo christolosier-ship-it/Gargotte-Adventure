@@ -4,6 +4,10 @@ import {
   type GridPosition,
   type RoomState,
 } from "@gargotte/engine";
+import type {
+  BrouhahaControlAction,
+  BrouhahaControlId,
+} from "./brouhaha-controller";
 
 export interface ScriptedSpawnAction {
   id: string;
@@ -15,6 +19,7 @@ export interface TacticalActionHandlers {
   move(position: GridPosition): void;
   attack(enemyId: string): void;
   spawn(spawnId: string): void;
+  brouhaha(controlId: BrouhahaControlId): void;
 }
 
 function createActionButton(
@@ -36,9 +41,15 @@ export function renderTacticalActions(
   room: RoomState | null,
   handlers: TacticalActionHandlers,
   scriptedSpawns: readonly ScriptedSpawnAction[] = [],
+  brouhahaControls: readonly BrouhahaControlAction[] = [],
 ): void {
   container.replaceChildren();
   if (!room) return;
+
+  const brouhahaStatus = document.createElement("strong");
+  brouhahaStatus.textContent = `Brouhaha ${room.brouhaha.level}/12`;
+  brouhahaStatus.setAttribute("aria-label", `Brouhaha ${room.brouhaha.level} sur 12`);
+  container.append(brouhahaStatus);
 
   if (room.phase === "victory" || room.phase === "defeat") {
     const message = document.createElement("strong");
@@ -54,6 +65,11 @@ export function renderTacticalActions(
     container.append(message);
     return;
   }
+
+  for (const control of brouhahaControls)
+    container.append(
+      createActionButton(control.label, () => handlers.brouhaha(control.id)),
+    );
 
   for (const spawn of scriptedSpawns)
     container.append(
