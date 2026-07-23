@@ -35,7 +35,8 @@ export function renderGameView(options: GameViewOptions): void {
   const latestEffectNames = latestBrouhaha
     ? latestBrouhaha.effectIds.map(
         (id) =>
-          options.brouhahaEffects.find((effect) => effect.id === id)?.name ?? id,
+          options.brouhahaEffects.find((effect) => effect.id === id)?.name ??
+          id,
       )
     : [];
 
@@ -78,12 +79,7 @@ function highlights(room: RoomState) {
   );
   return {
     reachable: hero
-      ? reachablePositions(
-          room,
-          hero.position,
-          hero.actionsRemaining,
-          hero.id,
-        )
+      ? reachablePositions(room, hero.position, hero.actionsRemaining, hero.id)
       : [],
     attackable: hero ? getAttackableTargets(room, hero.id) : [],
   };
