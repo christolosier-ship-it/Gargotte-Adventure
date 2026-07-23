@@ -273,6 +273,7 @@ export class GameController {
         this.room,
         this.interactableDefinitions,
         this.brouhahaEffects,
+        this.roomDefinition.chainReactions,
         this.dungeon.id,
         interactableInstanceId,
         interactionId,
