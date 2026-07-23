@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 3,
+  "schemaVersion": 4,
   "id": "bastognac-sprint-1-room",
   "name": "Salle d'essai de Bastognac",
   "grid": { "width": 8, "height": 4 },
@@ -20,7 +20,7 @@
     {
       "id": "pilier-susceptible-1",
       "interactableId": "pilier-bastognac",
-      "position": { "column": 4, "row": 2 },
+      "position": { "column": 5, "row": 2 },
       "stateId": "intact"
     },
     {
@@ -34,6 +34,49 @@
       "interactableId": "torche-bastognac",
       "position": { "column": 1, "row": 3 },
       "stateId": "allumee"
+    }
+  ],
+  "chainReactions": [
+    {
+      "id": "table-percute-pilier",
+      "trigger": {
+        "type": "moved",
+        "interactableInstanceId": "table-bancale-1",
+        "position": { "column": 4, "row": 2 }
+      },
+      "actions": [
+        {
+          "type": "transition",
+          "targetInstanceId": "pilier-susceptible-1",
+          "interactionId": "fissurer"
+        },
+        {
+          "type": "damage",
+          "centerInstanceId": "pilier-susceptible-1",
+          "radius": 3,
+          "amount": 2
+        }
+      ]
+    },
+    {
+      "id": "pilier-libere-grille",
+      "trigger": {
+        "type": "state-entered",
+        "interactableInstanceId": "pilier-susceptible-1",
+        "stateId": "fissure"
+      },
+      "actions": [
+        {
+          "type": "transition",
+          "targetInstanceId": "grille-grincante-1",
+          "interactionId": "ouvrir"
+        },
+        {
+          "type": "brouhaha",
+          "delta": 1,
+          "reason": "Le mécanisme de la grille cède dans un fracas métallique."
+        }
+      ]
     }
   ],
   "spawnPoints": [
@@ -114,5 +157,5 @@
       "position": { "column": 7, "row": 3 }
     }
   ],
-  "notes": "Statistiques provisoires. Spawn, Brouhaha et objets interactifs déterministes du Sprint 3."
+  "notes": "Statistiques provisoires. Spawn, Brouhaha, objets interactifs et réactions en chaîne déterministes du Sprint 3."
 }
