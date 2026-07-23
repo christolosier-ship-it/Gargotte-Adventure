@@ -7,6 +7,14 @@ import type {
   SpawnRejectionReason,
   SpawnSource,
 } from "./types";
+import type {
+  ChainReactionActionType,
+  ChainReactionTriggerDefinition,
+} from "./chain-reaction-types";
+
+export type TacticalCause =
+  | { type: "hero-interaction"; id: string }
+  | { type: "chain-reaction"; id: string };
 
 export type TacticalEvent =
   | { type: "hero-selected"; heroId: string }
@@ -47,6 +55,15 @@ export type TacticalEvent =
       kind: InteractableKind;
       previousStateId: string;
       stateId: string;
+      cause: TacticalCause;
+    }
+  | {
+      type: "interactable-moved";
+      requestId: string;
+      interactableInstanceId: string;
+      from: GridPosition;
+      to: GridPosition;
+      cause: TacticalCause;
     }
   | {
       type: "interactable-interaction-succeeded";
@@ -65,6 +82,36 @@ export type TacticalEvent =
       interactionId: string;
       reason: InteractableRejectionReason;
       details: string[];
+    }
+  | {
+      type: "chain-reaction-triggered";
+      rootRequestId: string;
+      reactionDefinitionId: string;
+      triggerType: ChainReactionTriggerDefinition["type"];
+      sourceInstanceId: string;
+      parentReactionId: string | null;
+    }
+  | {
+      type: "chain-reaction-damage-applied";
+      reactionId: string;
+      combatantId: string;
+      damage: number;
+      remainingHp: number;
+      centerInstanceId: string;
+    }
+  | {
+      type: "chain-reaction-action-skipped";
+      reactionId: string;
+      actionType: ChainReactionActionType;
+      targetId: string | null;
+      details: string[];
+    }
+  | {
+      type: "chain-reaction-guarded";
+      reactionId: string;
+      rootRequestId: string;
+      reactionDefinitionId: string;
+      reason: "cycle-detected" | "max-steps";
     }
   | {
       type: "spawn-requested";
