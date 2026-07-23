@@ -70,7 +70,13 @@ const chainReactionHistoryEntrySchema = z
     sourceInstanceId: idSchema,
     parentReactionId: idSchema.nullable(),
     actionIndex: z.number().int().nonnegative(),
-    actionType: z.enum(["transition", "move", "damage", "brouhaha", "guard"]),
+    actionType: z.enum([
+      "transition",
+      "move",
+      "damage",
+      "brouhaha",
+      "guard",
+    ]),
     targetId: idSchema.nullable(),
     outcome: z.enum(["applied", "skipped", "guarded"]),
     details: z.array(z.string()),
@@ -289,7 +295,8 @@ function validateChainHistory(
     context.addIssue({
       code: "custom",
       path: ["chainReactionHistory"],
-      message: "l'historique des réactions doit avoir des identifiants et séquences uniques",
+      message:
+        "l'historique des réactions doit avoir des identifiants et séquences uniques",
     });
   const maximum = Math.max(0, ...history.map((entry) => entry.sequence));
   if (
