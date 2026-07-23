@@ -4,6 +4,7 @@ export * from "./movement";
 export * from "./line-of-sight";
 export * from "./combat";
 export * from "./room-state";
+export * from "./spawn";
 export * from "./turn-machine";
 export * from "./enemy-ai";
 export * from "./events";
