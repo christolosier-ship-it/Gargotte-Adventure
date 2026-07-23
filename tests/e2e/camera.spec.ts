@@ -75,7 +75,7 @@ test("conserve le picking logique après une rotation de 90°", async ({
 
   const target = { column: 1, row: 0 };
   const point = await bringPointIntoViewport(page, () =>
-    canvasPointForLogicalCell(page, target),
+    canvasPointForLogicalCell(page, target, { x: 0, y: -16 }),
   );
   await tapOrClick(page, isMobile, point);
   await expectHeroAt(page, "brunhilda", target, 2);
