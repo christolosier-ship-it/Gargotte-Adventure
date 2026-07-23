@@ -1,6 +1,11 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
-import { createInitialGameState, createRoomState } from "@gargotte/engine";
+import {
+  createInitialGameState,
+  createRoomState,
+  spawnCreatures,
+  type CreatureDefinition,
+} from "@gargotte/engine";
 import {
   clearGameState,
   clearRoomState,
@@ -9,6 +14,16 @@ import {
   saveGameState,
   saveRoomState,
 } from "./index";
+
+const enemyDefinition: CreatureDefinition = {
+  id: "gobelin-test",
+  name: "Gobelin Test",
+  maxHp: 5,
+  atk: 2,
+  def: 0,
+  range: 1,
+  blocksMovement: true,
+};
 
 async function putRawSave(id: string, state: unknown): Promise<void> {
   const request = indexedDB.open("gargotte-adventure", 1);
@@ -36,6 +51,14 @@ function createTestRoom() {
     width: 8,
     height: 4,
     obstacles: [{ column: 3, row: 1 }],
+    spawnPoints: [
+      {
+        id: "renfort",
+        position: { column: 6, row: 0 },
+        tags: ["reinforcement"],
+        enabled: true,
+      },
+    ],
     heroes: [
       {
         id: "h",
@@ -48,16 +71,12 @@ function createTestRoom() {
         range: 1,
       },
     ],
+    creatureDefinitions: [enemyDefinition],
     enemies: [
       {
         id: "e",
-        name: "E",
+        creatureId: enemyDefinition.id,
         position: { column: 4, row: 0 },
-        hp: 2,
-        maxHp: 5,
-        atk: 2,
-        def: 0,
-        range: 1,
       },
     ],
   });
@@ -82,25 +101,67 @@ describe("sauvegarde locale", () => {
 });
 
 describe("sauvegarde tactique", () => {
-  it("restaure exactement une salle après plusieurs actions", async () => {
+  it("restaure exactement instances, points et compteur après un spawn", async () => {
     const initial = createTestRoom();
+    const spawned = spawnCreatures(initial, [enemyDefinition], {
+      id: "renfort-1",
+      source: { type: "test", id: "save-test" },
+      creatureId: enemyDefinition.id,
+      quantity: 1,
+      candidateSpawnPointIds: ["renfort"],
+      failureMode: "all-or-nothing",
+    }).state;
     const room = {
-      ...initial,
+      ...spawned,
       activeHeroId: "h",
       turn: 3,
-      heroes: initial.heroes.map((hero) => ({
+      heroes: spawned.heroes.map((hero) => ({
         ...hero,
         actionsRemaining: 1,
       })),
     };
     const payload = {
       kind: "tactical-room" as const,
-      version: 1 as const,
+      version: 2 as const,
       room,
       selectedHeroIds: ["h"],
     };
     await saveRoomState(payload);
     await expect(loadRoomState()).resolves.toEqual(payload);
+  });
+
+  it("migre une sauvegarde tactique version 1 vers les instances version 2", async () => {
+    const current = createTestRoom();
+    const legacyRoom = {
+      version: 1,
+      scenarioId: current.scenarioId,
+      width: current.width,
+      height: current.height,
+      obstacles: current.obstacles,
+      heroes: current.heroes,
+      enemies: current.enemies.map(({ creatureId: _creatureId, ...enemy }) =>
+        enemy,
+      ),
+      activeHeroId: current.activeHeroId,
+      phase: current.phase,
+      turn: current.turn,
+    };
+    await putRawSave("room-autosave", {
+      kind: "tactical-room",
+      version: 1,
+      room: legacyRoom,
+      selectedHeroIds: ["h"],
+    });
+
+    const migrated = await loadRoomState();
+    expect(migrated).not.toBeNull();
+    expect(migrated).not.toBe("legacy");
+    if (!migrated || migrated === "legacy") return;
+    expect(migrated.version).toBe(2);
+    expect(migrated.room.version).toBe(2);
+    expect(migrated.room.enemies[0]?.creatureId).toBe("e");
+    expect(migrated.room.spawnPoints).toEqual([]);
+    expect(migrated.room.nextEnemyInstanceSequence).toBe(1);
   });
 
   it("détecte une ancienne sauvegarde Sprint 0", async () => {
@@ -120,16 +181,17 @@ describe("sauvegarde tactique", () => {
     await expect(loadRoomState()).resolves.toBeNull();
   });
 
-  it("rejette une corruption profonde des combattants et coordonnées", async () => {
+  it("rejette une corruption profonde des instances et coordonnées", async () => {
     const initial = createTestRoom();
     await putRawSave("room-autosave", {
       kind: "tactical-room",
-      version: 1,
+      version: 2,
       room: {
         ...initial,
-        heroes: [
+        enemies: [
           {
-            ...initial.heroes[0],
+            ...initial.enemies[0],
+            creatureId: "",
             hp: 99,
             position: { column: 99, row: 0 },
           },
@@ -143,7 +205,7 @@ describe("sauvegarde tactique", () => {
   it("rejette une sélection absente de la salle", async () => {
     await putRawSave("room-autosave", {
       kind: "tactical-room",
-      version: 1,
+      version: 2,
       room: createTestRoom(),
       selectedHeroIds: ["fantome"],
     });
@@ -151,39 +213,10 @@ describe("sauvegarde tactique", () => {
   });
 
   it("supprime la sauvegarde sans créer un faux héritage", async () => {
-    const room = createRoomState({
-      scenarioId: "s",
-      width: 2,
-      height: 1,
-      obstacles: [],
-      heroes: [
-        {
-          id: "h",
-          name: "H",
-          position: { column: 0, row: 0 },
-          hp: 5,
-          maxHp: 5,
-          atk: 2,
-          def: 0,
-          range: 1,
-        },
-      ],
-      enemies: [
-        {
-          id: "e",
-          name: "E",
-          position: { column: 1, row: 0 },
-          hp: 3,
-          maxHp: 3,
-          atk: 1,
-          def: 0,
-          range: 1,
-        },
-      ],
-    });
+    const room = createTestRoom();
     await saveRoomState({
       kind: "tactical-room",
-      version: 1,
+      version: 2,
       room,
       selectedHeroIds: ["h"],
     });
