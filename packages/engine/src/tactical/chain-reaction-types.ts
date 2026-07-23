@@ -64,6 +64,15 @@ export interface ChainReactionRuntimeTrigger {
   parentReactionId: string | null;
 }
 
+export interface ChainReactionActionResolution {
+  state: import("./types").RoomState;
+  events: import("./events").TacticalEvent[];
+  triggers: ChainReactionTriggerDefinition[];
+  outcome: ChainReactionOutcome;
+  targetId: string | null;
+  details: string[];
+}
+
 export interface ChainReactionResult {
   state: import("./types").RoomState;
   events: import("./events").TacticalEvent[];
