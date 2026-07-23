@@ -66,6 +66,12 @@ export function hasLineOfSight(
   return blockers.every(
     (position) =>
       !isObstacle(position, state.obstacles) &&
+      !state.interactables.some(
+        (interactable) =>
+          interactable.blocksLineOfSight &&
+          !ignoreIds.includes(interactable.id) &&
+          samePosition(interactable.position, position),
+      ) &&
       !livingCombatants(state).some(
         (combatant) =>
           combatant.blocksMovement &&
