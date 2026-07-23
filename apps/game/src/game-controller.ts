@@ -16,7 +16,6 @@ import {
   selectHero,
   type BrouhahaEffectDefinition,
   type CreatureDefinition,
-  type DomainEvent,
   type GameState,
   type GridPosition,
   type InteractableDefinition,
@@ -26,15 +25,14 @@ import {
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
 import {
-  describeBrouhahaEvent,
   executeBrouhahaControl,
   type BrouhahaControlId,
 } from "./brouhaha-controller";
+import { describeDomainEvent, describeTacticalEvent } from "./event-messages";
 import { renderGameView } from "./game-view";
 import { readSelectedHeroIds } from "./hero-selection";
 import {
   availableInteractableActions,
-  describeInteractableEvent,
   executeInteractableAction,
 } from "./interactable-controller";
 import {
@@ -42,10 +40,7 @@ import {
   type RestoredSession,
 } from "./persistence-controller";
 import { buildTacticalRoom } from "./room-builder";
-import {
-  describeSpawnEvent,
-  executeScriptedSpawn,
-} from "./scripted-spawn-controller";
+import { executeScriptedSpawn } from "./scripted-spawn-controller";
 
 interface GameControllerOptions {
   shell: GameShell;
@@ -113,7 +108,7 @@ export class GameController {
   start(): void {
     this.events.subscribe((event) => {
       this.state = reduceGameState(this.state, event);
-      this.shell.appendEvent(this.eventMessage(event));
+      this.shell.appendEvent(describeDomainEvent(event));
       this.persist();
     });
     this.shell.heroPicker.addEventListener("change", () =>
@@ -346,24 +341,13 @@ export class GameController {
 
   private appendTacticalEvents(events: readonly TacticalEvent[]): void {
     events.forEach((event) =>
-      this.shell.appendEvent(this.tacticalEventMessage(event)),
+      this.shell.appendEvent(
+        describeTacticalEvent(
+          event,
+          this.creatureDefinitions,
+          this.interactableDefinitions,
+        ),
+      ),
     );
-  }
-
-  private tacticalEventMessage(event: TacticalEvent): string {
-    return (
-      describeInteractableEvent(event, this.interactableDefinitions) ??
-      describeBrouhahaEvent(event) ??
-      describeSpawnEvent(event, this.creatureDefinitions) ??
-      event.type
-    );
-  }
-
-  private eventMessage(event: DomainEvent): string {
-    return event.type === "expedition/started"
-      ? "Les héros entrent dans la salle tactique."
-      : event.type === "expedition/returned-to-menu"
-        ? "Retour au menu."
-        : "Le moteur de jeu est prêt.";
   }
 }
