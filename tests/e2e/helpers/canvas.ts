@@ -241,7 +241,8 @@ export async function activateBrunhilda(page: Page): Promise<void> {
     .click();
   await canvasLocator(page).scrollIntoViewIfNeeded();
   await page.evaluate(
-    () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+    () =>
+      new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
   );
 }
 
