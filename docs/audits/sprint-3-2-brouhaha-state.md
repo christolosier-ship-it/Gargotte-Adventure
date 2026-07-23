@@ -39,9 +39,9 @@ L'ajout des commandes Brouhaha allongeait la colonne latérale et étirait initi
 
 Les tests historiques activent un héros depuis la colonne de commandes avant de cliquer le plateau. Le helper Playwright ramène maintenant le canvas dans la fenêtre après cette activation, afin de recalculer les coordonnées sur sa position visible.
 
-## Validation fonctionnelle
+## Validation finale
 
-HEAD fonctionnel validé : `764e1459e0f028651ddcf781674f22ef2b8a25ee`.
+HEAD validé avant fusion : `1318fb261a63e1bc0ec60b3b0cda122efc7d3baf`.
 
 Succès obtenus :
 
@@ -57,8 +57,14 @@ Succès obtenus :
 - parcours historiques de picking, rotation, redimensionnement et fallbacks ;
 - package lock et artefact de production.
 
+## Livraison
+
+- Issue : #36, clôturée comme terminée ;
+- Pull Request : #37, fusionnée par squash ;
+- commit de fusion : `306cc037a5e64ef948b45d85e92d45e3a9909eb2` ;
+- dépôt modifié : `christolosier-ship-it/Gargotte-Adventure` uniquement ;
+- Gargottex : aucune écriture.
+
 ## Verdict
 
-Le Sprint 3.2 satisfait son périmètre fonctionnel et ses invariants. La PR #37 peut être fusionnée après le dernier passage complet de la CI sur ce commit documentaire de clôture.
-
-Le commit de fusion sera consigné dans Google Drive. Gargottex n'a reçu aucune écriture.
+Le Sprint 3.2 satisfait son périmètre fonctionnel et ses invariants. Il est livré dans `main` et la roadmap peut passer au Sprint 3.3 consacré aux objets interactifs.
