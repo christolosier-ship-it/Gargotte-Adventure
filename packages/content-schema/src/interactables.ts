@@ -98,7 +98,9 @@ export type InteractableStateDefinition = z.infer<
 export type InteractableInteractionDefinition = z.infer<
   typeof interactableInteractionDefinitionSchema
 >;
-export type InteractableDefinition = z.infer<typeof interactableDefinitionSchema>;
+export type InteractableDefinition = z.infer<
+  typeof interactableDefinitionSchema
+>;
 export type InteractableCatalog = z.infer<typeof interactableCatalogSchema>;
 
 export function parseInteractableCatalog(value: unknown): InteractableCatalog {
