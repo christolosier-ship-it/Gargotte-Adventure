@@ -1,3 +1,4 @@
+import { createInitialBrouhahaState } from "./brouhaha";
 import type {
   CreatureDefinition,
   EnemyState,
@@ -31,7 +32,7 @@ export function createRoomState(input: {
   );
 
   return {
-    version: 2,
+    version: 3,
     scenarioId: input.scenarioId,
     width: input.width,
     height: input.height,
@@ -39,6 +40,7 @@ export function createRoomState(input: {
     spawnPoints: input.spawnPoints,
     processedSpawnRequestIds: [],
     nextEnemyInstanceSequence: 1,
+    brouhaha: createInitialBrouhahaState(),
     heroes: input.heroes.map((hero) => ({
       ...hero,
       kind: "hero",
