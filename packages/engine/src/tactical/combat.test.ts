@@ -4,11 +4,14 @@ import { hasLineOfSight, supercoverLine } from "./line-of-sight";
 import type { RoomState } from "./types";
 
 const state = (patch: Partial<RoomState> = {}): RoomState => ({
-  version: 3,
+  version: 4,
   scenarioId: "t",
   width: 8,
   height: 4,
   obstacles: [],
+  interactables: [],
+  processedInteractableRequestIds: [],
+  nextInteractableInteractionSequence: 1,
   spawnPoints: [],
   processedSpawnRequestIds: [],
   nextEnemyInstanceSequence: 1,
@@ -98,10 +101,31 @@ describe("portée ligne de vue combat", () => {
     ).toBe(false);
   });
 
-  it("bloque un obstacle central et une entité", () => {
+  it("bloque un obstacle, un objet opaque et une entité", () => {
     expect(
       hasLineOfSight(
         state({ obstacles: [{ column: 1, row: 0 }] }),
+        { column: 0, row: 0 },
+        { column: 2, row: 0 },
+      ),
+    ).toBe(false);
+    expect(
+      hasLineOfSight(
+        state({
+          enemies: [],
+          interactables: [
+            {
+              id: "pilier",
+              interactableId: "pilier-test",
+              name: "Pilier",
+              kind: "pillar",
+              position: { column: 1, row: 0 },
+              stateId: "intact",
+              blocksMovement: true,
+              blocksLineOfSight: true,
+            },
+          ],
+        }),
         { column: 0, row: 0 },
         { column: 2, row: 0 },
       ),
