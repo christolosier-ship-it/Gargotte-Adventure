@@ -18,6 +18,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Salle tactique](architecture/tactical-room.md)
 - [Moteur de spawn déterministe](architecture/spawn-engine.md)
 - [Moteur de Brouhaha](architecture/brouhaha.md)
+- [Objets interactifs](architecture/interactable-objects.md)
 - [Décisions d'architecture](adr/README.md)
 - [ADR-0006 : plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 - [ADR-0007 : définitions, instances et spawn déterministe](adr/0007-creature-instances-and-deterministic-spawn.md)
@@ -37,6 +38,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Désendettement structurel pré-Sprint 3](audits/pre-sprint-3-structural-debt.md)
 - [Sprint 3.1 : fondation de spawn déterministe](audits/sprint-3-1-spawn-foundation.md)
 - [Sprint 3.2 : état et effets du Brouhaha](audits/sprint-3-2-brouhaha-state.md)
+- [Sprint 3.3 : objets interactifs](audits/sprint-3-3-interactable-objects.md)
 
 ## Design et sources externes
 
@@ -80,17 +82,15 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 
 ## État documentaire
 
-Après la fusion du Sprint 3.2 :
+Pendant la livraison du Sprint 3.3 :
 
-- le Sprint 3.1 est consigné comme fusionné par la PR #35 ;
-- le Sprint 3.2 est consigné comme fusionné par la PR #37 ;
-- les commits de fusion sont référencés dans la roadmap, le suivi et les audits ;
-- l'architecture du Brouhaha décrit l'état, le catalogue, la résolution et les frontières ;
-- la salle tactique utilise la sauvegarde version 3 ;
-- les migrations depuis les versions 1 et 2 sont documentées ;
-- les effets universels et propres à Bastognac sont distingués ;
+- les Sprints 3.1 et 3.2 restent consignés comme fusionnés ;
+- la PR active est la #43 et l'issue active la #42 ;
+- les définitions éditoriales sont séparées des instances d'objets ;
+- les transitions, refus, événements et liens avec le Brouhaha sont documentés ;
+- la salle tactique passe en sauvegarde version 4 ;
+- les migrations depuis les versions 1 à 3 sont documentées ;
 - le renderer reste sans règle métier ;
-- le lien avec les Sprints 3.3 à 3.5 est explicité ;
-- l'audit de livraison Sprint 3.2 est clôturé ;
-- Gargottex reste strictement en lecture seule ;
-- la prochaine phase est le Sprint 3.3 consacré aux objets interactifs.
+- les réactions en chaîne restent réservées au Sprint 3.4 ;
+- l'audit de livraison Sprint 3.3 est indexé ;
+- Gargottex reste strictement en lecture seule.
