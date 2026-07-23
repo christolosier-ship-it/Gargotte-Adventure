@@ -39,6 +39,17 @@ export interface CanvasWallSegment {
   orientation: string;
 }
 
+export interface CanvasBrouhahaHistoryEntry {
+  id: string;
+  requestId: string;
+  sequence: number;
+  previousLevel: number;
+  level: number;
+  requestedDelta: number;
+  appliedDelta: number;
+  effectIds: string[];
+}
+
 export interface CanvasState {
   phase: string;
   turn: number;
@@ -49,6 +60,10 @@ export interface CanvasState {
   spawnPoints: CanvasSpawnPoint[];
   processedSpawnRequests: string[];
   nextEnemyInstanceSequence: number;
+  brouhahaLevel: number;
+  brouhahaHistory: CanvasBrouhahaHistoryEntry[];
+  processedBrouhahaRequests: string[];
+  nextBrouhahaResolutionSequence: number;
   heroes: CanvasHeroState[];
   enemies: CanvasEnemyState[];
 }
@@ -74,6 +89,16 @@ export async function readCanvasState(page: Page): Promise<CanvasState> {
     ) as string[],
     nextEnemyInstanceSequence: Number(
       element.dataset.nextEnemyInstanceSequence ?? 0,
+    ),
+    brouhahaLevel: Number(element.dataset.brouhahaLevel ?? 0),
+    brouhahaHistory: JSON.parse(
+      element.dataset.brouhahaHistory ?? "[]",
+    ) as CanvasBrouhahaHistoryEntry[],
+    processedBrouhahaRequests: JSON.parse(
+      element.dataset.processedBrouhahaRequests ?? "[]",
+    ) as string[],
+    nextBrouhahaResolutionSequence: Number(
+      element.dataset.nextBrouhahaResolutionSequence ?? 0,
     ),
     heroes: JSON.parse(element.dataset.heroes ?? "[]") as CanvasHeroState[],
     enemies: JSON.parse(element.dataset.enemies ?? "[]") as CanvasEnemyState[],
