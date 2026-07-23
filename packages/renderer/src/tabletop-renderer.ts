@@ -79,7 +79,12 @@ export async function createTabletopRenderer(
   const stage = new Container();
   app.stage.addChild(stage);
   const layers = createLayers(stage);
-  const listeners: SceneListeners = { cell: [], hero: [], enemy: [] };
+  const listeners: SceneListeners = {
+    cell: [],
+    hero: [],
+    enemy: [],
+    interactable: [],
+  };
 
   let currentRotation: CameraRotation = 0;
   let currentRoomDimensions: GridDimensions = { width: 1, height: 1 };
@@ -205,6 +210,9 @@ export async function createTabletopRenderer(
     },
     onEnemySelected(listener) {
       listeners.enemy.push(listener);
+    },
+    onInteractableSelected(listener) {
+      listeners.interactable.push(listener);
     },
   };
 }
