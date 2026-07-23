@@ -91,7 +91,9 @@ for (const reaction of room.chainReactions) {
   for (const action of reaction.actions) {
     if (action.type === "brouhaha") continue;
     const targetId =
-      action.type === "damage" ? action.centerInstanceId : action.targetInstanceId;
+      action.type === "damage"
+        ? action.centerInstanceId
+        : action.targetInstanceId;
     const placement = placementsById.get(targetId);
     if (!placement)
       throw new Error(`Réaction ${reaction.id}: cible absente ${targetId}.`);
