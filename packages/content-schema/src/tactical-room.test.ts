@@ -99,6 +99,17 @@ describe("contenu tactique", () => {
     ).toThrow();
   });
 
+  it("rejette un identifiant partagé entre combattant et objet", () => {
+    expect(() =>
+      parseTacticalRoom({
+        ...room,
+        interactables: room.interactables.map((object, index) =>
+          index === 0 ? { ...object, id: room.heroes[0]!.id } : object,
+        ),
+      }),
+    ).toThrow(/identifiant d'instance dupliqué brunhilda/);
+  });
+
   it("rejette un spawn scripté pointant vers un point absent", () => {
     expect(() =>
       parseTacticalRoom({
