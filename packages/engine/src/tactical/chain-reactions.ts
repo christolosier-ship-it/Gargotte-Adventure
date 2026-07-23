@@ -147,7 +147,9 @@ function triggerMatches(
   if (expected.type === "moved" && actual.type === "moved")
     return (
       !expected.position ||
-      Boolean(actual.position && samePosition(expected.position, actual.position))
+      Boolean(
+        actual.position && samePosition(expected.position, actual.position),
+      )
     );
   return false;
 }
