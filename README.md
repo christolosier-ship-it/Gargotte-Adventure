@@ -14,7 +14,7 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 
 **Sprint 3.1 : fondation de spawn déterministe livrée par la PR #35**
 
-**Sprint 3.2 : Brouhaha 0 à 12 en livraison dans la PR #37**
+**Sprint 3.2 : Brouhaha 0 à 12 livré par la PR #37**
 
 La version stable de `main` permet de :
 
@@ -30,13 +30,16 @@ La version stable de `main` permet de :
 - sélectionner les cases et combattants directement sur le canvas ;
 - afficher des sols, murs, obstacles et sprites pilotes Bastognac ;
 - instancier des renforts avec des identifiants reproductibles ;
+- faire évoluer une jauge de Brouhaha de 0 à 12 ;
+- résoudre un ou deux effets déterministes selon le niveau ;
+- conserver l'historique du Brouhaha dans la sauvegarde version 3 ;
 - rester jouable grâce aux fallbacks si un asset ne charge pas.
 
 Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, les statistiques, les compétences et une partie du bestiaire restent provisoires.
 
-## Chantier actuel
+## Dernière livraison
 
-La PR #37 implémente le Sprint 3.2 :
+La PR #37 a livré le Sprint 3.2 au commit `306cc037a5e64ef948b45d85e92d45e3a9909eb2` :
 
 - jauge de Brouhaha bornée de 0 à 12 ;
 - demandes d'augmentation ou de diminution explicites ;
@@ -52,6 +55,8 @@ La PR #37 implémente le Sprint 3.2 :
 - tests moteur, contenu, sauvegarde, desktop et mobile paysage.
 
 Le Brouhaha ne déclenche pas encore automatiquement de renfort. Cette connexion est réservée au Sprint 3.5 et utilisera le moteur de spawn livré au Sprint 3.1.
+
+La prochaine phase de la roadmap est le Sprint 3.3 consacré aux objets interactifs.
 
 Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
 
