@@ -156,7 +156,10 @@ type ReturnTypePayload = {
   selectedHeroIds: string[];
 };
 
-function payload(room: RoomState, selectedHeroIds: string[]): ReturnTypePayload {
+function payload(
+  room: RoomState,
+  selectedHeroIds: string[],
+): ReturnTypePayload {
   return {
     kind: "tactical-room",
     version: 5,
@@ -165,9 +168,7 @@ function payload(room: RoomState, selectedHeroIds: string[]): ReturnTypePayload 
   };
 }
 
-function migrateV4(
-  room: z.infer<typeof legacyRoomStateV4Schema>,
-): RoomState {
+function migrateV4(room: z.infer<typeof legacyRoomStateV4Schema>): RoomState {
   return {
     ...room,
     version: 5,
