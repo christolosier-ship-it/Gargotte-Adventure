@@ -6,7 +6,11 @@ import type { IsometricProjection, ScreenPosition } from "../projection";
 import type { CameraRotation, GridDimensions } from "../view";
 
 export type SceneLayerName =
-  "backdrop" | "floor" | "backWall" | "object" | "interface";
+  | "backdrop"
+  | "floor"
+  | "backWall"
+  | "object"
+  | "interface";
 
 export type SceneLayers = Record<SceneLayerName, Container>;
 
@@ -14,6 +18,7 @@ export interface SceneListeners {
   cell: ((position: GridPosition) => void)[];
   hero: ((id: string) => void)[];
   enemy: ((id: string) => void)[];
+  interactable: ((id: string) => void)[];
 }
 
 export interface SceneRenderContext {
