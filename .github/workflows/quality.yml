@@ -24,4 +24,17 @@ jobs:
           python-version: "3.12"
 
       - name: Validate structure and secrets
-        run: python tools/validate_repository.py
+        shell: bash
+        run: |
+          set +e
+          python tools/validate_repository.py 2>&1 | tee repository-validation.log
+          status=${PIPESTATUS[0]}
+          exit "$status"
+
+      - name: Upload repository diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: repository-diagnostics
+          path: repository-validation.log
+          if-no-files-found: error
