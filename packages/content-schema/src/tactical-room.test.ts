@@ -1,7 +1,12 @@
 import { describe, expect, it } from "vitest";
 import creatures from "../../../content/bastognac/creatures.json";
+import interactables from "../../../content/bastognac/interactables.json";
 import room from "../../../content/bastognac/sprint-1-room.json";
-import { parseCreatureCatalog, parseTacticalRoom } from "./index";
+import {
+  parseCreatureCatalog,
+  parseInteractableCatalog,
+  parseTacticalRoom,
+} from "./index";
 
 const officialHeroes = [
   ["brunhilda", "Brünhilda la Torgnole"],
@@ -11,24 +16,36 @@ const officialHeroes = [
 ] as const;
 
 describe("contenu tactique", () => {
-  it("valide le catalogue pilote et les quatre héros officiels", () => {
-    const catalog = parseCreatureCatalog(creatures);
+  it("valide les catalogues pilotes, les objets et les héros officiels", () => {
+    const creatureCatalog = parseCreatureCatalog(creatures);
+    const interactableCatalog = parseInteractableCatalog(interactables);
     const parsed = parseTacticalRoom(room);
-    expect(catalog.creatures.map((creature) => creature.id)).toEqual([
+    expect(creatureCatalog.creatures.map((creature) => creature.id)).toEqual([
       "gobelin-bricoleur",
       "gobelin-lance-tout",
     ]);
+    expect(interactableCatalog.interactables.map((object) => object.kind)).toEqual(
+      ["table", "barrel", "gate", "torch", "pillar"],
+    );
     expect(parsed.heroes.map(({ id, name }) => [id, name])).toEqual(
       officialHeroes,
     );
     expect(parsed.enemies.every((enemy) => "creatureId" in enemy)).toBe(true);
+    expect(parsed.interactables).toHaveLength(5);
   });
 
-  it("référence uniquement des créatures et points de spawn connus", () => {
-    const catalog = parseCreatureCatalog(creatures);
+  it("référence uniquement des créatures, objets, états et points connus", () => {
+    const creatureCatalog = parseCreatureCatalog(creatures);
+    const interactableCatalog = parseInteractableCatalog(interactables);
     const parsed = parseTacticalRoom(room);
     const creatureIds = new Set(
-      catalog.creatures.map((creature) => creature.id),
+      creatureCatalog.creatures.map((creature) => creature.id),
+    );
+    const definitions = new Map(
+      interactableCatalog.interactables.map((definition) => [
+        definition.id,
+        definition,
+      ]),
     );
     const pointIds = new Set(parsed.spawnPoints.map((point) => point.id));
 
@@ -42,9 +59,17 @@ describe("contenu tactique", () => {
           spawn.candidateSpawnPointIds.every((id) => pointIds.has(id)),
       ),
     ).toBe(true);
+    expect(
+      parsed.interactables.every((placement) => {
+        const definition = definitions.get(placement.interactableId);
+        return definition?.states.some(
+          (state) => state.id === placement.stateId,
+        );
+      }),
+    ).toBe(true);
   });
 
-  it("rejette doublons, hors plateau et obstacle", () => {
+  it("rejette doublons, hors plateau et collision avec un obstacle", () => {
     expect(() =>
       parseTacticalRoom({
         ...room,
@@ -67,8 +92,8 @@ describe("contenu tactique", () => {
     expect(() =>
       parseTacticalRoom({
         ...room,
-        heroes: room.heroes.map((hero, index) =>
-          index === 0 ? { ...hero, position: room.obstacles[0] } : hero,
+        interactables: room.interactables.map((object, index) =>
+          index === 0 ? { ...object, position: room.obstacles[0] } : object,
         ),
       }),
     ).toThrow();
@@ -120,11 +145,37 @@ describe("contenu tactique", () => {
     ).toThrow();
   });
 
-  it("rejette les définitions de créatures dupliquées", () => {
+  it("rejette les définitions de créatures et d'objets dupliquées", () => {
     expect(() =>
       parseCreatureCatalog({
         ...creatures,
         creatures: [creatures.creatures[0], creatures.creatures[0]],
+      }),
+    ).toThrow();
+    expect(() =>
+      parseInteractableCatalog({
+        ...interactables,
+        interactables: [
+          interactables.interactables[0],
+          interactables.interactables[0],
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejette une transition vers un état absent", () => {
+    const barrel = interactables.interactables[1]!;
+    expect(() =>
+      parseInteractableCatalog({
+        schemaVersion: 1,
+        interactables: [
+          {
+            ...barrel,
+            interactions: [
+              { ...barrel.interactions[0]!, toStateId: "poussiere" },
+            ],
+          },
+        ],
       }),
     ).toThrow();
   });
