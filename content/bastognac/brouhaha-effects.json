@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "effects": [
+    {
+      "id": "universel-echo-suspect",
+      "name": "Écho suspect",
+      "description": "Un bruit répond depuis un couloir où personne ne devrait se trouver.",
+      "scope": { "type": "universal" },
+      "minLevel": 0,
+      "maxLevel": 9
+    },
+    {
+      "id": "universel-poussiere-nerveuse",
+      "name": "Poussière nerveuse",
+      "description": "Le plafond toussote et couvre la salle d'une fine poussière très peu rassurante.",
+      "scope": { "type": "universal" },
+      "minLevel": 0,
+      "maxLevel": 9
+    },
+    {
+      "id": "universel-panique-des-murs",
+      "name": "Panique des murs",
+      "description": "Les murs vibrent comme si tout le donjon cherchait à se lever d'un seul coup.",
+      "scope": { "type": "universal" },
+      "minLevel": 10,
+      "maxLevel": 12
+    },
+    {
+      "id": "universel-vacarme-en-cascade",
+      "name": "Vacarme en cascade",
+      "description": "Chaque choc en déclenche un autre et le donjon devient une batterie de cuisine géante.",
+      "scope": { "type": "universal" },
+      "minLevel": 10,
+      "maxLevel": 12
+    },
+    {
+      "id": "bastognac-placard-qui-ricane",
+      "name": "Le placard qui ricane",
+      "description": "Une porte de placard s'entrouvre, ricane puis se referme avec une dignité douteuse.",
+      "scope": {
+        "type": "dungeon",
+        "dungeonId": "chateau-de-bastognac"
+      },
+      "minLevel": 0,
+      "maxLevel": 9
+    },
+    {
+      "id": "bastognac-cuisines-reveillees",
+      "name": "Les cuisines se réveillent",
+      "description": "Des casseroles galopent dans les couloirs tandis qu'une cloche sonne sans raison valable.",
+      "scope": {
+        "type": "dungeon",
+        "dungeonId": "chateau-de-bastognac"
+      },
+      "minLevel": 10,
+      "maxLevel": 12
+    }
+  ]
+}

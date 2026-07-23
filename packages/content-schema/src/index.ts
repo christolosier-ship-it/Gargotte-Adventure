@@ -1,5 +1,15 @@
 import { z } from "zod";
 
+export {
+  brouhahaEffectCatalogSchema,
+  brouhahaEffectDefinitionSchema,
+  parseBrouhahaEffectCatalog,
+} from "./brouhaha";
+export type {
+  BrouhahaEffectCatalog,
+  BrouhahaEffectDefinition,
+} from "./brouhaha";
+
 const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
 export const contentManifestSchema = z.object({

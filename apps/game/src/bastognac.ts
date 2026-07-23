@@ -1,16 +1,23 @@
 import {
+  parseBrouhahaEffectCatalog,
   parseCreatureCatalog,
   parseDungeon,
   parseTacticalRoom,
 } from "@gargotte/content-schema";
-import type { CreatureDefinition } from "@gargotte/engine";
+import type {
+  BrouhahaEffectDefinition,
+  CreatureDefinition,
+} from "@gargotte/engine";
 import type { TabletopAssetCatalog } from "@gargotte/renderer";
+import brouhahaEffectData from "../../../content/bastognac/brouhaha-effects.json";
 import creatureData from "../../../content/bastognac/creatures.json";
 import dungeonData from "../../../content/bastognac/dungeon.json";
 import roomData from "../../../content/bastognac/sprint-1-room.json";
 
 export const bastognacDungeon = parseDungeon(dungeonData);
 export const bastognacCreatureCatalog = parseCreatureCatalog(creatureData);
+export const bastognacBrouhahaEffectCatalog =
+  parseBrouhahaEffectCatalog(brouhahaEffectData);
 export const bastognacRoom = parseTacticalRoom(roomData);
 export const bastognacCreatureDefinitions: CreatureDefinition[] =
   bastognacCreatureCatalog.creatures.map((creature) => ({
@@ -22,6 +29,8 @@ export const bastognacCreatureDefinitions: CreatureDefinition[] =
     range: creature.range,
     blocksMovement: creature.blocksMovement,
   }));
+export const bastognacBrouhahaEffects: BrouhahaEffectDefinition[] =
+  bastognacBrouhahaEffectCatalog.effects;
 
 export const bastognacAssetCatalog: TabletopAssetCatalog = {
   canvasLabel: "Plateau tactique PixiJS de Bastognac",

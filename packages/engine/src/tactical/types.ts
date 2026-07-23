@@ -90,8 +90,77 @@ export interface SpawnRejection {
   details: string[];
 }
 
+export type BrouhahaEffectScope =
+  { type: "universal" } | { type: "dungeon"; dungeonId: string };
+
+export interface BrouhahaEffectDefinition {
+  id: string;
+  name: string;
+  description: string;
+  scope: BrouhahaEffectScope;
+  minLevel: number;
+  maxLevel: number;
+}
+
+export type BrouhahaSourceType =
+  | "combat"
+  | "object"
+  | "explosion"
+  | "door"
+  | "ability"
+  | "calm-turn"
+  | "scenario"
+  | "test";
+
+export interface BrouhahaSource {
+  type: BrouhahaSourceType;
+  id: string;
+}
+
+export interface BrouhahaRequest {
+  id: string;
+  delta: number;
+  source: BrouhahaSource;
+  reason: string;
+}
+
+export interface BrouhahaHistoryEntry {
+  id: string;
+  requestId: string;
+  sequence: number;
+  previousLevel: number;
+  level: number;
+  requestedDelta: number;
+  appliedDelta: number;
+  source: BrouhahaSource;
+  reason: string;
+  effectIds: string[];
+}
+
+export interface BrouhahaState {
+  level: number;
+  processedRequestIds: string[];
+  nextResolutionSequence: number;
+  history: BrouhahaHistoryEntry[];
+}
+
+export type BrouhahaRejectionReason =
+  | "duplicate-request"
+  | "invalid-delta"
+  | "terminal-room"
+  | "no-level-change"
+  | "insufficient-effects";
+
+export interface BrouhahaRejection {
+  requestId: string;
+  reason: BrouhahaRejectionReason;
+  previousLevel: number;
+  requestedDelta: number;
+  details: string[];
+}
+
 export interface RoomState {
-  version: 2;
+  version: 3;
   scenarioId: string;
   width: number;
   height: number;
@@ -99,6 +168,7 @@ export interface RoomState {
   spawnPoints: SpawnPoint[];
   processedSpawnRequestIds: string[];
   nextEnemyInstanceSequence: number;
+  brouhaha: BrouhahaState;
   heroes: HeroState[];
   enemies: EnemyState[];
   activeHeroId: string | null;

@@ -1,6 +1,7 @@
 import "virtual:pwa-register";
 import "./styles.css";
 import "./theme.css";
+import "./layout.css";
 import { bootstrapGame } from "./bootstrap";
 
 const root = document.querySelector<HTMLElement>("#app");

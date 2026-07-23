@@ -16,6 +16,9 @@ export interface GameShellUpdate {
   actions?: number;
   activeHero?: string | null;
   selectedHeroIds?: string[];
+  brouhahaLevel?: number;
+  brouhahaMax?: number;
+  brouhahaEffects?: string[];
 }
 
 export interface GameShell {

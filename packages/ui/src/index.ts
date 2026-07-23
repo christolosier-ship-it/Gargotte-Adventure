@@ -77,7 +77,10 @@ export function createGameShell(
       rotateCameraButton.disabled = !next.canRotateCamera;
       cameraStatus.textContent = `Vue : ${next.cameraRotation ?? 0}°`;
       saveStatus.textContent = next.saveText;
-      hud.textContent = `Héros actif: ${next.activeHero ?? "aucun"} · Actions: ${"●".repeat(next.actions ?? 0)}${"○".repeat(Math.max(0, 3 - (next.actions ?? 0)))} · Phase: ${tacticalPhase ?? "menu"}`;
+      const brouhahaEffects = next.brouhahaEffects?.length
+        ? ` · Effets: ${next.brouhahaEffects.join(" + ")}`
+        : "";
+      hud.textContent = `Héros actif: ${next.activeHero ?? "aucun"} · Actions: ${"●".repeat(next.actions ?? 0)}${"○".repeat(Math.max(0, 3 - (next.actions ?? 0)))} · Brouhaha: ${next.brouhahaLevel ?? 0}/${next.brouhahaMax ?? 12}${brouhahaEffects} · Phase: ${tacticalPhase ?? "menu"}`;
       endActivationButton.disabled =
         tacticalPhase !== "heroes-turn" || !next.activeHero;
       endHeroesTurnButton.disabled = tacticalPhase !== "heroes-turn";

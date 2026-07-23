@@ -1,9 +1,11 @@
 import "fake-indexeddb/auto";
 import { beforeEach, describe, expect, it } from "vitest";
 import {
+  changeBrouhaha,
   createInitialGameState,
   createRoomState,
   spawnCreatures,
+  type BrouhahaEffectDefinition,
   type CreatureDefinition,
 } from "@gargotte/engine";
 import {
@@ -24,6 +26,33 @@ const enemyDefinition: CreatureDefinition = {
   range: 1,
   blocksMovement: true,
 };
+
+const brouhahaEffects: BrouhahaEffectDefinition[] = [
+  {
+    id: "universel-bas",
+    name: "Écho",
+    description: "Un écho répond.",
+    scope: { type: "universal" },
+    minLevel: 0,
+    maxLevel: 9,
+  },
+  {
+    id: "universel-haut-a",
+    name: "Panique",
+    description: "Le donjon panique.",
+    scope: { type: "universal" },
+    minLevel: 10,
+    maxLevel: 12,
+  },
+  {
+    id: "universel-haut-b",
+    name: "Vacarme",
+    description: "Le vacarme répond.",
+    scope: { type: "universal" },
+    minLevel: 10,
+    maxLevel: 12,
+  },
+];
 
 async function putRawSave(id: string, state: unknown): Promise<void> {
   const request = indexedDB.open("gargotte-adventure", 1);
@@ -101,7 +130,7 @@ describe("sauvegarde locale", () => {
 });
 
 describe("sauvegarde tactique", () => {
-  it("restaure exactement instances, points et compteur après un spawn", async () => {
+  it("restaure exactement spawn, Brouhaha, effets et compteurs", async () => {
     const initial = createTestRoom();
     const spawned = spawnCreatures(initial, [enemyDefinition], {
       id: "renfort-1",
@@ -111,18 +140,29 @@ describe("sauvegarde tactique", () => {
       candidateSpawnPointIds: ["renfort"],
       failureMode: "all-or-nothing",
     }).state;
+    const noisy = changeBrouhaha(
+      spawned,
+      brouhahaEffects,
+      {
+        id: "bruit-1",
+        delta: 2,
+        source: { type: "test", id: "save-test" },
+        reason: "Test de sauvegarde",
+      },
+      { dungeonId: "bastognac" },
+    ).state;
     const room = {
-      ...spawned,
+      ...noisy,
       activeHeroId: "h",
       turn: 3,
-      heroes: spawned.heroes.map((hero) => ({
+      heroes: noisy.heroes.map((hero) => ({
         ...hero,
         actionsRemaining: 1,
       })),
     };
     const payload = {
       kind: "tactical-room" as const,
-      version: 2 as const,
+      version: 3 as const,
       room,
       selectedHeroIds: ["h"],
     };
@@ -130,7 +170,31 @@ describe("sauvegarde tactique", () => {
     await expect(loadRoomState()).resolves.toEqual(payload);
   });
 
-  it("migre une sauvegarde tactique version 1 vers les instances version 2", async () => {
+  it("migre une sauvegarde tactique version 2 vers le Brouhaha version 3", async () => {
+    const current = createTestRoom();
+    const { brouhaha: _brouhaha, ...legacyRoom } = current;
+    await putRawSave("room-autosave", {
+      kind: "tactical-room",
+      version: 2,
+      room: { ...legacyRoom, version: 2 },
+      selectedHeroIds: ["h"],
+    });
+
+    const migrated = await loadRoomState();
+    expect(migrated).not.toBeNull();
+    expect(migrated).not.toBe("legacy");
+    if (!migrated || migrated === "legacy") return;
+    expect(migrated.version).toBe(3);
+    expect(migrated.room.version).toBe(3);
+    expect(migrated.room.brouhaha).toEqual({
+      level: 0,
+      processedRequestIds: [],
+      nextResolutionSequence: 1,
+      history: [],
+    });
+  });
+
+  it("migre une sauvegarde tactique version 1 vers les instances et le Brouhaha version 3", async () => {
     const current = createTestRoom();
     const legacyRoom = {
       version: 1,
@@ -157,11 +221,12 @@ describe("sauvegarde tactique", () => {
     expect(migrated).not.toBeNull();
     expect(migrated).not.toBe("legacy");
     if (!migrated || migrated === "legacy") return;
-    expect(migrated.version).toBe(2);
-    expect(migrated.room.version).toBe(2);
+    expect(migrated.version).toBe(3);
+    expect(migrated.room.version).toBe(3);
     expect(migrated.room.enemies[0]?.creatureId).toBe("e");
     expect(migrated.room.spawnPoints).toEqual([]);
     expect(migrated.room.nextEnemyInstanceSequence).toBe(1);
+    expect(migrated.room.brouhaha.level).toBe(0);
   });
 
   it("détecte une ancienne sauvegarde Sprint 0", async () => {
@@ -181,21 +246,18 @@ describe("sauvegarde tactique", () => {
     await expect(loadRoomState()).resolves.toBeNull();
   });
 
-  it("rejette une corruption profonde des instances et coordonnées", async () => {
+  it("rejette une corruption profonde du Brouhaha", async () => {
     const initial = createTestRoom();
     await putRawSave("room-autosave", {
       kind: "tactical-room",
-      version: 2,
+      version: 3,
       room: {
         ...initial,
-        enemies: [
-          {
-            ...initial.enemies[0],
-            creatureId: "",
-            hp: 99,
-            position: { column: 99, row: 0 },
-          },
-        ],
+        brouhaha: {
+          ...initial.brouhaha,
+          level: 13,
+          processedRequestIds: ["doublon", "doublon"],
+        },
       },
       selectedHeroIds: ["h"],
     });
@@ -205,7 +267,7 @@ describe("sauvegarde tactique", () => {
   it("rejette une sélection absente de la salle", async () => {
     await putRawSave("room-autosave", {
       kind: "tactical-room",
-      version: 2,
+      version: 3,
       room: createTestRoom(),
       selectedHeroIds: ["fantome"],
     });
@@ -216,7 +278,7 @@ describe("sauvegarde tactique", () => {
     const room = createTestRoom();
     await saveRoomState({
       kind: "tactical-room",
-      version: 2,
+      version: 3,
       room,
       selectedHeroIds: ["h"],
     });

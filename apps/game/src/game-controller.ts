@@ -12,11 +12,11 @@ import {
   endHeroActivation,
   endHeroesTurn,
   finishEnemyTurn,
-  getAttackableTargets,
   moveCombatant,
-  reachablePositions,
   reduceGameState,
   selectHero,
+  type BrouhahaEffectDefinition,
+  type BrouhahaResult,
   type CreatureDefinition,
   type DomainEvent,
   type GameState,
@@ -28,15 +28,19 @@ import {
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
 import {
+  describeBrouhahaEvent,
+  executeBrouhahaControl,
+  type BrouhahaControlId,
+} from "./brouhaha-controller";
+import { renderGameView } from "./game-view";
+import {
   PersistenceController,
   type RestoredSession,
 } from "./persistence-controller";
 import {
-  availableScriptedSpawns,
   describeSpawnEvent,
   executeScriptedSpawn,
 } from "./scripted-spawn-controller";
-import { renderTacticalActions } from "./tactical-actions";
 
 interface GameControllerOptions {
   shell: GameShell;
@@ -44,6 +48,7 @@ interface GameControllerOptions {
   dungeon: DungeonDefinition;
   roomDefinition: TacticalRoomDefinition;
   creatureDefinitions: CreatureDefinition[];
+  brouhahaEffects: BrouhahaEffectDefinition[];
   restored: RestoredSession;
 }
 
@@ -53,6 +58,7 @@ export class GameController {
   private readonly dungeon: DungeonDefinition;
   private readonly roomDefinition: TacticalRoomDefinition;
   private readonly creatureDefinitions: CreatureDefinition[];
+  private readonly brouhahaEffects: BrouhahaEffectDefinition[];
   private readonly events = new EventBus();
   private readonly persistence = new PersistenceController();
   private readonly defaultHeroId: string;
@@ -68,6 +74,7 @@ export class GameController {
     this.dungeon = options.dungeon;
     this.roomDefinition = options.roomDefinition;
     this.creatureDefinitions = options.creatureDefinitions;
+    this.brouhahaEffects = options.brouhahaEffects;
     const defaultHeroId = options.roomDefinition.heroes[0]?.id;
     if (!defaultHeroId)
       throw new Error("Aucun héros disponible dans le scénario.");
@@ -142,55 +149,24 @@ export class GameController {
     });
   }
 
-  private highlights() {
-    const hero = this.room?.heroes.find(
-      (candidate) => candidate.id === this.room?.activeHeroId,
-    );
-    return {
-      reachable:
-        this.room && hero
-          ? reachablePositions(
-              this.room,
-              hero.position,
-              hero.actionsRemaining,
-              hero.id,
-            )
-          : [],
-      attackable:
-        this.room && hero ? getAttackableTargets(this.room, hero.id) : [],
-    };
-  }
-
   private render(saveText: string): void {
-    const active = this.room?.heroes.find(
-      (hero) => hero.id === this.room?.activeHeroId,
-    );
-    this.shell.update({
-      phase: this.state.phase,
-      tacticalPhase: this.room?.phase ?? null,
-      expeditionNumber: this.state.expeditionNumber,
-      canContinue: Boolean(this.room),
-      canRotateCamera: Boolean(this.room),
-      cameraRotation: this.renderer.getCameraRotation(),
-      saveText,
-      actions: active?.actionsRemaining ?? 0,
-      activeHero: active?.name ?? null,
+    renderGameView({
+      shell: this.shell,
+      renderer: this.renderer,
+      state: this.state,
+      room: this.room,
       selectedHeroIds: this.selectedHeroIds,
-    });
-    renderTacticalActions(
-      this.shell.tacticalActions,
-      this.room,
-      {
+      saveText,
+      brouhahaEffects: this.brouhahaEffects,
+      roomDefinition: this.roomDefinition,
+      handlers: {
         selectHero: this.handleHeroSelection,
         move: this.handleMove,
         attack: this.handleAttack,
         spawn: this.handleScriptedSpawn,
+        brouhaha: this.handleBrouhahaControl,
       },
-      this.room
-        ? availableScriptedSpawns(this.room, this.roomDefinition.scriptedSpawns)
-        : [],
-    );
-    if (this.room) this.renderer.renderRoom(this.room, this.highlights());
+    });
   }
 
   private persist(): void {
@@ -293,14 +269,34 @@ export class GameController {
     );
   };
 
+  private readonly handleBrouhahaControl = (
+    controlId: BrouhahaControlId,
+  ): void => {
+    if (!this.room) return;
+    this.applyBrouhahaResult(
+      executeBrouhahaControl(
+        this.room,
+        this.brouhahaEffects,
+        this.dungeon.id,
+        controlId,
+      ),
+    );
+  };
+
   private applySpawnResult(result: SpawnResult): void {
     const changed = result.state !== this.room;
     this.room = result.state;
-    result.events.forEach((event) =>
-      this.shell.appendEvent(this.tacticalEventMessage(event)),
-    );
+    this.appendTacticalEvents(result.events);
     if (changed) this.persist();
     else this.render("Apparition refusée");
+  }
+
+  private applyBrouhahaResult(result: BrouhahaResult): void {
+    const changed = result.state !== this.room;
+    this.room = result.state;
+    this.appendTacticalEvents(result.events);
+    if (changed) this.persist();
+    else this.render("Brouhaha inchangé");
   }
 
   private applyResult(
@@ -319,15 +315,22 @@ export class GameController {
     }
     this.room = result.value.state;
     if (successMessage) this.shell.appendEvent(successMessage);
-    else
-      result.value.events.forEach((event) =>
-        this.shell.appendEvent(this.tacticalEventMessage(event)),
-      );
+    else this.appendTacticalEvents(result.value.events);
     this.persist();
   }
 
+  private appendTacticalEvents(events: readonly TacticalEvent[]): void {
+    events.forEach((event) =>
+      this.shell.appendEvent(this.tacticalEventMessage(event)),
+    );
+  }
+
   private tacticalEventMessage(event: TacticalEvent): string {
-    return describeSpawnEvent(event, this.creatureDefinitions) ?? event.type;
+    return (
+      describeBrouhahaEvent(event) ??
+      describeSpawnEvent(event, this.creatureDefinitions) ??
+      event.type
+    );
   }
 
   private eventMessage(event: DomainEvent): string {
