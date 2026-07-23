@@ -62,7 +62,7 @@ export async function clearGameState(): Promise<void> {
 
 export interface SavedRoomPayload {
   kind: "tactical-room";
-  version: 4;
+  version: 5;
   room: RoomState;
   selectedHeroIds: string[];
 }
