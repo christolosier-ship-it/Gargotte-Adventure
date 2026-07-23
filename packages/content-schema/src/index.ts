@@ -160,6 +160,7 @@ export const tacticalRoomSchema = z
     const occupied = new Map<string, string>();
     const actorIds = new Set<string>();
     const spawnPointIds = new Set<string>();
+    const spawnPointPositions = new Map<string, string>();
     const scriptedSpawnIds = new Set<string>();
     const addBlockingPosition = (
       position: { column: number; row: number },
@@ -197,6 +198,14 @@ export const tacticalRoomSchema = z
         });
       spawnPointIds.add(point.id);
       validatePosition(room, point.position, point.id, context);
+      const positionKey = `${point.position.column},${point.position.row}`;
+      const otherPoint = spawnPointPositions.get(positionKey);
+      if (otherPoint)
+        context.addIssue({
+          code: "custom",
+          message: `${point.id} partage la position de ${otherPoint}`,
+        });
+      else spawnPointPositions.set(positionKey, point.id);
     }
 
     for (const scripted of room.scriptedSpawns) {
@@ -206,6 +215,14 @@ export const tacticalRoomSchema = z
           message: `spawn scripté dupliqué ${scripted.id}`,
         });
       scriptedSpawnIds.add(scripted.id);
+      if (
+        new Set(scripted.candidateSpawnPointIds).size !==
+        scripted.candidateSpawnPointIds.length
+      )
+        context.addIssue({
+          code: "custom",
+          message: `${scripted.id} contient des points candidats dupliqués`,
+        });
       for (const pointId of scripted.candidateSpawnPointIds)
         if (!spawnPointIds.has(pointId))
           context.addIssue({
