@@ -187,10 +187,7 @@ export class GameController {
         spawn: this.handleScriptedSpawn,
       },
       this.room
-        ? availableScriptedSpawns(
-            this.room,
-            this.roomDefinition.scriptedSpawns,
-          )
+        ? availableScriptedSpawns(this.room, this.roomDefinition.scriptedSpawns)
         : [],
     );
     if (this.room) this.renderer.renderRoom(this.room, this.highlights());
@@ -292,11 +289,7 @@ export class GameController {
     );
     if (!scripted) return;
     this.applySpawnResult(
-      executeScriptedSpawn(
-        this.room,
-        this.creatureDefinitions,
-        scripted,
-      ),
+      executeScriptedSpawn(this.room, this.creatureDefinitions, scripted),
     );
   };
 
