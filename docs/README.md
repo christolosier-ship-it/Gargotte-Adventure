@@ -34,6 +34,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Audit d’alignement du Sprint 2](audits/sprint-2-alignment.md)
 - [Stabilisation pré-Sprint 3 — murs arrière et rotation caméra](audits/pre-sprint-3-camera-aware-walls.md)
 - [Désendettement structurel pré-Sprint 3](audits/pre-sprint-3-structural-debt.md)
+- [Sprint 3.1 — Fondation de spawn déterministe](audits/sprint-3-1-spawn-foundation.md)
 
 ## Design et sources externes
 
@@ -89,5 +90,6 @@ Pendant le Sprint 3.1 :
 - budget de menace maintenu par salle et hors du spawn ;
 - étude du générateur Gargottex consignée en lecture seule ;
 - sauvegarde version 2 et migration version 1 documentées ;
+- audit de la fondation de spawn indexé ;
 - suivi d’exécution présent dans Google Drive ;
 - statut final encore conditionné à la CI et au contrôle de la PR #34.
