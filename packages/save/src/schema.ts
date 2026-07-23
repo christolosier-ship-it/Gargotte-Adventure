@@ -1,5 +1,10 @@
 import { z } from "zod";
-import { HERO_ACTIONS, type GameState, type RoomState } from "@gargotte/engine";
+import {
+  HERO_ACTIONS,
+  createInitialBrouhahaState,
+  type GameState,
+  type RoomState,
+} from "@gargotte/engine";
 
 const idSchema = z.string().min(1);
 const gridPositionSchema = z
@@ -58,6 +63,132 @@ const spawnPointSchema = z
   })
   .strict();
 
+const brouhahaSourceSchema = z
+  .object({
+    type: z.enum([
+      "combat",
+      "object",
+      "explosion",
+      "door",
+      "ability",
+      "calm-turn",
+      "scenario",
+      "test",
+    ]),
+    id: idSchema,
+  })
+  .strict();
+
+const brouhahaHistoryEntrySchema = z
+  .object({
+    id: idSchema,
+    requestId: idSchema,
+    sequence: z.number().int().positive(),
+    previousLevel: z.number().int().min(0).max(12),
+    level: z.number().int().min(0).max(12),
+    requestedDelta: z.number().int(),
+    appliedDelta: z.number().int(),
+    source: brouhahaSourceSchema,
+    reason: z.string().min(1),
+    effectIds: z.array(idSchema).min(1).max(2),
+  })
+  .strict()
+  .superRefine((entry, context) => {
+    if (entry.requestedDelta === 0)
+      context.addIssue({
+        code: "custom",
+        path: ["requestedDelta"],
+        message: "requestedDelta doit être non nul",
+      });
+    if (entry.appliedDelta !== entry.level - entry.previousLevel)
+      context.addIssue({
+        code: "custom",
+        path: ["appliedDelta"],
+        message: "appliedDelta doit correspondre au changement de niveau",
+      });
+    if (new Set(entry.effectIds).size !== entry.effectIds.length)
+      context.addIssue({
+        code: "custom",
+        path: ["effectIds"],
+        message: "les effets résolus doivent être distincts",
+      });
+    const expectedEffectCount = entry.level >= 10 ? 2 : 1;
+    if (entry.effectIds.length !== expectedEffectCount)
+      context.addIssue({
+        code: "custom",
+        path: ["effectIds"],
+        message: `${expectedEffectCount} effet(s) attendu(s) au niveau ${entry.level}`,
+      });
+  });
+
+const brouhahaStateSchema = z
+  .object({
+    level: z.number().int().min(0).max(12),
+    processedRequestIds: z.array(idSchema),
+    nextResolutionSequence: z.number().int().positive(),
+    history: z.array(brouhahaHistoryEntrySchema),
+  })
+  .strict()
+  .superRefine((brouhaha, context) => {
+    if (
+      new Set(brouhaha.processedRequestIds).size !==
+      brouhaha.processedRequestIds.length
+    )
+      context.addIssue({
+        code: "custom",
+        path: ["processedRequestIds"],
+        message: "les demandes de Brouhaha traitées doivent être uniques",
+      });
+
+    const historyIds = new Set<string>();
+    const historyRequests = new Set<string>();
+    const sequences = new Set<number>();
+    for (const entry of brouhaha.history) {
+      if (historyIds.has(entry.id))
+        context.addIssue({
+          code: "custom",
+          path: ["history"],
+          message: `historique de Brouhaha dupliqué ${entry.id}`,
+        });
+      historyIds.add(entry.id);
+      if (historyRequests.has(entry.requestId))
+        context.addIssue({
+          code: "custom",
+          path: ["history"],
+          message: `demande de Brouhaha dupliquée ${entry.requestId}`,
+        });
+      historyRequests.add(entry.requestId);
+      if (sequences.has(entry.sequence))
+        context.addIssue({
+          code: "custom",
+          path: ["history"],
+          message: `séquence de Brouhaha dupliquée ${entry.sequence}`,
+        });
+      sequences.add(entry.sequence);
+      if (!brouhaha.processedRequestIds.includes(entry.requestId))
+        context.addIssue({
+          code: "custom",
+          path: ["processedRequestIds"],
+          message: `demande historique absente des demandes traitées: ${entry.requestId}`,
+        });
+    }
+
+    const last = brouhaha.history.at(-1);
+    if (last && last.level !== brouhaha.level)
+      context.addIssue({
+        code: "custom",
+        path: ["level"],
+        message: "le niveau doit correspondre à la dernière résolution",
+      });
+    const maxSequence = Math.max(0, ...brouhaha.history.map((entry) => entry.sequence));
+    if (brouhaha.nextResolutionSequence <= maxSequence)
+      context.addIssue({
+        code: "custom",
+        path: ["nextResolutionSequence"],
+        message: "la prochaine séquence doit suivre l'historique",
+      });
+  });
+
 function validateCombatant(
   combatant: {
     hp: number;
@@ -98,7 +229,7 @@ export const gameStateSchema = z
   .strict();
 
 const currentRoomShape = {
-  version: z.literal(2),
+  version: z.literal(3),
   scenarioId: idSchema,
   width: z.number().int().positive(),
   height: z.number().int().positive(),
@@ -106,6 +237,7 @@ const currentRoomShape = {
   spawnPoints: z.array(spawnPointSchema),
   processedSpawnRequestIds: z.array(idSchema),
   nextEnemyInstanceSequence: z.number().int().positive(),
+  brouhaha: brouhahaStateSchema,
   heroes: z.array(heroSchema).min(1),
   enemies: z.array(enemySchema).min(1),
   activeHeroId: idSchema.nullable(),
@@ -118,7 +250,26 @@ export const roomStateSchema = z
   .strict()
   .superRefine(validateRoomState);
 
-const legacyRoomStateSchema = z
+const legacyRoomStateV2Schema = z
+  .object({
+    version: z.literal(2),
+    scenarioId: idSchema,
+    width: z.number().int().positive(),
+    height: z.number().int().positive(),
+    obstacles: z.array(gridPositionSchema),
+    spawnPoints: z.array(spawnPointSchema),
+    processedSpawnRequestIds: z.array(idSchema),
+    nextEnemyInstanceSequence: z.number().int().positive(),
+    heroes: z.array(heroSchema).min(1),
+    enemies: z.array(enemySchema).min(1),
+    activeHeroId: idSchema.nullable(),
+    phase: z.enum(["heroes-turn", "enemy-turn", "victory", "defeat"]),
+    turn: z.number().int().positive(),
+  })
+  .strict()
+  .superRefine(validateRoomState);
+
+const legacyRoomStateV1Schema = z
   .object({
     version: z.literal(1),
     scenarioId: idSchema,
@@ -223,18 +374,28 @@ function validateRoomState(
 export const savedRoomPayloadSchema = z
   .object({
     kind: z.literal("tactical-room"),
-    version: z.literal(2),
+    version: z.literal(3),
     room: roomStateSchema,
     selectedHeroIds: z.array(idSchema).min(1).max(4),
   })
   .strict()
   .superRefine(validateSelectedHeroes);
 
-const legacySavedRoomPayloadSchema = z
+const legacySavedRoomPayloadV2Schema = z
+  .object({
+    kind: z.literal("tactical-room"),
+    version: z.literal(2),
+    room: legacyRoomStateV2Schema,
+    selectedHeroIds: z.array(idSchema).min(1).max(4),
+  })
+  .strict()
+  .superRefine(validateSelectedHeroes);
+
+const legacySavedRoomPayloadV1Schema = z
   .object({
     kind: z.literal("tactical-room"),
     version: z.literal(1),
-    room: legacyRoomStateSchema,
+    room: legacyRoomStateV1Schema,
     selectedHeroIds: z.array(idSchema).min(1).max(4),
   })
   .strict()
@@ -271,7 +432,7 @@ export function parseSavedGameState(value: unknown): GameState | null {
 
 export function parseSavedRoomPayload(value: unknown): {
   kind: "tactical-room";
-  version: 2;
+  version: 3;
   room: RoomState;
   selectedHeroIds: string[];
 } | null {
@@ -279,27 +440,41 @@ export function parseSavedRoomPayload(value: unknown): {
   if (current.success)
     return current.data as {
       kind: "tactical-room";
-      version: 2;
+      version: 3;
       room: RoomState;
       selectedHeroIds: string[];
     };
 
-  const legacy = legacySavedRoomPayloadSchema.safeParse(value);
-  if (!legacy.success) return null;
+  const legacyV2 = legacySavedRoomPayloadV2Schema.safeParse(value);
+  if (legacyV2.success)
+    return {
+      kind: "tactical-room",
+      version: 3,
+      room: {
+        ...legacyV2.data.room,
+        version: 3,
+        brouhaha: createInitialBrouhahaState(),
+      },
+      selectedHeroIds: legacyV2.data.selectedHeroIds,
+    };
+
+  const legacyV1 = legacySavedRoomPayloadV1Schema.safeParse(value);
+  if (!legacyV1.success) return null;
   return {
     kind: "tactical-room",
-    version: 2,
+    version: 3,
     room: {
-      ...legacy.data.room,
-      version: 2,
+      ...legacyV1.data.room,
+      version: 3,
       spawnPoints: [],
       processedSpawnRequestIds: [],
       nextEnemyInstanceSequence: 1,
-      enemies: legacy.data.room.enemies.map((enemy) => ({
+      brouhaha: createInitialBrouhahaState(),
+      enemies: legacyV1.data.room.enemies.map((enemy) => ({
         ...enemy,
         creatureId: enemy.id,
       })),
     },
-    selectedHeroIds: legacy.data.selectedHeroIds,
+    selectedHeroIds: legacyV1.data.selectedHeroIds,
   };
 }
