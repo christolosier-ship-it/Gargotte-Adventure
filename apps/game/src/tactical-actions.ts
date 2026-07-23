@@ -8,6 +8,7 @@ import type {
   BrouhahaControlAction,
   BrouhahaControlId,
 } from "./brouhaha-controller";
+import type { InteractableAction } from "./interactable-controller";
 
 export interface ScriptedSpawnAction {
   id: string;
@@ -18,6 +19,7 @@ export interface TacticalActionHandlers {
   selectHero(heroId: string): void;
   move(position: GridPosition): void;
   attack(enemyId: string): void;
+  interact(interactableInstanceId: string, interactionId: string): void;
   spawn(spawnId: string): void;
   brouhaha(controlId: BrouhahaControlId): void;
 }
@@ -42,6 +44,7 @@ export function renderTacticalActions(
   handlers: TacticalActionHandlers,
   scriptedSpawns: readonly ScriptedSpawnAction[] = [],
   brouhahaControls: readonly BrouhahaControlAction[] = [],
+  interactableActions: readonly InteractableAction[] = [],
 ): void {
   container.replaceChildren();
   if (!room) return;
@@ -92,6 +95,18 @@ export function renderTacticalActions(
 
   const activeHero = room.heroes.find((hero) => hero.id === room.activeHeroId);
   if (!activeHero) return;
+
+  for (const action of interactableActions)
+    container.append(
+      createActionButton(
+        `🧱 ${action.label} ${action.objectName}`,
+        () =>
+          handlers.interact(
+            action.interactableInstanceId,
+            action.interactionId,
+          ),
+      ),
+    );
 
   for (const position of reachablePositions(
     room,
