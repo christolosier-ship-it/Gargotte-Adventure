@@ -10,6 +10,7 @@ import type { VisibleWallSegment } from "../view";
 import { drawCombatant } from "./combatants";
 import type { SceneRenderContext } from "./context";
 import { drawTile, drawWall } from "./environment";
+import { drawInteractable } from "./interactables";
 import { resolveTileState } from "./primitives";
 
 export function renderRoomScene(
@@ -73,6 +74,9 @@ export function renderRoomScene(
     }
 
   wallSegments.forEach((segment) => drawWall(context, segment));
+  state.interactables.forEach((interactable) =>
+    drawInteractable(context, interactable),
+  );
   state.heroes
     .filter((candidate) => candidate.alive)
     .forEach((hero, index) =>
