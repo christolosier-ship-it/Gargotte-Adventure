@@ -9,7 +9,7 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 | Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
 | Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
 | Sprint 2 : Plateau isométrique             | ✅ Terminé  | Même salle jouable en 2D isométrique avec pipeline graphique réutilisable      |
-| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn livré, Brouhaha 0 à 12 en livraison, décor interactif à venir             |
+| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn livré, Brouhaha 0 à 12 en livraison, décor interactif à venir            |
 | Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs                     |
 | Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition              |
 
