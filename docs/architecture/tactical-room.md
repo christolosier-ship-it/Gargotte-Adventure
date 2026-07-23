@@ -2,115 +2,85 @@
 
 ## Responsabilités
 
-La salle tactique est divisée en cinq responsabilités :
+La salle tactique sépare cinq responsabilités :
 
-1. **Contenu** (`content/bastognac` et `packages/content-schema`) : catalogue de créatures, géométrie logique, placements initiaux, points de spawn et scripts de contrôle.
-2. **Moteur** (`packages/engine/src/tactical`) : grille, déplacements, ligne de vue, combat, tours, IA, instances, spawn, événements et erreurs métier.
-3. **Renderer PixiJS** (`packages/renderer`) : projection isométrique de `RoomState`, transformation de vue, assets et remontée des intentions.
-4. **UI DOM** (`packages/ui`) : sélection des héros, HUD, boutons de phase, rotation, commandes accessibles et journal.
-5. **Sauvegarde** (`packages/save`) : persistance IndexedDB versionnée, migration et restauration défensive.
+1. **Contenu** : catalogues, géométrie logique, placements, points de spawn et scripts pilotes.
+2. **Moteur** : grille, déplacements, ligne de vue, combat, tours, IA, Brouhaha, objets et spawn.
+3. **Renderer PixiJS** : projection isométrique, assets, picking et diagnostics.
+4. **UI DOM** : sélection, HUD, commandes accessibles et journal.
+5. **Sauvegarde** : persistance IndexedDB, schémas versionnés et migrations.
 
-`apps/game/src/bootstrap.ts` assemble ces responsabilités. `game-controller.ts` traduit les intentions utilisateur, mais ne décide pas si un déplacement, une attaque, un spawn ou un changement de phase est valide.
+`apps/game` assemble ces responsabilités. Il traduit les intentions utilisateur, mais ne décide pas si une action est valide.
 
-## Contenu de salle version 2
+## Contenu de salle version 3
 
-La salle de contenu distingue désormais :
+La salle Bastognac contient :
 
-- les quatre héros et leurs statistiques provisoires ;
-- les placements ennemis initiaux, limités à `id`, `creatureId` et position ;
-- les obstacles ;
-- les points de spawn ;
-- les spawns scriptés de contrôle ;
-- les dimensions et les notes.
+- les héros et placements ennemis initiaux ;
+- les obstacles structurels ;
+- les instances initiales d'objets ;
+- les points et scripts de spawn ;
+- les dimensions et notes.
 
-Les définitions de créatures sont conservées dans `content/bastognac/creatures.json`. La salle ne duplique plus les statistiques de Gobelin Bricoleur et Gobelin Lance-Tout.
+Les statistiques de créatures et les états d'objets restent dans leurs catalogues respectifs. Le validateur contrôle les identifiants, références, positions, collisions et états initiaux.
 
-Les schémas Zod contrôlent notamment :
+## `RoomState` version 4
 
-- unicité des identifiants d’instances ;
-- unicité des points et scripts ;
-- limites du plateau ;
-- collisions initiales ;
-- références des scripts vers des points existants ;
-- références des placements et scripts vers le catalogue, via le validateur du paquet.
+L'état runtime contient :
 
-## `RoomState` version 2
+- dimensions, obstacles, phase et tour ;
+- héros et instances ennemies ;
+- instances d'objets et demandes d'interaction traitées ;
+- points, demandes et séquence de spawn ;
+- niveau, historique et séquence du Brouhaha.
 
-`RoomState` contient :
-
-- version `2` ;
-- identifiant du scénario ;
-- largeur et hauteur ;
-- obstacles ;
-- points de spawn ;
-- identifiants des requêtes de spawn déjà traitées ;
-- prochaine séquence d’instance ennemie ;
-- héros ;
-- instances ennemies ;
-- héros actif ;
-- phase ;
-- numéro de tour.
-
-L’état ne contient aucune coordonnée écran, texture, orientation de caméra ou référence PixiJS.
+Aucune coordonnée écran, texture, orientation de caméra ou référence PixiJS n'entre dans le moteur.
 
 ## Définitions et instances
 
-### `CreatureDefinition`
+### Créatures
 
-Une définition décrit l’archétype stable : nom, statistiques de base et blocage. Le schéma de contenu pilote ajoute catégorie, menace et tags.
+`CreatureDefinition` décrit l'archétype stable. `CreatureInstance` porte l'identifiant runtime, le `creatureId`, la position, les PV et les statistiques courantes.
 
-### `CreatureInstance`
+### Objets
 
-Une instance ennemie possède :
+`InteractableDefinition` décrit la famille, les états et transitions autorisés. `InteractableInstance` porte l'identifiant runtime, la position, l'état courant et les propriétés de blocage calculées.
 
-- un `id` runtime unique ;
-- un `creatureId` pointant vers la définition ;
-- position, PV et statistiques runtime ;
-- état vivant ;
-- blocage du déplacement.
+Plusieurs instances peuvent partager la même définition sans partager leur état.
 
-L’`id` runtime joue le rôle d’`instanceId` défini dans l’ADR-0007. Plusieurs instances peuvent partager le même `creatureId`.
+## Objets interactifs
 
-`createRoomState` transforme les placements initiaux en instances complètes à partir du catalogue. Une définition absente provoque une erreur avant le démarrage de la salle.
+Le Sprint 3.3 livre table, tonneau, grille, torche et pilier. Une interaction valide exige :
+
+- le tour des héros ;
+- un héros vivant et actif ;
+- au moins une action restante ;
+- une distance orthogonale d'une case ;
+- une transition autorisée depuis l'état courant ;
+- une case libre lorsqu'un objet redevient bloquant.
+
+Une réussite consomme une action. Une interaction bruyante produit une demande de Brouhaha stable. Un refus ne modifie rien et ne consomme aucune action.
+
+Les règles détaillées se trouvent dans [Architecture des objets interactifs](interactable-objects.md).
 
 ## Spawn déterministe
 
-Le moteur reçoit :
+Une `SpawnRequest` fournit un archétype, une quantité et une liste ordonnée de points candidats. Le moteur filtre les points absents, dupliqués, désactivés, hors limites ou bloqués.
 
-- l’état de salle ;
-- le catalogue de définitions ;
-- une `SpawnRequest`.
+Le mode `all-or-nothing` refuse sans mutation lorsque les positions sont insuffisantes. Le mode `partial` crée les instances possibles et explique le reliquat.
 
-Il retourne un `SpawnResult` comprenant :
+Les identifiants reposent sur une séquence persistée. Le moteur de spawn ne lit ni ne dépense le budget de menace.
 
-- le nouvel état ;
-- les instances créées ;
-- les refus structurés ;
-- les événements explicatifs.
+## Brouhaha
 
-La demande contient une liste ordonnée d’identifiants de points. Le moteur conserve cet ordre et élimine les candidats absents, dupliqués, désactivés, hors limites ou bloqués.
+La jauge reste bornée de 0 à 12. Les demandes sont idempotentes, historisées et résolues sans hasard implicite :
 
-Le mode `all-or-nothing` refuse sans mutation lorsque les positions valides sont insuffisantes. Le mode `partial` crée les instances possibles et explique le reliquat.
+- un effet aux niveaux 0 à 9 ;
+- deux effets distincts aux niveaux 10 à 12.
 
-Une requête réussie est inscrite dans `processedSpawnRequestIds`. Elle ne peut donc pas être exécutée deux fois.
+Les objets ne choisissent aucun effet. Ils produisent seulement une demande explicite que le moteur de Brouhaha résout.
 
-Les identifiants générés utilisent `nextEnemyInstanceSequence`, par exemple `gobelin-bricoleur-spawn-1`. Aucun temps système, UUID aléatoire ou `Math.random()` n’est utilisé.
-
-Le moteur de spawn ne lit ni ne dépense le budget de menace. Ce budget appartient au futur générateur de rencontre et reste défini par salle.
-
-## Renfort de contrôle
-
-La salle pilote contient :
-
-- `renfort-est-haut` en colonne 7, ligne 1 dans l’affichage humain ;
-- `renfort-est-bas` en colonne 7, ligne 4 ;
-- le script `renfort-controle-sprint-3-1`.
-
-Une commande DOM temporaire permet d’exécuter ce script. Elle sert au contrôle d’intégration, à l’accessibilité et aux tests navigateur. Elle ne simule pas encore le Brouhaha.
-
-Après un succès, le bouton disparaît parce que la requête est déjà traitée. Après rechargement, la sauvegarde restaure la même instance, le même historique et la même séquence.
-
-## Phases
+## Phases et activations
 
 ```text
 heroes-turn
@@ -124,137 +94,58 @@ enemy-turn
 heroes-turn du tour suivant
 
 À tout moment :
-- dernier ennemi hors combat → victory
-- dernier héros hors combat  → defeat
+- dernier ennemi vaincu → victory
+- dernier héros vaincu  → defeat
 ```
 
-Une phase terminale refuse toute nouvelle action tactique et toute apparition.
+Chaque héros commence avec trois actions. Changer de héros pendant une activation est interdit. Une phase terminale refuse toute action et toute apparition.
 
-Le renfort de contrôle est disponible pendant `heroes-turn`. Les futurs déclenchements du Brouhaha préciseront leur point exact de résolution sans court-circuiter les transitions existantes.
+## Grille, déplacement et ligne de vue
 
-## Activation des héros
+Le moteur utilise les coordonnées logiques de la grille 8 × 4. Les obstacles, combattants et objets bloquants participent à l'occupation.
 
-- un héros vivant et non terminé peut être sélectionné ;
-- un seul héros est actif à la fois ;
-- changer de héros pendant une activation est interdit ;
-- chaque héros commence avec trois actions ;
-- une activation peut être terminée avant consommation des trois actions ;
-- un héros terminé ne peut plus agir pendant ce tour ;
-- lorsque tous les héros vivants ont terminé, la phase devient `enemy-turn`.
+La ligne de vue supercover considère :
 
-## Grille, déplacement et occupation
+- les obstacles structurels ;
+- les combattants bloquants ;
+- les objets dont l'état bloque la visibilité.
 
-La salle pilote utilise une grille 8 × 4. Le moteur fournit :
-
-- contrôle des limites ;
-- voisins orthogonaux ;
-- distance de Manhattan ;
-- occupation par obstacles ou combattants ;
-- cases atteignables ;
-- chemin le plus court ;
-- départage déterministe des chemins équivalents.
-
-Un déplacement orthogonal d’une case coûte une action. Une intention invalide ne modifie pas l’état et ne consomme aucune action.
-
-Le spawn réutilise les mêmes règles de limites et d’occupation. Une instance bloquante ne peut pas apparaître sur une case déjà bloquée.
-
-## Ligne de vue et combat
-
-La ligne de vue repose sur un algorithme supercover. Toutes les cases touchées par le segment entre attaquant et cible sont examinées, y compris les deux cases latérales lors du passage exact par un coin.
-
-Une attaque valide vérifie phase, attaquant actif, action disponible, cible vivante, portée et visibilité.
-
-Les dégâts restent déterministes :
-
-```ts
-const damage = Math.max(1, attacker.atk - target.def);
-```
-
-Les instances créées par le spawn utilisent ensuite exactement les mêmes fonctions de combat et d’IA que les ennemis initiaux.
-
-## IA ennemie
-
-Les ennemis sont résolus dans un ordre stable. Chaque ennemi cherche une case d’attaque libre, se déplace si nécessaire, attaque lorsqu’il le peut ou attend avec une explication structurée.
-
-Le moteur d’IA utilise l’identifiant runtime de l’instance. Deux créatures du même archétype restent donc indépendantes.
+Ouvrir une grille ou briser un tonneau peut donc libérer une case et une ligne de vue sans modifier le renderer.
 
 ## Présentation isométrique
 
-Le renderer distingue :
+Le renderer distingue espace logique, espace de vue et espace écran. Les rotations 0°, 90°, 180° et 270° ne modifient jamais l'état sauvegardé.
 
-1. espace logique de `RoomState` ;
-2. espace physique de salle ;
-3. espace de vue après rotation ;
-4. espace écran après projection et fit responsive.
+Le canvas remonte les intentions de case, héros, ennemi ou objet. Il expose aussi les diagnostics des objets, spawns, Brouhaha, combattants, murs, caméra et assets.
 
-La rotation 0°, 90°, 180° ou 270° ne modifie jamais les coordonnées logiques, les points de spawn ni la sauvegarde.
+## Sauvegarde version 4
 
-Le renderer résout :
+La sauvegarde conserve :
 
-- les héros par leur `id` ;
-- les ennemis par leur `creatureId`.
+- toutes les instances d'objets et leurs états ;
+- les demandes d'interaction traitées et la séquence suivante ;
+- les héros, ennemis, spawns et Brouhaha ;
+- les positions, PV, actions, phase et tour.
 
-Ainsi, toutes les instances de Gobelin Bricoleur partagent l’asset `character.gobelin-bricoleur` sans perdre leur identité runtime.
+Les versions 1 à 3 sont migrées défensivement. Elles reçoivent une liste d'objets vide et une séquence initiale à 1, sans inventer rétroactivement du décor.
 
-Le canvas expose pour les tests :
+## Tests du Sprint 3.3
 
-- positions logiques et de vue ;
-- `creatureId` des ennemis ;
-- points de spawn ;
-- requêtes traitées ;
-- prochaine séquence d’instance ;
-- murs, caméra et états d’assets.
+Les tests couvrent :
 
-## Sauvegarde
+- transitions, coût d'action, portée et idempotence ;
+- blocage de déplacement et de ligne de vue ;
+- Brouhaha automatique ;
+- fermeture refusée sur une case occupée ;
+- validation des catalogues et placements ;
+- sauvegarde version 4 et migrations ;
+- clic direct, journal et reprise sur desktop et mobile paysage.
 
-La sauvegarde tactique version 2 contient :
+## Hors périmètre
 
-- héros sélectionnés ;
-- état complet de la salle ;
-- instances et `creatureId` ;
-- points de spawn ;
-- requêtes traitées ;
-- prochaine séquence ;
-- positions, PV, actions, phase et tour.
-
-Une sauvegarde tactique version 1 valide est migrée défensivement. Les anciennes instances reçoivent temporairement leur ancien `id` comme `creatureId`, les points et requêtes commencent vides et la séquence repart à 1.
-
-Les données corrompues, incompatibles ou incohérentes sont rejetées avant le moteur et le renderer.
-
-## Tests du Sprint 3.1
-
-### Unitaires
-
-- plusieurs instances du même archétype ;
-- ordre stable des points ;
-- point occupé puis alternative ;
-- apparition totale ou partielle ;
-- refus sans mutation ;
-- requête dupliquée ;
-- séquence persistée et collision d’identifiant ;
-- catalogue et références de contenu ;
-- migration et corruption de sauvegarde ;
-- compatibilité des tours, déplacements, combat et IA.
-
-### Playwright
-
-- entrée dans la salle ;
-- présence des deux points ;
-- exécution du renfort fixe ;
-- création de `gobelin-bricoleur-spawn-1` ;
-- rendu par l’asset partagé ;
-- disparition du bouton traité ;
-- rechargement ;
-- restauration exacte de l’instance, de la requête et de la séquence ;
-- desktop et mobile paysage.
-
-## Hors périmètre actuel
-
-- jauge de Brouhaha ;
-- seuils déclenchant automatiquement des renforts ;
-- objets interactifs ;
-- réactions en chaîne ;
-- génération de rencontre par budget ;
-- génération géométrique ;
-- bestiaire définitif ;
-- vagues complexes.
+- poussée et lancement d'objets ;
+- réactions en chaîne et dégâts de zone ;
+- renforts automatiques par seuil ;
+- loot direct ;
+- génération de rencontre ou de géométrie ;
+- audio et animations définitifs.
