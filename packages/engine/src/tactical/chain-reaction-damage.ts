@@ -42,7 +42,10 @@ export function resolveChainReactionDamage(
     )
     .sort((a, b) => a.id.localeCompare(b.id));
   const hpById = new Map(
-    targets.map((target) => [target.id, Math.max(0, target.hp - action.amount)]),
+    targets.map((target) => [
+      target.id,
+      Math.max(0, target.hp - action.amount),
+    ]),
   );
   const updateCombatant = <T extends Combatant>(combatant: T): T => {
     const hp = hpById.get(combatant.id);
