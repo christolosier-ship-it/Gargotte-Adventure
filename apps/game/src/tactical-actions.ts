@@ -48,7 +48,10 @@ export function renderTacticalActions(
 
   const brouhahaStatus = document.createElement("strong");
   brouhahaStatus.textContent = `Brouhaha ${room.brouhaha.level}/12`;
-  brouhahaStatus.setAttribute("aria-label", `Brouhaha ${room.brouhaha.level} sur 12`);
+  brouhahaStatus.setAttribute(
+    "aria-label",
+    `Brouhaha ${room.brouhaha.level} sur 12`,
+  );
   container.append(brouhahaStatus);
 
   if (room.phase === "victory" || room.phase === "defeat") {
