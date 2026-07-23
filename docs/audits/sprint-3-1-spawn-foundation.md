@@ -1,9 +1,10 @@
 # Audit du Sprint 3.1 — Fondation de spawn déterministe
 
-- Statut : en cours
+- Statut : validation finale
 - Issue : #33
-- Branche : `sprint-3/spawn-engine`
-- Pull Request : #34
+- Branche : `sprint-3/spawn-engine-validation`
+- Pull Request de livraison : #35
+- Pull Request de travail remplacée : #34, fermée sans fusion
 - Base : `67c88e61fbde9258cadce7dd53c9655040316dbf`
 
 ## Objectif de l’audit
@@ -33,6 +34,7 @@ Le générateur de Gargottex a uniquement servi à identifier des principes réu
 - `creatureId` distinct de l’identifiant runtime ;
 - points, demandes, résultats et refus ;
 - ordre stable des points candidats ;
+- protection contre plusieurs points candidats partageant la même position ;
 - modes total et partiel ;
 - séquence persistée ;
 - protection contre les requêtes rejouées ;
@@ -71,7 +73,7 @@ Le générateur de Gargottex a uniquement servi à identifier des principes réu
 - Playwright desktop et mobile paysage ;
 - restauration après apparition.
 
-## Invariants à valider
+## Invariants contrôlés
 
 - mêmes entrées, même résultat ;
 - aucun hasard implicite ;
@@ -93,6 +95,20 @@ Le générateur de Gargottex a uniquement servi à identifier des principes réu
 - équilibrage final ;
 - vagues complexes.
 
+## Validation technique
+
+Le run de validation précédant la clôture a franchi :
+
+- formatage ;
+- validation du contenu ;
+- TypeScript strict ;
+- tests unitaires ;
+- build de production ;
+- validation structurelle du dépôt ;
+- Playwright Chromium desktop et mobile paysage.
+
+Le dernier feu rouge provenait uniquement de l’upload direct du dossier `dist` après ces contrôles. Le workflow a été nettoyé de ses captures temporaires et empaquette désormais le build en archive après vérification de `dist/index.html`.
+
 ## Verdict provisoire
 
-L’architecture et les parcours de test sont présents sur la branche. Le verdict final sera renseigné uniquement après formatage, validation du contenu, TypeScript strict, tests unitaires, build, validation du dépôt et Playwright entièrement verts.
+Le périmètre fonctionnel et architectural du Sprint 3.1 est conforme. La fusion de la PR #35 reste conditionnée au dernier passage entièrement vert des workflows `Validate application` et `Repository quality`. La PR #34 est fermée sans fusion et ne doit pas être intégrée séparément.
