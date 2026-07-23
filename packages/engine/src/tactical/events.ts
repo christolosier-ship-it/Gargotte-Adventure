@@ -1,4 +1,10 @@
-import type { GridPosition, SpawnRejectionReason, SpawnSource } from "./types";
+import type {
+  BrouhahaRejectionReason,
+  BrouhahaSource,
+  GridPosition,
+  SpawnRejectionReason,
+  SpawnSource,
+} from "./types";
 
 export type TacticalEvent =
   | { type: "hero-selected"; heroId: string }
@@ -52,6 +58,41 @@ export type TacticalEvent =
       reason: SpawnRejectionReason;
       requested: number;
       available: number;
+      details: string[];
+    }
+  | {
+      type: "brouhaha-change-requested";
+      requestId: string;
+      source: BrouhahaSource;
+      delta: number;
+      reason: string;
+    }
+  | {
+      type: "brouhaha-level-changed";
+      requestId: string;
+      previousLevel: number;
+      level: number;
+      requestedDelta: number;
+      appliedDelta: number;
+      reason: string;
+    }
+  | {
+      type: "brouhaha-effect-resolved";
+      requestId: string;
+      resolutionId: string;
+      effectId: string;
+      effectName: string;
+      effectDescription: string;
+      effectIndex: number;
+      effectCount: number;
+      level: number;
+    }
+  | {
+      type: "brouhaha-change-rejected";
+      requestId: string;
+      reason: BrouhahaRejectionReason;
+      previousLevel: number;
+      requestedDelta: number;
       details: string[];
     };
 
