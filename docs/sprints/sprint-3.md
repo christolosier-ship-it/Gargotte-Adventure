@@ -26,6 +26,14 @@ Références :
 - [Architecture du moteur de spawn](../architecture/spawn-engine.md)
 - [Architecture de la salle tactique](../architecture/tactical-room.md)
 
+## Champ historique `floorBudgets`
+
+Le paquet Bastognac actuel contient encore un champ `floorBudgets` créé pendant les fondations. Ce champ n’est pas utilisé par un moteur de génération et ne constitue pas la règle produit définitive.
+
+Sa dénomination est désormais considérée comme un placeholder historique. Elle devra être remplacée au plus tard lors du cadrage technique du Sprint 5 par une politique attribuant un budget propre à chaque salle, par exemple une courbe de progression d’étage produisant plusieurs `roomThreatBudget`.
+
+Ce lot étant strictement documentaire, le schéma et le JSON actuels ne sont pas modifiés.
+
 ## Découpage du Sprint 3
 
 ### Sprint 3.1 — Fondation de spawn déterministe
@@ -125,6 +133,7 @@ La prochaine étape de code sera le Sprint 3.1. Son objectif n’est pas de prod
 - génération complète des salles ;
 - génération de la topologie des étages ;
 - composition procédurale finale par budget de menace ;
+- remplacement runtime du champ historique `floorBudgets` ;
 - seize créatures définitives et équilibrées ;
 - compétences définitives des héros ;
 - loot et progression entre salles ;
@@ -163,6 +172,8 @@ Chaque étage sera un graphe de salles reliées. La génération comprendra :
 Chaque salle recevra son propre budget de menace. Il n’existe pas de budget unique partagé par tout l’étage.
 
 Le générateur de rencontre transformera ce budget de salle en plan de population. Le moteur de spawn exécutera ensuite les demandes d’instanciation initiales.
+
+Le champ historique `floorBudgets` devra être migré vers un modèle de politique d’étage et de budgets de salles explicites avant l’implémentation de ce générateur.
 
 ## Validation documentaire actuelle
 
