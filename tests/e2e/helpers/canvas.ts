@@ -239,6 +239,10 @@ export async function activateBrunhilda(page: Page): Promise<void> {
   await page
     .getByRole("button", { name: "Activer Brünhilda la Torgnole" })
     .click();
+  await canvasLocator(page).scrollIntoViewIfNeeded();
+  await page.evaluate(
+    () => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())),
+  );
 }
 
 export async function moveBrunhilda(
