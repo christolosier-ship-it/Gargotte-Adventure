@@ -4,11 +4,14 @@ import { hasLineOfSight, supercoverLine } from "./line-of-sight";
 import type { RoomState } from "./types";
 
 const state = (patch: Partial<RoomState> = {}): RoomState => ({
-  version: 1,
+  version: 2,
   scenarioId: "t",
   width: 8,
   height: 4,
   obstacles: [],
+  spawnPoints: [],
+  processedSpawnRequestIds: [],
+  nextEnemyInstanceSequence: 1,
   heroes: [
     {
       id: "h",
@@ -29,6 +32,7 @@ const state = (patch: Partial<RoomState> = {}): RoomState => ({
   enemies: [
     {
       id: "e",
+      creatureId: "enemy-test",
       name: "E",
       kind: "enemy",
       position: { column: 1, row: 0 },
