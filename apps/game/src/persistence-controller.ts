@@ -56,7 +56,7 @@ export class PersistenceController {
         if (room)
           await saveRoomState({
             kind: "tactical-room",
-            version: 1,
+            version: 2,
             room,
             selectedHeroIds: selected,
           });
