@@ -88,6 +88,38 @@ describe("contenu tactique", () => {
     ).toThrow();
   });
 
+  it("rejette des points partageant une position", () => {
+    expect(() =>
+      parseTacticalRoom({
+        ...room,
+        spawnPoints: [
+          room.spawnPoints[0],
+          {
+            ...room.spawnPoints[1],
+            position: room.spawnPoints[0].position,
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
+  it("rejette les points candidats dupliqués dans un script", () => {
+    expect(() =>
+      parseTacticalRoom({
+        ...room,
+        scriptedSpawns: [
+          {
+            ...room.scriptedSpawns[0],
+            candidateSpawnPointIds: [
+              room.spawnPoints[0].id,
+              room.spawnPoints[0].id,
+            ],
+          },
+        ],
+      }),
+    ).toThrow();
+  });
+
   it("rejette les définitions de créatures dupliquées", () => {
     expect(() =>
       parseCreatureCatalog({
