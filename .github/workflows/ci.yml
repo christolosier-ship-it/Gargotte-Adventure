@@ -81,7 +81,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Browser smoke tests
-        run: npm run test:e2e
+        run: npm run test:e2e 2>&1 | tee playwright.log
 
       - name: Upload Playwright diagnostics
         if: failure()
@@ -89,9 +89,10 @@ jobs:
         with:
           name: playwright-diagnostics
           path: |
+            playwright.log
             test-results
             playwright-report
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload package lock
         uses: actions/upload-artifact@v7
