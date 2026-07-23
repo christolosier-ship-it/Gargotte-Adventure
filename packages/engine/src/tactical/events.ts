@@ -2,6 +2,8 @@ import type {
   BrouhahaRejectionReason,
   BrouhahaSource,
   GridPosition,
+  InteractableKind,
+  InteractableRejectionReason,
   SpawnRejectionReason,
   SpawnSource,
 } from "./types";
@@ -30,6 +32,40 @@ export type TacticalEvent =
       explanation: EnemyDecisionExplanation;
     }
   | { type: "phase-changed"; phase: string; turn: number }
+  | {
+      type: "interactable-interaction-requested";
+      requestId: string;
+      heroId: string;
+      interactableInstanceId: string;
+      interactionId: string;
+    }
+  | {
+      type: "interactable-state-changed";
+      requestId: string;
+      interactableInstanceId: string;
+      interactableId: string;
+      kind: InteractableKind;
+      previousStateId: string;
+      stateId: string;
+    }
+  | {
+      type: "interactable-interaction-succeeded";
+      requestId: string;
+      heroId: string;
+      interactableInstanceId: string;
+      interactionId: string;
+      actionCost: 1;
+      brouhahaRequestId: string | null;
+    }
+  | {
+      type: "interactable-interaction-rejected";
+      requestId: string;
+      heroId: string;
+      interactableInstanceId: string;
+      interactionId: string;
+      reason: InteractableRejectionReason;
+      details: string[];
+    }
   | {
       type: "spawn-requested";
       requestId: string;
