@@ -1,9 +1,4 @@
-import {
-  isObstacle,
-  isWithinBounds,
-  occupantAt,
-  samePosition,
-} from "./grid";
+import { isObstacle, isWithinBounds, occupantAt, samePosition } from "./grid";
 import type {
   GridPosition,
   HeroState,
