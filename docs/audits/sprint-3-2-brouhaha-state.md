@@ -21,7 +21,7 @@
 - demandes idempotentes et refus sans mutation ;
 - aucun renfort automatique avant le Sprint 3.5 ;
 - aucun hasard implicite ;
-- Gargottex consulté sans écriture.
+- Gargottex consulté en lecture seule.
 
 ## Architecture
 
@@ -35,18 +35,30 @@ La salle tactique utilise la version 3. Les versions 1 et 2 sont migrées vers u
 
 ## Interface et picking
 
-L'ajout des commandes Brouhaha allongeait la colonne latérale et étirait initialement le plateau par le comportement par défaut de la grille CSS. La hauteur du plateau est maintenant indépendante de celle des commandes avec `align-items: start`, ce qui stabilise la caméra et le picking desktop/mobile.
+L'ajout des commandes Brouhaha allongeait la colonne latérale et étirait initialement le plateau. La hauteur du plateau est maintenant indépendante de celle des commandes avec `align-items: start`.
 
-## Validation attendue avant fusion
+Les tests historiques activent un héros depuis la colonne de commandes avant de cliquer le plateau. Le helper Playwright ramène maintenant le canvas dans la fenêtre après cette activation, afin de recalculer les coordonnées sur sa position visible.
 
-- Repository quality : succès ;
-- formatage : succès ;
-- validation du contenu : succès ;
-- TypeScript strict : succès ;
-- tests unitaires : succès ;
-- build de production : succès ;
-- validation du dépôt : succès ;
-- Playwright Chromium desktop/mobile : succès ;
-- package lock et artefact de production : succès.
+## Validation fonctionnelle
 
-Le verdict final, le HEAD validé et le commit de fusion seront inscrits après le dernier passage de CI.
+HEAD fonctionnel validé : `764e1459e0f028651ddcf781674f22ef2b8a25ee`.
+
+Succès obtenus :
+
+- Repository quality ;
+- formatage ;
+- contenu et assets ;
+- TypeScript strict ;
+- tests unitaires ;
+- build de production ;
+- validation structurelle ;
+- Playwright Chromium desktop et mobile paysage ;
+- scénario Brouhaha, diminution et reprise exacte ;
+- parcours historiques de picking, rotation, redimensionnement et fallbacks ;
+- package lock et artefact de production.
+
+## Verdict
+
+Le Sprint 3.2 satisfait son périmètre fonctionnel et ses invariants. La PR #37 peut être fusionnée après le dernier passage complet de la CI sur ce commit documentaire de clôture.
+
+Le commit de fusion sera consigné dans Google Drive. Gargottex n'a reçu aucune écriture.
