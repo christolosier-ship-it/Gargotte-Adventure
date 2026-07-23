@@ -90,7 +90,11 @@ export function changeBrouhaha(
       requestedEvent,
     );
 
-  const eligible = eligibleEffects(effectDefinitions, nextLevel, context.dungeonId);
+  const eligible = eligibleEffects(
+    effectDefinitions,
+    nextLevel,
+    context.dungeonId,
+  );
   const expectedCount = effectCountForBrouhahaLevel(nextLevel);
   if (eligible.length < expectedCount)
     return reject(
@@ -123,10 +127,7 @@ export function changeBrouhaha(
     ...state,
     brouhaha: {
       level: nextLevel,
-      processedRequestIds: [
-        ...state.brouhaha.processedRequestIds,
-        request.id,
-      ],
+      processedRequestIds: [...state.brouhaha.processedRequestIds, request.id],
       nextResolutionSequence: sequence + 1,
       history: [...state.brouhaha.history, historyEntry],
     },
