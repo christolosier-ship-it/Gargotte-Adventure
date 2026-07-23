@@ -17,10 +17,13 @@ import {
   reachablePositions,
   reduceGameState,
   selectHero,
+  type CreatureDefinition,
   type DomainEvent,
   type GameState,
   type GridPosition,
   type RoomState,
+  type SpawnResult,
+  type TacticalEvent,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
@@ -28,6 +31,11 @@ import {
   PersistenceController,
   type RestoredSession,
 } from "./persistence-controller";
+import {
+  availableScriptedSpawns,
+  describeSpawnEvent,
+  executeScriptedSpawn,
+} from "./scripted-spawn-controller";
 import { renderTacticalActions } from "./tactical-actions";
 
 interface GameControllerOptions {
@@ -35,6 +43,7 @@ interface GameControllerOptions {
   renderer: TabletopRenderer;
   dungeon: DungeonDefinition;
   roomDefinition: TacticalRoomDefinition;
+  creatureDefinitions: CreatureDefinition[];
   restored: RestoredSession;
 }
 
@@ -43,6 +52,7 @@ export class GameController {
   private readonly renderer: TabletopRenderer;
   private readonly dungeon: DungeonDefinition;
   private readonly roomDefinition: TacticalRoomDefinition;
+  private readonly creatureDefinitions: CreatureDefinition[];
   private readonly events = new EventBus();
   private readonly persistence = new PersistenceController();
   private readonly defaultHeroId: string;
@@ -57,6 +67,7 @@ export class GameController {
     this.renderer = options.renderer;
     this.dungeon = options.dungeon;
     this.roomDefinition = options.roomDefinition;
+    this.creatureDefinitions = options.creatureDefinitions;
     const defaultHeroId = options.roomDefinition.heroes[0]?.id;
     if (!defaultHeroId)
       throw new Error("Aucun héros disponible dans le scénario.");
@@ -124,7 +135,9 @@ export class GameController {
       width: this.roomDefinition.grid.width,
       height: this.roomDefinition.grid.height,
       obstacles: this.roomDefinition.obstacles,
+      spawnPoints: this.roomDefinition.spawnPoints,
       heroes: chosen,
+      creatureDefinitions: this.creatureDefinitions,
       enemies: this.roomDefinition.enemies,
     });
   }
@@ -164,11 +177,22 @@ export class GameController {
       activeHero: active?.name ?? null,
       selectedHeroIds: this.selectedHeroIds,
     });
-    renderTacticalActions(this.shell.tacticalActions, this.room, {
-      selectHero: this.handleHeroSelection,
-      move: this.handleMove,
-      attack: this.handleAttack,
-    });
+    renderTacticalActions(
+      this.shell.tacticalActions,
+      this.room,
+      {
+        selectHero: this.handleHeroSelection,
+        move: this.handleMove,
+        attack: this.handleAttack,
+        spawn: this.handleScriptedSpawn,
+      },
+      this.room
+        ? availableScriptedSpawns(
+            this.room,
+            this.roomDefinition.scriptedSpawns,
+          )
+        : [],
+    );
     if (this.room) this.renderer.renderRoom(this.room, this.highlights());
   }
 
@@ -227,8 +251,7 @@ export class GameController {
 
   private endActivation(): void {
     if (!this.room?.activeHeroId) return;
-    const result = endHeroActivation(this.room, this.room.activeHeroId);
-    this.applyResult(result);
+    this.applyResult(endHeroActivation(this.room, this.room.activeHeroId));
   }
 
   private finishHeroesTurn(): void {
@@ -262,6 +285,31 @@ export class GameController {
     this.applyResult(attackTarget(this.room, this.room.activeHeroId, enemyId));
   };
 
+  private readonly handleScriptedSpawn = (spawnId: string): void => {
+    if (!this.room) return;
+    const scripted = this.roomDefinition.scriptedSpawns.find(
+      (candidate) => candidate.id === spawnId,
+    );
+    if (!scripted) return;
+    this.applySpawnResult(
+      executeScriptedSpawn(
+        this.room,
+        this.creatureDefinitions,
+        scripted,
+      ),
+    );
+  };
+
+  private applySpawnResult(result: SpawnResult): void {
+    const changed = result.state !== this.room;
+    this.room = result.state;
+    result.events.forEach((event) =>
+      this.shell.appendEvent(this.tacticalEventMessage(event)),
+    );
+    if (changed) this.persist();
+    else this.render("Apparition refusée");
+  }
+
   private applyResult(
     result:
       | ReturnType<typeof selectHero>
@@ -280,9 +328,13 @@ export class GameController {
     if (successMessage) this.shell.appendEvent(successMessage);
     else
       result.value.events.forEach((event) =>
-        this.shell.appendEvent(event.type),
+        this.shell.appendEvent(this.tacticalEventMessage(event)),
       );
     this.persist();
+  }
+
+  private tacticalEventMessage(event: TacticalEvent): string {
+    return describeSpawnEvent(event, this.creatureDefinitions) ?? event.type;
   }
 
   private eventMessage(event: DomainEvent): string {
