@@ -1,4 +1,4 @@
-import { changeBrouhaha, type BrouhahaResult } from "./brouhaha";
+import type { BrouhahaResult } from "./brouhaha";
 import { resolveChainReactions } from "./chain-reactions";
 import type {
   ChainReactionDefinition,
@@ -7,6 +7,7 @@ import type {
 } from "./chain-reaction-types";
 import type { TacticalEvent } from "./events";
 import { manhattanDistance, occupantAt } from "./grid";
+import { applyDirectInteractableBrouhaha } from "./interactable-brouhaha";
 import { resolveHeroObjectMovement } from "./interactable-movement";
 import type {
   BrouhahaEffectDefinition,
@@ -230,13 +231,13 @@ export function interactWithObject(
     },
   );
 
-  const direct = applyDirectBrouhaha(
+  const direct = applyDirectInteractableBrouhaha(
     intermediateState,
     brouhahaEffects,
     interaction,
     instance.id,
     brouhahaRequestId,
-    context,
+    context.dungeonId,
   );
   const triggers: ChainReactionRuntimeTrigger[] = [
     {
@@ -274,29 +275,6 @@ export function interactWithObject(
     chainReactions,
     rejection: null,
   };
-}
-
-function applyDirectBrouhaha(
-  state: RoomState,
-  effects: readonly BrouhahaEffectDefinition[],
-  interaction: InteractableInteractionDefinition,
-  instanceId: string,
-  requestId: string | null,
-  context: InteractableContext,
-): { state: RoomState; events: TacticalEvent[]; result: BrouhahaResult | null } {
-  if (!requestId) return { state, events: [], result: null };
-  const result = changeBrouhaha(
-    state,
-    effects,
-    {
-      id: requestId,
-      delta: interaction.brouhahaDelta,
-      source: { type: "object", id: instanceId },
-      reason: interaction.reason,
-    },
-    context,
-  );
-  return { state: result.state, events: result.events, result };
 }
 
 function canTransitionToState(
