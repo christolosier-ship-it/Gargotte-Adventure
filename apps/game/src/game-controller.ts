@@ -8,7 +8,6 @@ import {
   attackTarget,
   createEvent,
   createInitialGameState,
-  createRoomState,
   endHeroActivation,
   endHeroesTurn,
   finishEnemyTurn,
@@ -16,13 +15,12 @@ import {
   reduceGameState,
   selectHero,
   type BrouhahaEffectDefinition,
-  type BrouhahaResult,
   type CreatureDefinition,
   type DomainEvent,
   type GameState,
   type GridPosition,
+  type InteractableDefinition,
   type RoomState,
-  type SpawnResult,
   type TacticalEvent,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
@@ -33,10 +31,17 @@ import {
   type BrouhahaControlId,
 } from "./brouhaha-controller";
 import { renderGameView } from "./game-view";
+import { readSelectedHeroIds } from "./hero-selection";
+import {
+  availableInteractableActions,
+  describeInteractableEvent,
+  executeInteractableAction,
+} from "./interactable-controller";
 import {
   PersistenceController,
   type RestoredSession,
 } from "./persistence-controller";
+import { buildTacticalRoom } from "./room-builder";
 import {
   describeSpawnEvent,
   executeScriptedSpawn,
@@ -49,7 +54,13 @@ interface GameControllerOptions {
   roomDefinition: TacticalRoomDefinition;
   creatureDefinitions: CreatureDefinition[];
   brouhahaEffects: BrouhahaEffectDefinition[];
+  interactableDefinitions: InteractableDefinition[];
   restored: RestoredSession;
+}
+
+interface StatefulTacticalResult {
+  state: RoomState;
+  events: TacticalEvent[];
 }
 
 export class GameController {
@@ -59,6 +70,7 @@ export class GameController {
   private readonly roomDefinition: TacticalRoomDefinition;
   private readonly creatureDefinitions: CreatureDefinition[];
   private readonly brouhahaEffects: BrouhahaEffectDefinition[];
+  private readonly interactableDefinitions: InteractableDefinition[];
   private readonly events = new EventBus();
   private readonly persistence = new PersistenceController();
   private readonly defaultHeroId: string;
@@ -75,6 +87,7 @@ export class GameController {
     this.roomDefinition = options.roomDefinition;
     this.creatureDefinitions = options.creatureDefinitions;
     this.brouhahaEffects = options.brouhahaEffects;
+    this.interactableDefinitions = options.interactableDefinitions;
     const defaultHeroId = options.roomDefinition.heroes[0]?.id;
     if (!defaultHeroId)
       throw new Error("Aucun héros disponible dans le scénario.");
@@ -103,7 +116,6 @@ export class GameController {
       this.shell.appendEvent(this.eventMessage(event));
       this.persist();
     });
-
     this.shell.heroPicker.addEventListener("change", () =>
       this.updateHeroSelection(),
     );
@@ -127,26 +139,11 @@ export class GameController {
     this.renderer.onHeroSelected(this.handleHeroSelection);
     this.renderer.onCellSelected(this.handleMove);
     this.renderer.onEnemySelected(this.handleAttack);
+    this.renderer.onInteractableSelected(this.handleInteractableSelection);
 
     this.shell.startButton.disabled = false;
     this.render(this.roomWasRestored ? "Salle restaurée" : "Prête");
     this.shell.appendEvent(`${this.dungeon.name} chargé · ${BUILD_LABEL}.`);
-  }
-
-  private buildRoom(): RoomState {
-    const chosen = this.roomDefinition.heroes.filter((hero) =>
-      this.selectedHeroIds.includes(hero.id),
-    );
-    return createRoomState({
-      scenarioId: this.roomDefinition.id,
-      width: this.roomDefinition.grid.width,
-      height: this.roomDefinition.grid.height,
-      obstacles: this.roomDefinition.obstacles,
-      spawnPoints: this.roomDefinition.spawnPoints,
-      heroes: chosen,
-      creatureDefinitions: this.creatureDefinitions,
-      enemies: this.roomDefinition.enemies,
-    });
   }
 
   private render(saveText: string): void {
@@ -158,11 +155,13 @@ export class GameController {
       selectedHeroIds: this.selectedHeroIds,
       saveText,
       brouhahaEffects: this.brouhahaEffects,
+      interactableDefinitions: this.interactableDefinitions,
       roomDefinition: this.roomDefinition,
       handlers: {
         selectHero: this.handleHeroSelection,
         move: this.handleMove,
         attack: this.handleAttack,
+        interact: this.handleInteractableAction,
         spawn: this.handleScriptedSpawn,
         brouhaha: this.handleBrouhahaControl,
       },
@@ -184,25 +183,20 @@ export class GameController {
   }
 
   private updateHeroSelection(): void {
-    const inputs = [
-      ...this.shell.heroPicker.querySelectorAll<HTMLInputElement>(
-        "input:checked",
-      ),
-    ];
-    this.selectedHeroIds = inputs
-      .map((input) => input.value)
-      .filter((id) => this.validHeroIds.has(id))
-      .slice(0, 4);
-    if (this.selectedHeroIds.length > 0) return;
-    this.selectedHeroIds = [this.defaultHeroId];
-    const fallback = this.shell.heroPicker.querySelector<HTMLInputElement>(
-      `input[value="${this.defaultHeroId}"]`,
+    this.selectedHeroIds = readSelectedHeroIds(
+      this.shell.heroPicker,
+      this.validHeroIds,
+      this.defaultHeroId,
     );
-    if (fallback) fallback.checked = true;
   }
 
   private startRoom(): void {
-    this.room = this.buildRoom();
+    this.room = buildTacticalRoom(
+      this.roomDefinition,
+      this.creatureDefinitions,
+      this.interactableDefinitions,
+      this.selectedHeroIds,
+    );
     const seed = 10_000 + this.state.expeditionNumber * 137 + 1;
     this.events.publish(createEvent("expedition/started", { seed }));
     this.render("Salle lancée");
@@ -228,13 +222,11 @@ export class GameController {
   }
 
   private finishHeroesTurn(): void {
-    if (!this.room) return;
-    this.applyResult(endHeroesTurn(this.room));
+    if (this.room) this.applyResult(endHeroesTurn(this.room));
   }
 
   private resolveEnemyTurn(): void {
-    if (!this.room) return;
-    this.applyResult(finishEnemyTurn(this.room));
+    if (this.room) this.applyResult(finishEnemyTurn(this.room));
   }
 
   private readonly handleHeroSelection = (heroId: string): void => {
@@ -258,14 +250,51 @@ export class GameController {
     this.applyResult(attackTarget(this.room, this.room.activeHeroId, enemyId));
   };
 
+  private readonly handleInteractableSelection = (
+    interactableInstanceId: string,
+  ): void => {
+    if (!this.room) return;
+    const action = availableInteractableActions(
+      this.room,
+      this.interactableDefinitions,
+    ).find(
+      (candidate) =>
+        candidate.interactableInstanceId === interactableInstanceId,
+    );
+    if (action)
+      this.handleInteractableAction(
+        action.interactableInstanceId,
+        action.interactionId,
+      );
+  };
+
+  private readonly handleInteractableAction = (
+    interactableInstanceId: string,
+    interactionId: string,
+  ): void => {
+    if (!this.room) return;
+    this.applyStatefulResult(
+      executeInteractableAction(
+        this.room,
+        this.interactableDefinitions,
+        this.brouhahaEffects,
+        this.dungeon.id,
+        interactableInstanceId,
+        interactionId,
+      ),
+      "Interaction refusée",
+    );
+  };
+
   private readonly handleScriptedSpawn = (spawnId: string): void => {
     if (!this.room) return;
     const scripted = this.roomDefinition.scriptedSpawns.find(
       (candidate) => candidate.id === spawnId,
     );
     if (!scripted) return;
-    this.applySpawnResult(
+    this.applyStatefulResult(
       executeScriptedSpawn(this.room, this.creatureDefinitions, scripted),
+      "Apparition refusée",
     );
   };
 
@@ -273,30 +302,26 @@ export class GameController {
     controlId: BrouhahaControlId,
   ): void => {
     if (!this.room) return;
-    this.applyBrouhahaResult(
+    this.applyStatefulResult(
       executeBrouhahaControl(
         this.room,
         this.brouhahaEffects,
         this.dungeon.id,
         controlId,
       ),
+      "Brouhaha inchangé",
     );
   };
 
-  private applySpawnResult(result: SpawnResult): void {
+  private applyStatefulResult(
+    result: StatefulTacticalResult,
+    unchangedText: string,
+  ): void {
     const changed = result.state !== this.room;
     this.room = result.state;
     this.appendTacticalEvents(result.events);
     if (changed) this.persist();
-    else this.render("Apparition refusée");
-  }
-
-  private applyBrouhahaResult(result: BrouhahaResult): void {
-    const changed = result.state !== this.room;
-    this.room = result.state;
-    this.appendTacticalEvents(result.events);
-    if (changed) this.persist();
-    else this.render("Brouhaha inchangé");
+    else this.render(unchangedText);
   }
 
   private applyResult(
@@ -327,6 +352,7 @@ export class GameController {
 
   private tacticalEventMessage(event: TacticalEvent): string {
     return (
+      describeInteractableEvent(event, this.interactableDefinitions) ??
       describeBrouhahaEvent(event) ??
       describeSpawnEvent(event, this.creatureDefinitions) ??
       event.type
