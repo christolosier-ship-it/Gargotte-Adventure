@@ -61,7 +61,12 @@ export const chainReactionActionSchema = z.discriminatedUnion("type", [
   z
     .object({
       type: z.literal("brouhaha"),
-      delta: z.number().int().min(-12).max(12).refine((value) => value !== 0),
+      delta: z
+        .number()
+        .int()
+        .min(-12)
+        .max(12)
+        .refine((value) => value !== 0),
       reason: z.string().min(1),
     })
     .strict(),
