@@ -170,16 +170,17 @@ function validSpawnPoints(
   request: SpawnRequest,
 ): { valid: SpawnPoint[]; details: string[] } {
   const byId = new Map(state.spawnPoints.map((point) => [point.id, point]));
-  const seen = new Set<string>();
+  const seenIds = new Set<string>();
+  const seenPositions = new Set<string>();
   const valid: SpawnPoint[] = [];
   const details: string[] = [];
 
   for (const id of request.candidateSpawnPointIds) {
-    if (seen.has(id)) {
+    if (seenIds.has(id)) {
       details.push(`${id}: candidat dupliqué ignoré`);
       continue;
     }
-    seen.add(id);
+    seenIds.add(id);
     const point = byId.get(id);
     if (!point) {
       details.push(`${id}: point absent`);
@@ -197,6 +198,12 @@ function validSpawnPoints(
       details.push(`${id}: position occupée ou bloquée`);
       continue;
     }
+    const positionKey = `${point.position.column},${point.position.row}`;
+    if (seenPositions.has(positionKey)) {
+      details.push(`${id}: position déjà retenue par un autre point`);
+      continue;
+    }
+    seenPositions.add(positionKey);
     valid.push(point);
   }
 
