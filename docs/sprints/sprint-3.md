@@ -1,10 +1,10 @@
 # Sprint 3 : Brouhaha, spawn et décor interactif
 
 - Statut : en cours
-- Étape livrée par cette PR : Sprint 3.3
-- Issue : #42
-- Pull Request : #43
-- Étape suivante : Sprint 3.4
+- Étape livrée par cette PR : Sprint 3.4
+- Issue : #44
+- Pull Request : #45
+- Étape suivante : Sprint 3.5
 
 ## Objectif
 
@@ -18,16 +18,18 @@ Le Sprint 3 introduit successivement le spawn, le Brouhaha, les objets interacti
 2. Définitions éditoriales et instances runtime restent séparées.
 3. Le Brouhaha produit des demandes explicites et historisées.
 4. Les objets produisent des intentions et des demandes de Brouhaha, sans choisir leurs conséquences.
-5. Le renderer affiche les états sans décider des règles.
-6. Le budget de menace appartient à chaque salle.
-7. La géométrie complète des étages appartient au Sprint 5.
-8. Gargottex reste strictement en lecture seule.
+5. Les réactions sont déclarées par salle et propagées dans un ordre reproductible.
+6. Le renderer affiche les états sans décider des règles.
+7. Le budget de menace appartient à chaque salle.
+8. La géométrie complète des étages appartient au Sprint 5.
+9. Gargottex reste strictement en lecture seule.
 
 Références :
 
 - [Architecture du moteur de spawn](../architecture/spawn-engine.md)
 - [Architecture du Brouhaha](../architecture/brouhaha.md)
 - [Architecture des objets interactifs](../architecture/interactable-objects.md)
+- [Architecture des réactions en chaîne](../architecture/chain-reactions.md)
 - [Architecture de la salle tactique](../architecture/tactical-room.md)
 
 ## Étapes livrées
@@ -71,18 +73,28 @@ Livré par la PR #43 :
 - sauvegarde version 4 et migrations depuis les versions 1 à 3 ;
 - tests moteur, contenu, sauvegarde et Playwright.
 
-Les objets ne donnent aucun loot direct. Les réactions en chaîne restent exclues.
+Les objets ne donnent aucun loot direct.
+
+### Sprint 3.4 : réactions en chaîne ✅
+
+Livré par la PR #45 :
+
+- poussée déterministe d'un objet selon la position du héros ;
+- refus atomique lorsque la destination est hors plateau ou occupée ;
+- graphe de réactions déclaré par salle ;
+- déclencheurs `state-entered` et `moved` ;
+- propagation FIFO, définitions triées et actions exécutées dans l'ordre déclaré ;
+- transitions, déplacements, dégâts et demandes de Brouhaha secondaires ;
+- causalité explicite depuis la demande racine jusqu'à chaque action ;
+- historique persistant avec identifiants `reaction-N` monotones ;
+- garde contre les cycles et limite stricte de 32 définitions exécutées ;
+- sauvegarde version 5 et migrations depuis les versions 1 à 4 ;
+- scénario pilote Bastognac avec table, pilier, dégâts, grille et Brouhaha en cascade ;
+- tests unitaires et Playwright sur Chrome bureau et paysage tactile.
+
+Aucun renfort n'est déclenché automatiquement par ces réactions. Ce lien appartient au Sprint 3.5.
 
 ## Étapes suivantes
-
-### Sprint 3.4 : réactions en chaîne
-
-- poussée et déplacement d'objets ;
-- déclencheurs et propagation ordonnée ;
-- dégâts, blocage ou ouverture ;
-- causalité explicite ;
-- protection contre les boucles infinies ;
-- plusieurs demandes de Brouhaha ordonnées.
 
 ### Sprint 3.5 : renforts déclenchés par le Brouhaha
 
@@ -102,38 +114,42 @@ Les objets ne donnent aucun loot direct. Les réactions en chaîne restent exclu
 - mesures de fluidité ;
 - tests desktop et mobile paysage.
 
-## Invariants du Sprint 3.3
+## Invariants du Sprint 3.4
 
-- mêmes état, catalogue et demande, même résultat ;
+- mêmes état, catalogues, réactions et demande, même résultat ;
 - aucun `Math.random()`, temps système ou UUID implicite ;
-- demande exécutée une seule fois ;
+- demande héroïque exécutée une seule fois ;
 - refus sans mutation ni consommation d'action ;
-- interaction réservée au héros actif et adjacent ;
-- état d'objet persistant ;
-- règles indépendantes de la caméra ;
+- poussée calculée uniquement depuis les coordonnées logiques ;
+- propagation ordonnée et causalité identifiable ;
+- une définition de réaction ne s'exécute qu'une fois par chaîne racine ;
+- une chaîne excessive ou cyclique s'arrête explicitement ;
+- plusieurs demandes de Brouhaha conservent leur ordre causal ;
+- état et historique persistants ;
 - aucune décision métier dans l'UI ou le renderer ;
 - aucun renfort automatique avant le Sprint 3.5 ;
 - aucune modification de Gargottex.
 
-## Critères de sortie du Sprint 3.3
+## Critères de sortie du Sprint 3.4
 
-- les cinq familles d'objets sont validées par le contenu ;
-- chaque transition modifie uniquement l'instance ciblée ;
-- les objets bloquants affectent déplacement, spawn et visibilité ;
-- le Brouhaha est produit automatiquement lorsqu'il est prévu ;
-- la fermeture d'une grille sur un combattant est refusée ;
-- l'état et la séquence survivent à une reprise ;
-- les sauvegardes versions 1 à 3 sont migrées ;
-- le clic direct et les commandes accessibles fonctionnent ;
-- desktop et mobile paysage sont validés ;
+- une table peut être poussée d'une case selon la position du héros ;
+- une destination occupée ou invalide produit un refus sans mutation ;
+- un déplacement ou un changement d'état peut déclencher une réaction ;
+- une chaîne peut ouvrir ou bloquer un passage, déplacer un objet et infliger des dégâts ;
+- plusieurs demandes de Brouhaha sont résolues dans l'ordre causal ;
+- chaque action possède une demande racine, une source et une réaction parente éventuelle ;
+- les cycles et la profondeur maximale sont interrompus et historisés ;
+- l'état final et l'historique survivent à une reprise ;
+- les sauvegardes versions 1 à 4 sont migrées ;
+- le scénario pilote fonctionne sur Chrome bureau et paysage tactile ;
 - tous les contrôles automatisés sont verts avant fusion.
 
 ## Articulation avec les Sprints 4 et 5
 
-Le Sprint 4 enrichira les héros et créatures sans modifier la frontière des objets. Le Sprint 5 générera la géométrie des salles et placera leurs objets initiaux, mais les interactions resteront résolues par le moteur runtime.
+Le Sprint 4 enrichira les héros et créatures sans modifier la frontière des objets. Le Sprint 5 générera la géométrie des salles et placera leurs objets initiaux, mais les interactions et réactions resteront résolues par le moteur runtime.
 
-Le budget de menace reste calculé et validé par salle. Le moteur d'objets ne le lit pas.
+Le budget de menace reste calculé et validé par salle. Le moteur de réactions ne le lit pas.
 
 ## État de livraison
 
-Les Sprints 3.1 et 3.2 sont fusionnés dans `main`. Le Sprint 3.3 est livré par la PR #43 après validation complète. Le rapport de contrôle se trouve dans [Audit de livraison Sprint 3.3](../audits/sprint-3-3-interactable-objects.md).
+Les Sprints 3.1, 3.2 et 3.3 sont fusionnés dans `main`. Le Sprint 3.4 est livré par la PR #45 après validation complète. Le rapport de contrôle se trouve dans [Audit de livraison Sprint 3.4](../audits/sprint-3-4-chain-reactions.md).
