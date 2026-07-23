@@ -92,9 +92,7 @@ test("brise, explique et restaure un objet interactif", async ({
 
 test("pousse une table et résout le domino causal", async ({ page }) => {
   await page.goto("./");
-  await page
-    .getByRole("checkbox", { name: "Magdalena Coquinelle" })
-    .check();
+  await page.getByRole("checkbox", { name: "Magdalena Coquinelle" }).check();
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
   await page
     .getByRole("button", { name: "Activer Magdalena Coquinelle" })
