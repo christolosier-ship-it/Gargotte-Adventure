@@ -98,13 +98,8 @@ export function renderTacticalActions(
 
   for (const action of interactableActions)
     container.append(
-      createActionButton(
-        `🧱 ${action.label} ${action.objectName}`,
-        () =>
-          handlers.interact(
-            action.interactableInstanceId,
-            action.interactionId,
-          ),
+      createActionButton(`🧱 ${action.label} ${action.objectName}`, () =>
+        handlers.interact(action.interactableInstanceId, action.interactionId),
       ),
     );
 
