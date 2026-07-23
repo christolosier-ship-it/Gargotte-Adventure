@@ -1,10 +1,9 @@
 # Sprint 3 : Brouhaha, spawn et décor interactif
 
 - Statut : en cours
-- Étape active : Sprint 3.2
-- Issue active : #36
-- Pull Request active : #37
-- Prérequis : Sprint 3.1 fusionné dans `main`
+- Étape suivante : Sprint 3.3
+- Dernière étape livrée : Sprint 3.2
+- Prérequis : Sprints 3.1 et 3.2 fusionnés dans `main`
 
 ## Objectif
 
@@ -64,9 +63,9 @@ Commit de fusion : `dd8c749f3afb73104270d87c9e920aab4e926bf3`.
 
 ### Sprint 3.2 : état, effets et historique du Brouhaha
 
-**Statut : implémentation candidate dans la PR #37.**
+**Statut : terminé et fusionné par la PR #37.**
 
-Livré sur la branche :
+Livré :
 
 - `BrouhahaState` intégré à `RoomState` version 3 ;
 - jauge bornée de 0 à 12 ;
@@ -84,9 +83,12 @@ Livré sur la branche :
 - sauvegarde version 3 ;
 - migrations des versions 1 et 2 ;
 - tests moteur, contenu, sauvegarde et Playwright ;
-- stabilisation de la hauteur du plateau lorsque les commandes s'allongent.
+- stabilisation de la hauteur du plateau lorsque les commandes s'allongent ;
+- maintien du picking après défilement, rotation et redimensionnement.
 
 Les commandes pilotes simulent combat, objet cassé, explosion et tour calme. Elles ne remplacent pas les futurs branchements automatiques.
+
+Commit de fusion : `306cc037a5e64ef948b45d85e92d45e3a9909eb2`.
 
 ### Sprint 3.3 : objets interactifs
 
@@ -122,7 +124,7 @@ Les commandes pilotes simulent combat, objet cassé, explosion et tour calme. El
 - mesures de fluidité ;
 - tests desktop et mobile paysage.
 
-## Invariants du Sprint 3.2
+## Invariants livrés au Sprint 3.2
 
 - mêmes état, catalogue et demande, même résultat ;
 - aucun `Math.random()`, temps système ou UUID aléatoire ;
@@ -139,6 +141,8 @@ Les commandes pilotes simulent combat, objet cassé, explosion et tour calme. El
 
 ## Critères de sortie du Sprint 3.2
 
+Tous les critères ont été validés avant fusion :
+
 - la jauge augmente et diminue selon une demande explicite ;
 - les variations sont bornées et expliquées ;
 - une demande dupliquée ne modifie pas la salle ;
@@ -150,7 +154,7 @@ Les commandes pilotes simulent combat, objet cassé, explosion et tour calme. El
 - le HUD et le journal rendent le résultat lisible ;
 - le picking reste fonctionnel malgré l'allongement des commandes ;
 - desktop et mobile paysage sont validés ;
-- tous les contrôles automatisés sont verts avant fusion.
+- tous les contrôles automatisés sont verts.
 
 ## Hors périmètre du Sprint 3.2
 
@@ -176,4 +180,6 @@ Le Brouhaha restera un système runtime distinct. Ses renforts pourront dépasse
 
 ## État de livraison
 
-La PR #37 concentre le lot Sprint 3.2. Le rapport de contrôle se trouve dans [Audit de livraison Sprint 3.2](../audits/sprint-3-2-brouhaha-state.md). Le HEAD final et le verdict complet de CI seront consignés avant passage de la PR en état prêt à fusionner.
+Les Sprints 3.1 et 3.2 sont fusionnés dans `main`. Le rapport de contrôle du Brouhaha se trouve dans [Audit de livraison Sprint 3.2](../audits/sprint-3-2-brouhaha-state.md).
+
+La prochaine phase de la roadmap est le Sprint 3.3 consacré aux objets interactifs.
