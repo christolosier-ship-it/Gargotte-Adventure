@@ -21,6 +21,17 @@ export function describeTacticalEvent(
   );
 }
 
+export function appendTacticalEvents(
+  append: (message: string) => void,
+  events: readonly TacticalEvent[],
+  creatures: readonly CreatureDefinition[],
+  interactables: readonly InteractableDefinition[],
+): void {
+  events.forEach((event) =>
+    append(describeTacticalEvent(event, creatures, interactables)),
+  );
+}
+
 export function describeDomainEvent(event: DomainEvent): string {
   return event.type === "expedition/started"
     ? "Les héros entrent dans la salle tactique."
