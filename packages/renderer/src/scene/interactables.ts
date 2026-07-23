@@ -59,7 +59,10 @@ export function drawInteractable(
     },
   }).catch((error: unknown) => {
     if (!context.isCurrent(container)) return;
-    console.error(`[assets] objet échoué: ${assetId}/${interactable.id}`, error);
+    console.error(
+      `[assets] objet échoué: ${assetId}/${interactable.id}`,
+      error,
+    );
   });
 }
 
