@@ -1,0 +1,120 @@
+# Audit de livraison du Sprint 3.4
+
+- Date de contrôle : 23 juillet 2026
+- Issue : #44
+- Pull Request : #45
+- Branche : `sprint-3/chain-reactions`
+- Base de départ : `d4d0419903a0695fb736bffb239c35c351c6def7`
+- Commit fonctionnel validé : `0bab7d8f487761df7e93475cc706fb78dde933c3`
+- Prochaine étape : Sprint 3.5
+
+## Conclusion
+
+Le Sprint 3.4 est conforme au périmètre documenté. Le moteur tactique peut pousser des objets, propager des réactions en chaîne dans un ordre reproductible, appliquer des transitions et des dégâts, ouvrir ou bloquer un passage et soumettre plusieurs demandes de Brouhaha dans leur ordre causal.
+
+La livraison respecte les frontières d'architecture : aucune règle métier n'a été ajoutée dans l'interface ou le renderer, aucun renfort automatique n'est déclenché avant le Sprint 3.5 et Gargottex n'a pas été modifié.
+
+## Contrôle du périmètre
+
+### Poussée et déplacement
+
+- la direction d'une poussée est déduite des coordonnées logiques du héros et de l'objet ;
+- la distance pilote est limitée à une case orthogonale ;
+- une destination hors plateau, occupée ou bloquée provoque un refus sans mutation ;
+- un refus ne consomme pas l'action du héros ;
+- le déplacement produit un événement portant sa cause.
+
+### Propagation déterministe
+
+- les déclencheurs disponibles sont `state-entered` et `moved` ;
+- les réactions applicables sont triées par identifiant ;
+- les actions d'une réaction sont exécutées dans l'ordre du contenu ;
+- les déclencheurs secondaires sont placés dans une file FIFO ;
+- les actions disponibles sont `transition`, `move`, `damage` et `brouhaha` ;
+- aucun hasard implicite, temps système ou UUID n'intervient dans la résolution.
+
+### Causalité et garde-fous
+
+Chaque action propagée conserve :
+
+- la demande racine ;
+- la définition de réaction ;
+- le type de déclencheur ;
+- l'objet source ;
+- la réaction parente éventuelle ;
+- l'index et le type de l'action ;
+- la cible ;
+- le résultat et ses détails.
+
+Une définition ne peut être exécutée qu'une fois dans une chaîne racine. Une nouvelle rencontre produit `cycle-detected`. La propagation est également limitée à 32 définitions, avec interruption explicite `max-steps`.
+
+## Scénario pilote Bastognac
+
+Le contenu de contrôle réalise la séquence suivante :
+
+1. Magdalena pousse et renverse la table bancale ;
+2. le déplacement de la table fissure le pilier susceptible ;
+3. la réaction du pilier inflige deux dégâts dans sa zone ;
+4. l'état fissuré ouvre la grille grinçante ;
+5. le pilier puis le mécanisme de la grille produisent deux demandes de Brouhaha ordonnées.
+
+Le résultat final est identique pour des entrées identiques et survit à une reprise de partie.
+
+## Sauvegarde
+
+L'état tactique passe en version 5 avec :
+
+- `nextChainReactionSequence` ;
+- `chainReactionHistory`.
+
+Les sauvegardes versions 1 à 4 sont migrées. Elles reçoivent un historique vide et une prochaine séquence égale à 1, sans reconstruction fictive d'événements passés.
+
+Les contrôles rejettent les historiques dont les identifiants ou séquences sont dupliqués, ainsi qu'une prochaine séquence incohérente.
+
+## Validation automatisée
+
+### Validate application
+
+Exécution GitHub Actions `30049262620` : succès complet.
+
+- formatage Prettier ;
+- validation du contenu ;
+- TypeScript strict ;
+- tests unitaires ;
+- build de production ;
+- validateur du dépôt ;
+- installation Chromium ;
+- Playwright Chrome bureau ;
+- Playwright paysage tactile ;
+- création des artefacts de production.
+
+### Repository quality
+
+Exécution GitHub Actions `30049262840` : succès complet.
+
+- structure du dépôt ;
+- limites de taille des fichiers ;
+- contrôle des secrets et fichiers interdits.
+
+## Couverture ajoutée
+
+Les tests automatisés vérifient notamment :
+
+- le domino complet et l'ordre des demandes de Brouhaha ;
+- la reproductibilité à entrées identiques ;
+- le refus atomique d'une poussée bloquée ;
+- l'interruption d'un cycle ;
+- la persistance de l'historique causal ;
+- les migrations versions 1 à 4 ;
+- la corruption des séquences ;
+- le scénario pilote sur desktop et mobile paysage.
+
+## Écarts et arbitrages
+
+Aucun écart fonctionnel non autorisé n'a été introduit.
+
+Le journal visible conserve volontairement une fenêtre courte des événements récents. L'ordre causal complet est donc contrôlé par l'historique persistant et les tests unitaires, tandis que le test navigateur vérifie les événements encore visibles et l'état final.
+
+## Décision de sortie
+
+Le Sprint 3.4 peut être fusionné. Le dépôt est prêt à démarrer le Sprint 3.5, consacré aux renforts déclenchés par les seuils du Brouhaha.
