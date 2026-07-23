@@ -4,11 +4,25 @@ import { moveCombatant, reachablePositions, shortestPath } from "./movement";
 import type { RoomState } from "./types";
 
 const room = (): RoomState => ({
-  version: 3,
+  version: 4,
   scenarioId: "t",
   width: 4,
   height: 4,
   obstacles: [{ column: 1, row: 1 }],
+  interactables: [
+    {
+      id: "grille",
+      interactableId: "grille-test",
+      name: "Grille",
+      kind: "gate",
+      position: { column: 3, row: 1 },
+      stateId: "fermee",
+      blocksMovement: true,
+      blocksLineOfSight: true,
+    },
+  ],
+  processedInteractableRequestIds: [],
+  nextInteractableInteractionSequence: 1,
   spawnPoints: [],
   processedSpawnRequestIds: [],
   nextEnemyInstanceSequence: 1,
@@ -57,11 +71,12 @@ const room = (): RoomState => ({
 });
 
 describe("grille tactique", () => {
-  it("rejette sortie obstacle et occupation", () => {
+  it("rejette sortie obstacle objet et occupation", () => {
     const state = room();
     expect(isWithinBounds({ column: -1, row: 0 }, 4, 4)).toBe(false);
     expect(isBlocked(state, { column: 1, row: 1 })).toBe(true);
     expect(isBlocked(state, { column: 2, row: 0 })).toBe(true);
+    expect(isBlocked(state, { column: 3, row: 1 })).toBe(true);
   });
 
   it("liste voisins dans un coin", () => {
@@ -87,7 +102,7 @@ describe("grille tactique", () => {
   });
 
   it("départage les chemins équivalents", () => {
-    const state = { ...room(), obstacles: [], enemies: [] };
+    const state = { ...room(), obstacles: [], interactables: [], enemies: [] };
     expect(
       shortestPath(state, { column: 0, row: 0 }, { column: 1, row: 1 }, "h"),
     ).toEqual([
@@ -97,7 +112,7 @@ describe("grille tactique", () => {
   });
 
   it("déplace une ou plusieurs cases avec un événement par action", () => {
-    const state = { ...room(), obstacles: [], enemies: [] };
+    const state = { ...room(), obstacles: [], interactables: [], enemies: [] };
     const one = moveCombatant(state, "h", { column: 1, row: 0 });
     expect(one.ok && one.value.events).toHaveLength(1);
     const many = moveCombatant(state, "h", { column: 0, row: 3 });
