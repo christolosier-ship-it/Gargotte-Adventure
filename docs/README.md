@@ -55,14 +55,16 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 | Source         | Rôle                                                                            |
 | -------------- | ------------------------------------------------------------------------------- |
 | GitHub         | Code, architecture technique, ADR, formats, tests et historique des changements |
-| Gargottex      | Source de vérité éditoriale des données structurées                             |
+| Gargottex      | Source de vérité éditoriale et référence consultable en lecture seule           |
 | Google Drive   | Règles humaines, lore, médias maîtres, comptes rendus et archives               |
 | Figma / FigJam | Écrans, composants, gabarits, tokens et diagrammes                              |
 
+Gargottex n’est pas une dépendance runtime de Gargotte Adventure. Le dépôt `christolosier-ship-it/Gargotte-V5` peut être étudié, mais il n’est jamais modifié depuis ce projet.
+
 ## Règles de maintenance
 
-1. La documentation GitHub décrit l’état technique réel de `main`.
-2. Une cible future est explicitement étiquetée comme telle.
+1. La documentation GitHub décrit l’état technique réel de `main` ou identifie explicitement une PR en cours.
+2. Une cible future est étiquetée comme telle.
 3. Une fonctionnalité n’est marquée comme livrée qu’après fusion et CI verte.
 4. Les rapports de sprint sont historiques et ne servent pas d’instructions actives.
 5. Les ADR consignent les décisions structurantes, pas les détails locaux.
@@ -70,23 +72,22 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 7. Les liens internes au dépôt sont relatifs.
 8. Toute modification d’architecture, de sauvegarde, de renderer ou de format de contenu met à jour les pages associées.
 9. Toute modification des budgets de menace précise leur niveau d’application.
-10. Les documents distinguent systématiquement définition éditoriale, instance runtime et génération.
+10. Les documents distinguent définition éditoriale, instance runtime et génération.
+11. Toute étude de code Gargottex mentionne son caractère strictement non modifiant.
 
 ## État documentaire
 
-Après la clôture du Sprint 2, la stabilisation de la caméra, le désendettement pré-Sprint 3 et le cadrage du Sprint 3 :
+Pendant le Sprint 3.1 :
 
-- README aligné sur la prochaine fondation de spawn ;
-- roadmap mise à jour avec le Sprint 3 découpé en six étapes ;
-- architecture générale alignée sur la séparation définition / instance / génération ;
-- moteur de spawn documenté avant implémentation ;
-- ADR-0007 acceptée ;
-- budget de menace défini explicitement par salle ;
-- génération complète des salles et étages réservée au Sprint 5 ;
-- orchestrateur applicatif et renderer découpés par responsabilité ;
-- sauvegardes actuelles validées en profondeur ;
-- garde-fous d’architecture automatisés ;
-- rapports Sprint 0, Sprint 1 et Sprint 2 conservés comme historiques ;
-- cadrage Sprint 3 indexé ;
-- suivi détaillé présent dans Google Drive ;
-- aucune mécanique Sprint 3 ni génération runtime introduite par ce lot documentaire.
+- README aligné sur la PR #34 ;
+- roadmap et cadrage Sprint 3 conservés ;
+- architecture générale alignée sur le spawn réellement implémenté ;
+- structure du dépôt mise à jour ;
+- salle tactique documentée en version 2 ;
+- moteur de spawn documenté avec algorithme, événements et sauvegarde ;
+- ADR-0007 respectée ;
+- budget de menace maintenu par salle et hors du spawn ;
+- étude du générateur Gargottex consignée en lecture seule ;
+- sauvegarde version 2 et migration version 1 documentées ;
+- suivi d’exécution présent dans Google Drive ;
+- statut final encore conditionné à la CI et au contrôle de la PR #34.
