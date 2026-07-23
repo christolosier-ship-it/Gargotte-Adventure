@@ -306,8 +306,8 @@ docs                      produit, architecture, audits, ADR et sprints
 - générateur de topologie des étages ;
 - générateur de géométrie complète des salles ;
 - générateur de rencontre ;
-- budget de menace par salle ;
-- progression, loot, boss et campagne.
+- budget de menace validé par salle ;
+- loot, progression et boss final.
 
 Ces éléments seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
 
@@ -316,14 +316,13 @@ Ces éléments seront ajoutés uniquement lorsqu’un sprint leur fournit un com
 - moteur déterministe à entrée identique ;
 - état sérialisable et versionné ;
 - règles testables sans navigateur ;
-- définitions éditoriales séparées des instances runtime ;
-- apparitions explicables ;
-- génération reproductible à seed identique ;
-- budget de menace validé par salle ;
 - rendu indépendant des décisions métier ;
 - sauvegardes validées avant utilisation ;
 - packages sans cycles ;
 - modules principaux de taille bornée ;
+- définitions éditoriales séparées des instances ;
+- plans générés séparés des états runtime ;
+- budget de menace par salle ;
 - aucun secret dans le client ;
 - aucune dépendance 3D ou WebAssembly sans besoin mesuré.
 
