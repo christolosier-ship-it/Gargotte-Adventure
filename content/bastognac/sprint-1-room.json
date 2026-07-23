@@ -1,11 +1,40 @@
 {
-  "schemaVersion": 2,
+  "schemaVersion": 3,
   "id": "bastognac-sprint-1-room",
   "name": "Salle d'essai de Bastognac",
   "grid": { "width": 8, "height": 4 },
-  "obstacles": [
-    { "column": 3, "row": 1 },
-    { "column": 4, "row": 2 }
+  "obstacles": [],
+  "interactables": [
+    {
+      "id": "tonneau-douteux-1",
+      "interactableId": "tonneau-bastognac",
+      "position": { "column": 2, "row": 1 },
+      "stateId": "intact"
+    },
+    {
+      "id": "table-bancale-1",
+      "interactableId": "table-bastognac",
+      "position": { "column": 3, "row": 2 },
+      "stateId": "debout"
+    },
+    {
+      "id": "pilier-susceptible-1",
+      "interactableId": "pilier-bastognac",
+      "position": { "column": 4, "row": 2 },
+      "stateId": "intact"
+    },
+    {
+      "id": "grille-grincante-1",
+      "interactableId": "grille-bastognac",
+      "position": { "column": 5, "row": 1 },
+      "stateId": "fermee"
+    },
+    {
+      "id": "torche-murale-1",
+      "interactableId": "torche-bastognac",
+      "position": { "column": 1, "row": 3 },
+      "stateId": "allumee"
+    }
   ],
   "spawnPoints": [
     {
@@ -85,5 +114,5 @@
       "position": { "column": 7, "row": 3 }
     }
   ],
-  "notes": "Statistiques provisoires. Fondation de spawn déterministe Sprint 3.1."
+  "notes": "Statistiques provisoires. Spawn, Brouhaha et objets interactifs déterministes du Sprint 3."
 }
