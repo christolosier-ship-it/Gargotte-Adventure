@@ -6,6 +6,7 @@ import {
   bastognacBrouhahaEffects,
   bastognacCreatureDefinitions,
   bastognacDungeon,
+  bastognacInteractableDefinitions,
   bastognacRoom,
 } from "./bastognac";
 import { GameController } from "./game-controller";
@@ -35,6 +36,7 @@ export async function bootstrapGame(root: HTMLElement): Promise<void> {
     roomDefinition: bastognacRoom,
     creatureDefinitions: bastognacCreatureDefinitions,
     brouhahaEffects: bastognacBrouhahaEffects,
+    interactableDefinitions: bastognacInteractableDefinitions,
     restored,
   });
   registerPwaInstall(shell);
