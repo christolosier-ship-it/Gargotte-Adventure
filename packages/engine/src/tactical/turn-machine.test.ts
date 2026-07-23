@@ -8,6 +8,28 @@ import {
   finishEnemyTurn,
   selectHero,
 } from "./turn-machine";
+import type { CreatureDefinition } from "./types";
+
+const creatureDefinitions: CreatureDefinition[] = [
+  {
+    id: "enemy-melee",
+    name: "E1",
+    maxHp: 4,
+    atk: 2,
+    def: 0,
+    range: 1,
+    blocksMovement: true,
+  },
+  {
+    id: "enemy-ranged",
+    name: "E2",
+    maxHp: 4,
+    atk: 2,
+    def: 0,
+    range: 3,
+    blocksMovement: true,
+  },
+];
 
 const room = () =>
   createRoomState({
@@ -15,6 +37,7 @@ const room = () =>
     width: 8,
     height: 4,
     obstacles: [],
+    spawnPoints: [],
     heroes: [
       {
         id: "a",
@@ -37,26 +60,17 @@ const room = () =>
         range: 3,
       },
     ],
+    creatureDefinitions,
     enemies: [
       {
         id: "e1",
-        name: "E1",
+        creatureId: "enemy-melee",
         position: { column: 3, row: 0 },
-        hp: 4,
-        maxHp: 4,
-        atk: 2,
-        def: 0,
-        range: 1,
       },
       {
         id: "e2",
-        name: "E2",
+        creatureId: "enemy-ranged",
         position: { column: 6, row: 3 },
-        hp: 4,
-        maxHp: 4,
-        atk: 2,
-        def: 0,
-        range: 3,
       },
     ],
   });
