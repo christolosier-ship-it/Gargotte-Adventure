@@ -3,9 +3,10 @@
 ## Statut
 
 - Cible : Sprint 3.2
-- État : implémenté sur la branche `sprint-3/brouhaha-state`
-- Issue : #36
-- Pull Request : #37
+- État : livré dans `main`
+- Issue : #36, clôturée
+- Pull Request : #37, fusionnée
+- Commit de fusion : `306cc037a5e64ef948b45d85e92d45e3a9909eb2`
 
 ## Responsabilité
 
@@ -79,7 +80,7 @@ L'UI traduit ces événements en phrases, mais ne choisit ni le niveau ni les ef
 
 ## Sauvegarde
 
-La salle tactique passe en version 3.
+La salle tactique utilise la version 3.
 
 La sauvegarde conserve le niveau, les demandes traitées, la séquence et l'historique. Les versions 1 et 2 sont migrées vers un Brouhaha initial à zéro.
 
