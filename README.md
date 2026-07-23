@@ -91,7 +91,7 @@ packages/save                sauvegardes IndexedDB et migrations
 packages/common              types et utilitaires partagés
 packages/audio               fondation de réglages audio, non connectée à la boucle de jeu
 content/bastognac            paquet de contenu et catalogue pilote
- design/isometric             tokens, gabarits et handoff graphique
+design/isometric             tokens, gabarits et handoff graphique
 apps/game/public/assets      exports runtime SVG et WebP
 tools/validators             validation du dépôt, du contenu et des assets
 tests/e2e                    parcours Playwright desktop et mobile
