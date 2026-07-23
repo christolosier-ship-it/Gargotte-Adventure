@@ -24,11 +24,7 @@ const room = parseTacticalRoom(
   ),
 );
 
-for (const required of [
-  "dungeon.json",
-  "creatures.json",
-  "sprint-1-room.json",
-])
+for (const required of ["dungeon.json", "creatures.json", "sprint-1-room.json"])
   if (!manifest.files.includes(required))
     throw new Error(`Le manifeste Bastognac ne référence pas ${required}.`);
 if (manifest.packId !== dungeon.id)
