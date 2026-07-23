@@ -1,4 +1,4 @@
-# Architecture - Salle tactique
+# Architecture — Salle tactique
 
 ## Responsabilités
 
@@ -10,9 +10,9 @@ La salle tactique est divisée en cinq responsabilités :
 4. **UI DOM** (`packages/ui`) : sélection des héros, HUD, boutons de phase, rotation de contrôle, commandes accessibles et journal.
 5. **Sauvegarde** (`packages/save`) : persistance IndexedDB versionnée et restauration défensive.
 
-`apps/game/src/main.ts` relie ces responsabilités. Il ne décide pas si un déplacement, une attaque ou un changement de phase est valide.
+`apps/game/src/bootstrap.ts` assemble ces responsabilités. `game-controller.ts` traduit les intentions utilisateur, mais ne décide pas si un déplacement, une attaque, un spawn ou un changement de phase est valide.
 
-## État de salle
+## État de salle actuel
 
 `RoomState` contient au minimum :
 
@@ -25,7 +25,7 @@ La salle tactique est divisée en cinq responsabilités :
 - phase ;
 - numéro de tour.
 
-Chaque combattant possède un identifiant stable, une position, des PV, une attaque, une défense, une portée et un état vivant ou hors combat.
+Chaque combattant possède actuellement un identifiant stable, une position, des PV, une attaque, une défense, une portée et un état vivant ou hors combat.
 
 Les héros ajoutent :
 
@@ -34,7 +34,29 @@ Les héros ajoutent :
 
 L’état ne contient aucune coordonnée écran, texture, orientation de caméra ou référence PixiJS.
 
-## Phases
+## Évolution approuvée de l’état au Sprint 3
+
+La salle actuelle confond encore l’identifiant du type de monstre et l’identifiant de l’ennemi présent dans la partie. Le Sprint 3.1 doit séparer :
+
+- `CreatureDefinition` : archétype stable issu du contenu ;
+- `CreatureInstance` : état mutable d’une créature réellement présente ;
+- `SpawnPoint` : point physique autorisé dans la salle ;
+- `SpawnRequest` : intention d’apparition ;
+- `SpawnResult` : nouvel état et événements explicatifs.
+
+Les contrats détaillés se trouvent dans [Architecture du moteur de spawn](spawn-engine.md) et [ADR-0007](../adr/0007-creature-instances-and-deterministic-spawn.md).
+
+L’évolution de `RoomState` devra probablement inclure :
+
+- `instanceId` distinct de `creatureId` ;
+- points de spawn ;
+- compteur ou séquence déterministe d’instances ;
+- éventuels états du Brouhaha et du décor dans les étapes suivantes ;
+- version de schéma adaptée et migration testée.
+
+Ces éléments sont une cible documentée. Ils ne sont pas encore présents dans le code.
+
+## Phases actuelles
 
 ```text
 heroes-turn
@@ -58,6 +80,8 @@ Le joueur ne peut pas appeler directement le tour ennemi pendant `heroes-turn`. 
 
 - terminer volontairement le tour des héros ;
 - résoudre le tour ennemi lorsque la phase l’autorise.
+
+Le Sprint 3 devra préciser à quels points du cycle les déclencheurs de Brouhaha et de spawn sont résolus. Ils ne devront pas court-circuiter les transitions de phase existantes.
 
 ## Activation des héros
 
@@ -86,6 +110,8 @@ Le moteur fournit :
 Un déplacement orthogonal d’une case coûte une action. Une destination plus éloignée est résolue comme une succession de pas unitaires, chacun produisant un événement et consommant une action.
 
 Une intention invalide ne modifie pas l’état et ne consomme aucune action.
+
+Le moteur de spawn réutilisera les mêmes règles de limites et d’occupation. Une apparition bloquante ne pourra pas être créée sur une case déjà bloquée.
 
 ## Ligne de vue
 
@@ -129,6 +155,8 @@ Une attaque valide :
 
 Le moteur expose également `getAttackableTargets` afin que le renderer et l’UI n’affichent que les cibles réellement valides.
 
+Après le Sprint 3.1, les attaques cibleront un `instanceId`. Le `creatureId` servira à retrouver l’archétype, pas à identifier une cible unique lorsque plusieurs exemplaires coexistent.
+
 ## IA ennemie
 
 Les ennemis sont résolus dans un ordre stable.
@@ -147,6 +175,107 @@ Pour chaque ennemi vivant :
 L’IA ne cherche pas un chemin vers la case occupée par le héros. Elle cherche une **case d’attaque libre**.
 
 Chaque décision peut produire une explication structurée comprenant cible, action, motif et chemin retenu.
+
+L’ordre des futures instances devra rester stable, par exemple selon leur séquence d’instance ou un ordre explicitement défini par la salle. L’arrivée d’un renfort ne devra pas réordonner arbitrairement les ennemis déjà présents.
+
+## Spawn déterministe cible
+
+Le moteur de spawn sera une fonction métier pure :
+
+```text
+RoomState + SpawnRequest
+          │
+          ▼
+validation des points candidats
+          │
+          ▼
+création déterministe des instances
+          │
+          ▼
+SpawnResult = nouvel état + événements + refus
+```
+
+### Règles principales
+
+- même état et même requête donnent le même résultat ;
+- aucune utilisation de `Math.random()` sans PRNG seedé explicite ;
+- aucun identifiant fondé sur l’heure ;
+- toute instance possède un `instanceId` unique et sauvegardé ;
+- une demande refusée ne modifie pas l’état ;
+- toute apparition ou tout refus produit une raison ;
+- le renderer et l’UI ne créent jamais directement une instance.
+
+### Déclencheurs futurs
+
+- population initiale d’une salle ;
+- seuil de Brouhaha ;
+- objet interactif ;
+- script de salle ;
+- boss ;
+- vague ;
+- générateur de rencontre du Sprint 5.
+
+Le moteur de spawn exécute ces demandes mais ne décide pas seul pourquoi elles existent.
+
+## Budget de menace
+
+Le budget de menace est un **budget par salle**.
+
+Il ne s’agit pas d’un budget global d’étage réparti dynamiquement entre les salles.
+
+La progression dans un étage peut déterminer une courbe de budgets, mais chaque salle possède ensuite une valeur propre et sa rencontre est validée séparément.
+
+Le budget sert au futur générateur de rencontre pour composer la population initiale. Le moteur de spawn ne le dépense pas implicitement.
+
+Les renforts de Brouhaha peuvent augmenter la menace présente au-delà de la composition initiale si la règle du seuil le prévoit. Cette augmentation doit rester bornée, explicite et sauvegardable.
+
+## Génération complète cible du Sprint 5
+
+### Étage
+
+Un `FloorPlan` représentera un étage généré :
+
+- identifiant et numéro d’étage ;
+- seed ;
+- graphe de salles ;
+- entrée et sortie ;
+- chemin critique ;
+- embranchements ;
+- connexions et portes ;
+- ordre ou conditions d’accès.
+
+### Salle
+
+Un `RoomTemplate` ou plan de salle décrira :
+
+- dimensions ;
+- forme et cellules jouables ;
+- murs physiques ;
+- portes et passages ;
+- zones particulières ;
+- obstacles structurels ;
+- points de spawn ;
+- décor initial ;
+- entrée et sortie ;
+- budget de menace propre à la salle ;
+- contraintes de connectivité et de lisibilité.
+
+### Rencontre
+
+Le générateur de rencontre recevra le budget de la salle, le catalogue d’archétypes autorisés et les points disponibles. Il produira un plan de population ou des `SpawnRequest` initiales.
+
+Le moteur de spawn transformera ensuite ce plan en instances runtime.
+
+### Invariants de génération
+
+- seed identique, plan identique ;
+- toutes les salles sont accessibles selon les règles du graphe ;
+- entrée et sortie sont connectées ;
+- aucune porte ne débouche hors de la géométrie ;
+- les points de spawn sont dans les limites ;
+- la population initiale n’occupe pas une case structurellement bloquée ;
+- chaque rencontre est contrôlée par son budget de salle ;
+- le renderer reçoit seulement une géométrie et un état valides.
 
 ## Présentation isométrique
 
@@ -175,6 +304,8 @@ Le renderer distingue :
 4. **espace écran** : projection isométrique et fit responsive.
 
 Les tuiles, overlays, héros, ennemis, obstacles et murs passent par la même transformation de vue.
+
+Les futures portes, points de spawn et décorations seront attachés à l’espace physique ou logique de la salle, jamais à l’orientation courante de caméra.
 
 ### Murs périphériques
 
@@ -270,7 +401,7 @@ Le bouton de lancement reste désactivé jusqu’à la fin de l’initialisation
 
 ## Sauvegarde
 
-La sauvegarde tactique contient :
+La sauvegarde tactique contient actuellement :
 
 - type et version ;
 - héros sélectionnés ;
@@ -291,6 +422,8 @@ Le chargement :
 
 La sauvegarde reste en version 1. L’orientation de caméra n’est pas persistée et revient à `0°` après rechargement.
 
+Le Sprint 3.1 devra sauvegarder les `instanceId`, leur `creatureId`, le compteur déterministe et les points de spawn si ceux-ci appartiennent à l’état runtime. La migration devra préserver les ennemis existants ou rejeter proprement les données impossibles à convertir.
+
 ## Contenu Bastognac actuel
 
 Le scénario contient :
@@ -305,7 +438,9 @@ Le scénario contient :
 
 Brünhilda et le Gobelin Bricoleur disposent d’un sprite pilote. Les autres combattants restent en placeholders. Les statistiques et positions restent provisoires.
 
-## Tests
+Le champ historique `floorBudgets` du contenu de donjon n’est pas interprété comme un budget global d’étage. Il devra être remplacé au Sprint 5 par une politique attribuant un budget propre à chaque salle.
+
+## Tests actuels
 
 ### Unitaires
 
@@ -346,10 +481,27 @@ Sur build de production :
 - panne d’un sprite, d’un sol, d’un mur et du tonneau ;
 - desktop et mobile paysage tactile.
 
+## Tests requis pour le Sprint 3.1
+
+- deux instances du même archétype ;
+- identifiants uniques et reproductibles ;
+- compteur restauré après sauvegarde ;
+- point hors limites refusé ;
+- point occupé refusé ;
+- point alternatif choisi selon un ordre stable ;
+- aucune mutation sur échec ;
+- événements d’apparition et de refus ;
+- IA opérante sur les nouvelles instances ;
+- renderer opérant avec plusieurs instances partageant un asset ;
+- reprise exacte sur desktop et mobile paysage.
+
 ## Limites actuelles
 
 La version stabilisée avant le Sprint 3 n’implémente pas encore :
 
+- séparation définition / instance ;
+- moteur de spawn ;
+- points de spawn ;
 - portes, fenêtres ou grilles décrites dans le contenu ;
 - Brouhaha ;
 - objets interactifs ;
@@ -360,4 +512,7 @@ La version stabilisée avant le Sprint 3 n’implémente pas encore :
 - micro-animations de déplacement ou d’impact ;
 - sons définitifs ;
 - plusieurs salles ou étages ;
+- génération géométrique des salles ;
+- génération des étages ;
+- rencontre par budget de menace de salle ;
 - baseline quantitative de performance.

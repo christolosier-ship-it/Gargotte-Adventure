@@ -11,14 +11,15 @@ Les ADR conservent les décisions structurantes, leur contexte et leurs conséqu
 
 ## Index
 
-| ADR                                            | Statut  | Décision                                                  |
-| ---------------------------------------------- | ------- | --------------------------------------------------------- |
-| [ADR-0001](0001-pwa-typescript-pixijs.md)      | Accepté | PWA TypeScript avec plateau PixiJS et UI DOM              |
-| [ADR-0002](0002-gargottex-content-boundary.md) | Accepté | Gargottex reste la source de vérité éditoriale            |
-| [ADR-0003](0003-no-client-secrets.md)          | Accepté | Aucun secret ou appel OpenAI dans le client               |
-| [ADR-0004](0004-lightweight-branching.md)      | Accepté | Branches courtes et Pull Requests, squash privilégié      |
-| [ADR-0005](0005-deterministic-room-engine.md)  | Accepté | Moteur de salle, combat, IA et ligne de vue déterministes |
-| [ADR-0006](0006-isometric-2d-renderer.md)      | Accepté | Plateau 2D isométrique sous PixiJS, sans rig ni 3D        |
+| ADR                                                            | Statut  | Décision                                                  |
+| -------------------------------------------------------------- | ------- | --------------------------------------------------------- |
+| [ADR-0001](0001-pwa-typescript-pixijs.md)                      | Accepté | PWA TypeScript avec plateau PixiJS et UI DOM              |
+| [ADR-0002](0002-gargottex-content-boundary.md)                 | Accepté | Gargottex reste la source de vérité éditoriale            |
+| [ADR-0003](0003-no-client-secrets.md)                          | Accepté | Aucun secret ou appel OpenAI dans le client               |
+| [ADR-0004](0004-lightweight-branching.md)                      | Accepté | Branches courtes et Pull Requests, squash privilégié      |
+| [ADR-0005](0005-deterministic-room-engine.md)                  | Accepté | Moteur de salle, combat, IA et ligne de vue déterministes |
+| [ADR-0006](0006-isometric-2d-renderer.md)                      | Accepté | Plateau 2D isométrique sous PixiJS, sans rig ni 3D        |
+| [ADR-0007](0007-creature-instances-and-deterministic-spawn.md) | Accepté | Définitions, instances et spawn déterministe séparés      |
 
 ## Quand créer un ADR
 

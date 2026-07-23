@@ -5,13 +5,15 @@
 Gargotte Adventure est organisé en quatre couches :
 
 1. **contenu** : données versionnées de héros, créatures, salles, obstacles et références d’assets ;
-2. **moteur** : règles déterministes, déplacements, combat, tours, IA et événements ;
+2. **moteur** : règles déterministes, déplacements, combat, tours, IA, instances, spawn et événements ;
 3. **présentation** : plateau isométrique PixiJS, HUD et commandes DOM accessibles ;
 4. **plateforme** : PWA, sauvegarde IndexedDB, validation, tests, build et déploiement.
 
 Le moteur ne dépend ni du DOM, ni de PixiJS, ni d’IndexedDB, ni d’un donjon particulier. Il reçoit un état et une intention, puis retourne un nouvel état, des événements de domaine ou une erreur métier typée.
 
-## Flux principal
+Les capacités futures de spawn et de génération resteront pures et déterministes. Elles ne seront pas dissimulées dans le renderer ou le contrôleur applicatif.
+
+## Flux principal actuel
 
 ```text
 Interaction joueur
@@ -37,6 +39,60 @@ Interaction joueur
 
 Les interactions PixiJS et les commandes DOM utilisent les mêmes handlers. L’interface n’implémente donc pas une seconde version des règles.
 
+## Flux cible des apparitions
+
+```text
+Déclencheur de scénario, Brouhaha, objet ou boss
+                      │
+                      ▼
+                 SpawnRequest
+                      │
+                      ▼
+           moteur de spawn déterministe
+                      │
+          ┌───────────┴───────────┐
+          ▼                       ▼
+  nouvel état de salle      événements / refus
+          │
+          ├─► rendu
+          ├─► journal
+          └─► sauvegarde
+```
+
+Le système déclencheur décide pourquoi une apparition est demandée. Le moteur de spawn décide seulement si elle est valide, où elle a lieu selon les candidats autorisés et quelles instances sont créées.
+
+## Flux cible de génération du Sprint 5
+
+```text
+DungeonGenerationRequest + seed
+              │
+              ▼
+      générateur d'étages
+              │
+              ▼
+ FloorPlan avec salles reliées
+              │
+              ▼
+ générateur géométrique de salle
+              │
+              ▼
+ RoomTemplate + points de spawn
+              │
+              ▼
+ budget de menace de la salle
+              │
+              ▼
+ générateur de rencontre
+              │
+              ▼
+ SpawnRequest initiales
+              │
+              ▼
+ moteur de spawn
+```
+
+Le budget de menace est attaché à chaque salle. La progression d’un étage peut influencer les budgets attribués, mais un étage ne dispose pas d’un portefeuille global partagé entre toutes ses salles.
+
 ## État actuel après le désendettement pré-Sprint 3
 
 ### Contenu
@@ -49,9 +105,11 @@ Les interactions PixiJS et les commandes DOM utilisent les mêmes handlers. L’
 
 Le scénario définit une grille 8 × 4, les obstacles, les quatre héros officiels, deux gobelins provisoires et les positions initiales. Les schémas Zod empêchent qu’un contenu invalide atteigne le contrôleur.
 
+La salle actuelle décrit encore directement les ennemis initiaux. La distinction entre définition de créature et instance runtime est approuvée mais non implémentée.
+
 ### Moteur
 
-`packages/engine/src/tactical` contient :
+`packages/engine/src/tactical` contient actuellement :
 
 - types d’état et positions ;
 - limites, voisins et occupation de grille ;
@@ -64,6 +122,8 @@ Le scénario définit une grille 8 × 4, les obstacles, les quatre héros offici
 
 Le moteur conserve exclusivement des coordonnées `GridPosition { column, row }`. Il ne connaît ni l’isométrie, ni les dimensions des tuiles, ni les assets.
 
+Le moteur de spawn n’est pas encore implémenté. Son contrat est préparé dans [Architecture du moteur de spawn](spawn-engine.md).
+
 ### Composition applicative
 
 `apps/game/src/main.ts` est un point d’entrée minimal. Les responsabilités sont distribuées :
@@ -75,7 +135,7 @@ Le moteur conserve exclusivement des coordonnées `GridPosition { column, row }`
 - `pwa-install.ts` gère l’installation ;
 - `bastognac.ts` constitue la frontière entre le donjon et les composants génériques.
 
-Cette séparation évite que les futures mécaniques Brouhaha et décor interactif soient ajoutées directement dans le point d’entrée.
+Cette séparation évite que les futures mécaniques de spawn, Brouhaha et décor interactif soient ajoutées directement dans le point d’entrée.
 
 ### Renderer isométrique
 
@@ -109,6 +169,8 @@ Son implémentation est séparée entre :
 
 Les couches actives sont : fond, sol, murs arrière, objets et interface canvas. Une couche vide n’est pas conservée par anticipation.
 
+Les futures instances seront affichées depuis leur état moteur. Le renderer ne choisira ni leur archétype, ni leur position de spawn, ni leur identifiant.
+
 ### Pipeline d’assets
 
 Le renderer utilise un pipeline versionné :
@@ -139,6 +201,8 @@ Les commandes tactiques variables selon l’état restent dans `apps/game/src/ta
 
 Les données incompatibles ou corrompues sont rejetées avant d’atteindre le moteur ou le renderer. L’application sérialise les écritures successives pour empêcher les courses entre autosauvegardes.
 
+Le Sprint 3.1 devra versionner ou migrer la sauvegarde si `RoomState` introduit `creatureId`, `instanceId`, points de spawn ou compteur d’instances.
+
 ### Fondation audio
 
 `packages/audio` reste un socle minimal de réglages et d’`AudioDirector`. Il n’est pas encore connecté à la boucle de jeu et ne charge aucun média sonore.
@@ -153,6 +217,22 @@ Les données incompatibles ou corrompues sont rejetées avant d’atteindre le m
 - GitHub Actions pour qualité et déploiement ;
 - validation automatique des frontières de packages, tailles de modules, tokens, documentation, secrets et assets ;
 - GitHub Pages pour la publication.
+
+## Définitions, instances et plans
+
+### Définition
+
+Une définition éditoriale décrit ce qu’est une créature, un objet ou un type de salle. Elle est stable, versionnée et issue du contenu.
+
+### Instance
+
+Une instance décrit l’état mutable d’un élément présent dans une partie : position, PV, état, effets ou consommation.
+
+### Plan généré
+
+Un plan généré décrit une structure à instancier : topologie d’étage, géométrie de salle, connexions, points de spawn, obstacles et plan de rencontre.
+
+Ces trois niveaux ne doivent pas partager le même objet mutable.
 
 ## Projection de référence
 
@@ -169,7 +249,7 @@ Le gabarit retenu est une tuile 128 × 64, soit un ratio 2:1.
 
 ### Gargottex
 
-Gargottex demeure la source de vérité éditoriale. À terme, le jeu consommera des paquets normalisés, validés et versionnés issus de Gargottex.
+Gargottex demeure la source de vérité éditoriale. À terme, le jeu consommera des paquets normalisés, validés et versionnés issus de Gargottex, notamment les `CreatureDefinition`.
 
 ### Google Drive
 
@@ -202,17 +282,34 @@ tests/e2e                 parcours Playwright et helpers canvas
 docs                      produit, architecture, audits, ADR et sprints
 ```
 
-## Éléments cibles non encore intégrés
+## Évolutions approuvées mais non intégrées
 
-- Brouhaha et décor interactif ;
-- intégration audio réelle ;
-- importeur complet Gargottex ;
-- pipeline industriel d’optimisation des médias ;
+### Sprint 3
+
+- définitions et instances de créatures séparées ;
+- moteur de spawn déterministe ;
+- points de spawn ;
+- Brouhaha ;
+- décor interactif ;
+- réactions en chaîne ;
+- renforts ;
+- intégration audio utile.
+
+### Sprint 4
+
 - catalogue complet Bastognac ;
 - compétences définitives ;
-- campagne, loot et progression.
+- seize créatures et profils IA.
 
-Ils seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
+### Sprint 5
+
+- générateur de topologie des étages ;
+- générateur de géométrie complète des salles ;
+- générateur de rencontre ;
+- budget de menace validé par salle ;
+- loot, progression et boss final.
+
+Ces éléments seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement utile et testé.
 
 ## Propriétés attendues
 
@@ -223,6 +320,9 @@ Ils seront ajoutés uniquement lorsqu’un sprint leur fournit un comportement u
 - sauvegardes validées avant utilisation ;
 - packages sans cycles ;
 - modules principaux de taille bornée ;
+- définitions éditoriales séparées des instances ;
+- plans générés séparés des états runtime ;
+- budget de menace par salle ;
 - aucun secret dans le client ;
 - aucune dépendance 3D ou WebAssembly sans besoin mesuré.
 

@@ -9,9 +9,9 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 | Sprint 0 — Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
 | Sprint 1 — Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
 | Sprint 2 — Plateau isométrique             | ✅ Terminé | Même salle jouable en 2D isométrique avec pipeline graphique réutilisable      |
-| Sprint 3 — Brouhaha et décor               | Prochain   | Le plateau devient un système vivant, interactif et explicable                 |
-| Sprint 4 — Héros et créatures de Bastognac | À venir    | Rôles, compétences et comportements définitifs                                 |
-| Sprint 5 — Donjon complet et finition      | À venir    | Cinq étages, loot, boss, médias enrichis, audio, accessibilité et performances |
+| Sprint 3 — Brouhaha, spawn et décor        | Cadré      | Salle vivante, renforts déterministes et décor interactif                      |
+| Sprint 4 — Héros et créatures de Bastognac | À venir    | Rôles, compétences, archétypes et comportements définitifs                     |
+| Sprint 5 — Donjon généré et finition       | À venir    | Cinq étages générés, rencontres par salle, loot, boss et finition              |
 
 ## Sprint 0 — Fondations ✅
 
@@ -58,10 +58,9 @@ Livré :
 - projection 2D isométrique 128 × 64 sous PixiJS ;
 - grille logique et moteur tactique inchangés ;
 - picking réel par clic et toucher sur le canvas ;
-- caméra et redimensionnement adaptés au paysage ;
+- caméra responsive avec quatre orientations de contrôle ;
 - tri de profondeur déterministe ;
-- couches séparées pour le fond, le sol, les objets, le premier plan et l’interface ;
-- murs hauts non interactifs avec occlusion contextuelle ;
+- quatre murs physiques dont seuls les deux murs arrière sont rendus ;
 - manifeste versionné et registre centralisé d’assets ;
 - cache de textures, destruction sûre et fallbacks non bloquants ;
 - budgets automatiques pour les formats et le poids des assets ;
@@ -69,50 +68,129 @@ Livré :
 - deux sols Bastognac, deux orientations de mur et un tonneau illustré ;
 - placeholders compatibles pour le reste du casting ;
 - tests unitaires et Playwright desktop/mobile paysage, y compris les pannes d’assets ;
-- maintien de la sauvegarde version 1 et des résultats déterministes.
+- maintien de la sauvegarde version 1 et des résultats déterministes ;
+- désendettement de l’orchestrateur, du renderer et des sauvegardes avant Sprint 3.
 
-Les sprites restent fixes pour cette première version. Les micro-animations étaient autorisées mais non obligatoires et pourront être ajoutées lorsqu’elles servent une interaction réelle.
+Les sprites restent fixes pour cette première version. Les micro-animations pourront être ajoutées lorsqu’elles servent une interaction réelle.
 
-La charge graphique pilote reste très inférieure au budget de 1 Mio. Une mesure quantitative de fluidité sera ajoutée avant la multiplication des objets interactifs ou au début du Sprint 3.
-
-**Sortie obtenue :** la salle du Sprint 1 conserve exactement ses règles et devient jouable avec une présentation isométrique cohérente et un pipeline graphique réutilisable.
+**Sortie obtenue :** la salle du Sprint 1 conserve ses règles et devient jouable avec une présentation isométrique cohérente et une architecture prête à accueillir le monde vivant du Sprint 3.
 
 Le rapport détaillé se trouve dans [Sprint 2 — Plateau isométrique et pipeline graphique](sprints/sprint-2.md).
 
-## Sprint 3 — Brouhaha et décor
+## Sprint 3 — Brouhaha, spawn et décor
 
 Objectif : faire du plateau isométrique un acteur tactique visible, sans perdre le caractère déterministe du moteur.
 
-Périmètre envisagé :
+Le cadrage détaillé se trouve dans [Sprint 3 — Brouhaha, spawn et décor interactif](sprints/sprint-3.md).
 
-- jauge de Brouhaha 0–12 ;
-- événements pairs et impairs ;
-- seuils déclenchant renforts ou effets cumulés ;
-- tables, tonneaux, grilles, torches et piliers interactifs ;
-- réactions en chaîne ;
-- journal d’événements explicatif ;
-- premiers effets visuels et sonores liés au décor ;
-- sauvegarde et reprise de tous les nouveaux états.
+### Sprint 3.1 — Fondation de spawn déterministe
 
-**Sortie attendue :** le bruit et le décor créent des décisions tactiques et des catastrophes lisibles sur le plateau isométrique.
+- séparer `CreatureDefinition` et `CreatureInstance` ;
+- introduire les points de spawn ;
+- traiter des demandes d’apparition explicites ;
+- créer des identifiants d’instance reproductibles ;
+- refuser proprement les positions invalides ou occupées ;
+- produire des événements explicatifs ;
+- adapter la sauvegarde et la salle pilote ;
+- valider un premier renfort fixe sans dépendre encore du Brouhaha complet.
+
+### Sprint 3.2 — Brouhaha 0–12
+
+- état de jauge ;
+- incrémentation et diminution ;
+- effets universels ou propres au donjon ;
+- un effet aux niveaux 0–9 ;
+- deux effets aux niveaux 10–12 ;
+- historique et explication.
+
+### Sprint 3.3 — Décor interactif
+
+- tables, tonneaux, grilles, torches et piliers ;
+- états et interactions propres aux objets ;
+- règles validées par le moteur.
+
+### Sprint 3.4 — Réactions en chaîne
+
+- propagation ordonnée ;
+- causalité explicite ;
+- protection contre les boucles infinies ;
+- premiers effets visuels et sonores utiles.
+
+### Sprint 3.5 — Renforts de Brouhaha
+
+- seuils déclenchant des renforts ;
+- sélection déterministe des points ;
+- spawn partiel ou refus selon les règles ;
+- limites propres au scénario.
+
+### Sprint 3.6 — Sauvegarde, journal et finition
+
+- reprise de tous les nouveaux états ;
+- journal d’événements enrichi ;
+- rendu et retours visuels ;
+- mesures de fluidité ;
+- tests desktop et mobile paysage.
+
+**Sortie attendue :** le bruit et le décor créent des décisions tactiques et des catastrophes lisibles, tandis que les renforts utilisent un moteur d’instances générique et reproductible.
 
 ## Sprint 4 — Héros et créatures de Bastognac
 
-Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce sprint doit leur donner leur identité de gameplay définitive.
+Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce sprint doit donner au casting son identité de gameplay définitive.
 
 - caractéristiques et rôles équilibrés ;
 - compétences propres aux quatre héros ;
-- comportements IA différenciés ;
+- catalogue de `CreatureDefinition` ;
 - seize créatures de Bastognac ;
+- catégories et valeurs de menace ;
+- comportements IA différenciés ;
 - ciblage et explications de décision enrichis ;
 - fiches et tutoriel contextuel ;
 - intégration progressive des sprites définitifs ;
 - équilibrage du vertical slice.
 
-## Sprint 5 — Donjon complet et finition
+Les archétypes du Sprint 4 devront être instanciables par le moteur de spawn livré au Sprint 3 sans modifier sa frontière fondamentale.
 
-- cinq étages ;
-- génération contrôlée selon les budgets de menace ;
+## Sprint 5 — Donjon complet généré et finition
+
+Objectif : générer une expédition complète de Bastognac, de la topologie des étages jusqu’à la population de chaque salle.
+
+### Génération des cinq étages
+
+- nombre et ordre des salles ;
+- graphe de connexions ;
+- entrée, sortie et chemin critique ;
+- embranchements éventuels ;
+- validation de la connectivité ;
+- progression entre salles.
+
+### Génération géométrique complète des salles
+
+- dimensions et formes ;
+- grille logique ;
+- murs et segments physiques ;
+- portes, passages et connexions ;
+- zones particulières ;
+- obstacles structurels ;
+- points de spawn ;
+- décor initial ;
+- contraintes de jouabilité et de lisibilité isométrique.
+
+### Génération des rencontres
+
+Chaque salle reçoit son propre budget de menace. **Le budget de menace est un budget par salle et non par étage.**
+
+Le générateur de rencontre :
+
+- choisit des archétypes disponibles ;
+- respecte exactement ou selon une tolérance explicitement définie le budget de la salle ;
+- place la population initiale sur les points autorisés ;
+- produit des demandes d’instanciation pour le moteur de spawn ;
+- reste déterministe à seed identique.
+
+Un étage ne partage pas un portefeuille unique de menace entre ses salles. Sa progression influence les budgets attribués aux salles, mais chaque rencontre est validée séparément.
+
+### Progression et finition
+
 - loot ;
 - progression entre salles ;
 - boss Baron Pas-Très-Terrifiant ;
@@ -124,9 +202,11 @@ Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce 
 - installation PWA finalisée ;
 - tests utilisateurs.
 
+**Sortie attendue :** une expédition complète de cinq étages, générée de manière contrôlée et reproductible, avec des salles géométriquement valides et des rencontres équilibrées individuellement.
+
 ## Après Bastognac
 
-- stabilisation du format de paquet de donjon ;
+- stabilisation des formats de définition, instance, salle et étage ;
 - outillage d’import depuis Gargottex ;
 - ajout de La Forêt en Chantier ;
 - campagne, quêtes et taverne ;
@@ -138,7 +218,11 @@ Les quatre héros officiels sont déjà sélectionnables depuis le Sprint 1. Ce 
 1. expérience joueur avant sophistication technique ;
 2. règles testables avant animations ;
 3. rendu isométrique stabilisé avant multiplication des objets interactifs ;
-4. Bastognac complet avant multiplication des donjons ;
-5. données et assets versionnés avant automatisation massive ;
-6. mesures de performance avant WebAssembly ou véritable 3D ;
-7. aucune dépendance à l’API OpenAI pour lancer ou terminer une partie.
+4. instances et spawn déterministes avant renforts Brouhaha ;
+5. définitions de créatures stabilisées avant génération massive ;
+6. budget de menace calculé et validé par salle ;
+7. génération géométrique contrôlée avant multiplication des donjons ;
+8. Bastognac complet avant ajout d’un second donjon ;
+9. données et assets versionnés avant automatisation massive ;
+10. mesures de performance avant WebAssembly ou véritable 3D ;
+11. aucune dépendance à l’API OpenAI pour lancer ou terminer une partie.
