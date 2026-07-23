@@ -1,7 +1,9 @@
 # Sprint 3 — Brouhaha, spawn et décor interactif
 
-- Statut : cadrage documentaire approuvé
-- Implémentation : non commencée
+- Statut : en cours
+- Étape active : Sprint 3.1
+- Issue : #33
+- Pull Request : #34 en brouillon
 - Prérequis : Sprint 2 et désendettement pré-Sprint 3 terminés
 
 ## Objectif
@@ -19,6 +21,7 @@ Le Sprint 3 doit introduire le Brouhaha 0–12, les objets interactifs, les réa
 5. Le budget de menace n’est pas consommé implicitement par le moteur de spawn.
 6. La génération complète de la géométrie des salles et des étages appartient au Sprint 5.
 7. Le renderer affiche les nouveaux états mais ne décide jamais de leurs règles.
+8. Gargottex reste une source éditoriale et une référence en lecture seule, jamais un dépôt modifié par Gargotte Adventure.
 
 Références :
 
@@ -26,30 +29,43 @@ Références :
 - [Architecture du moteur de spawn](../architecture/spawn-engine.md)
 - [Architecture de la salle tactique](../architecture/tactical-room.md)
 
+## Retour d’expérience Gargottex
+
+Le générateur du dépôt `christolosier-ship-it/Gargotte-V5` a été inspecté sans écriture.
+
+Il filtre les créatures par donjon et catégorie, permet les doublons et cherche une combinaison exacte au moyen d’une recherche récursive mémoïsée. Cette approche sera utile au Sprint 5 pour la composition des rencontres.
+
+Le Sprint 3.1 ne reprend pas directement cet algorithme : Gargottex utilise un mélange `Math.random()`, manipule encore des budgets historiques par étage et retourne des définitions sélectionnées plutôt que des instances runtime persistées.
+
+Le moteur de spawn de Gargotte Adventure reste donc un exécutant déterministe indépendant du futur générateur de rencontre.
+
 ## Champ historique `floorBudgets`
 
-Le paquet Bastognac actuel contient encore un champ `floorBudgets` créé pendant les fondations. Ce champ n’est pas utilisé par un moteur de génération et ne constitue pas la règle produit définitive.
+Le paquet Bastognac contient encore un champ `floorBudgets` créé pendant les fondations. Ce champ n’est pas utilisé par le moteur de spawn et ne constitue pas la règle produit définitive.
 
-Sa dénomination est désormais considérée comme un placeholder historique. Elle devra être remplacée au plus tard lors du cadrage technique du Sprint 5 par une politique attribuant un budget propre à chaque salle, par exemple une courbe de progression d’étage produisant plusieurs `roomThreatBudget`.
-
-Ce lot étant strictement documentaire, le schéma et le JSON actuels ne sont pas modifiés.
+Sa dénomination reste un placeholder historique. Elle devra être remplacée lors du cadrage technique du Sprint 5 par une politique attribuant un budget propre à chaque salle.
 
 ## Découpage du Sprint 3
 
 ### Sprint 3.1 — Fondation de spawn déterministe
 
-Mettre en place les contrats et règles nécessaires pour créer plusieurs instances d’un même archétype et faire apparaître des renforts dans une salle existante.
+**Statut : implémentation en cours dans la PR #34.**
 
-Livrables futurs :
+Livrables réalisés sur la branche :
 
-- `CreatureDefinition` et `CreatureInstance` ;
-- `SpawnPoint`, `SpawnRequest` et `SpawnResult` ;
-- identifiants d’instance reproductibles ;
-- validation des positions ;
+- `CreatureDefinition` et `CreatureInstance` séparées ;
+- `creatureId` distinct de l’identifiant runtime ;
+- `SpawnPoint`, `SpawnRequest`, `SpawnResult` et refus typés ;
+- identifiants reproductibles par séquence persistée ;
+- ordre stable des points candidats ;
+- modes apparition totale ou partielle ;
 - événements explicatifs ;
-- adaptation de la salle pilote ;
-- migration et validation des sauvegardes ;
-- tests unitaires et scénario d’intégration.
+- catalogue pilote Bastognac ;
+- salle de contenu version 2 avec deux points de renfort ;
+- renfort fixe de contrôle ;
+- sauvegarde version 2 et migration défensive de la version 1 ;
+- asset ennemi résolu par `creatureId` ;
+- tests unitaires et parcours navigateur.
 
 Cette étape n’introduit pas encore la jauge de Brouhaha complète.
 
@@ -100,42 +116,48 @@ Cette étape n’introduit pas encore la jauge de Brouhaha complète.
 - mesures de fluidité ;
 - tests desktop et mobile paysage.
 
-## Première étape à implémenter
-
-La prochaine étape de code sera le Sprint 3.1. Son objectif n’est pas de produire déjà tout le Brouhaha, mais de créer la tuyauterie propre qui permettra aux renforts, objets, boss et futurs générateurs de demander des apparitions sans dupliquer la logique.
-
-### Invariants du Sprint 3.1
+## Invariants du Sprint 3.1
 
 - moteur pur et déterministe ;
 - mêmes entrées, même résultat ;
 - aucune dépendance navigateur ;
 - aucune décision métier dans le renderer ;
-- aucune utilisation de l’heure ou d’un UUID aléatoire ;
+- aucune utilisation de l’heure, d’un UUID aléatoire ou de `Math.random()` ;
 - positions logiques uniquement ;
 - événements explicatifs ;
 - sauvegarde versionnée ;
-- compatibilité de la salle actuelle ;
-- aucun équilibrage définitif du bestiaire.
+- requête exécutée une seule fois ;
+- refus total sans mutation ;
+- compatibilité des mécaniques Sprint 2 ;
+- aucun équilibrage définitif du bestiaire ;
+- aucune modification du dépôt Gargottex.
 
-### Critères de sortie du Sprint 3.1
+## Critères de sortie du Sprint 3.1
 
 - deux instances d’un même type peuvent coexister ;
 - les identifiants restent uniques après sauvegarde et reprise ;
 - une apparition hors limites ou sur une case occupée est refusée ;
-- une position alternative est choisie selon une règle stable ;
-- le journal peut expliquer le choix ou le refus ;
-- un renfort fixe peut être instancié dans un scénario de test ;
+- une position alternative est choisie selon l’ordre déclaré ;
+- une apparition partielle explique le reliquat ;
+- une requête déjà traitée ne crée aucun doublon ;
+- le journal explique le choix ou le refus ;
+- le renfort fixe est instancié puis restauré ;
 - les ennemis existants continuent de se déplacer et d’attaquer ;
-- tous les contrôles automatisés restent verts.
+- desktop et mobile paysage restent fonctionnels ;
+- tous les contrôles automatisés sont verts ;
+- la PR est laissée ouverte pour contrôle avant fusion.
 
-## Hors périmètre du Sprint 3
+## Hors périmètre du Sprint 3.1
 
+- jauge de Brouhaha complète ;
+- déclenchement automatique des renforts par seuil ;
 - génération complète des salles ;
 - génération de la topologie des étages ;
 - composition procédurale finale par budget de menace ;
 - remplacement runtime du champ historique `floorBudgets` ;
 - seize créatures définitives et équilibrées ;
 - compétences définitives des héros ;
+- vagues complexes ;
 - loot et progression entre salles ;
 - boss final complet.
 
@@ -171,10 +193,10 @@ Chaque étage sera un graphe de salles reliées. La génération comprendra :
 
 Chaque salle recevra son propre budget de menace. Il n’existe pas de budget unique partagé par tout l’étage.
 
-Le générateur de rencontre transformera ce budget de salle en plan de population. Le moteur de spawn exécutera ensuite les demandes d’instanciation initiales.
+Le générateur de rencontre pourra reprendre ou adapter l’idée de combinaison exacte observée dans Gargottex, à condition de devenir déterministe à seed identique et de respecter la frontière suivante : il compose un plan, puis le moteur de spawn exécute les demandes d’instanciation.
 
 Le champ historique `floorBudgets` devra être migré vers un modèle de politique d’étage et de budgets de salles explicites avant l’implémentation de ce générateur.
 
-## Validation documentaire actuelle
+## État de livraison
 
-Le présent document prépare uniquement l’implémentation. Aucun type, schéma, état, sauvegarde ou comportement de jeu n’est modifié par ce lot documentaire.
+La PR #34 est ouverte en brouillon. Le code, le contenu, la sauvegarde et les tests sont en cours de stabilisation. Aucun changement n’a été apporté à Gargottex. Le verdict final de CI et le commit contrôlé seront consignés avant passage de la PR en état prêt à contrôler.
