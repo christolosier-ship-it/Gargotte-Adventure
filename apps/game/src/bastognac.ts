@@ -46,7 +46,7 @@ export const bastognacAssetCatalog: TabletopAssetCatalog = {
   wallAssetId: "wall.bastognac",
   obstacleAssetId: "prop.bastognac-barrel",
   interactableAssetIds: {
-    "tonneau-bastognac": "prop.bastognac-barrel",
+    "tonneau-bastognac:intact": "prop.bastognac-barrel",
   },
   groundShadowAssetId: "common.ground-shadow",
   combatantAssetIds: {
