@@ -1,10 +1,27 @@
-import { parseDungeon, parseTacticalRoom } from "@gargotte/content-schema";
+import {
+  parseCreatureCatalog,
+  parseDungeon,
+  parseTacticalRoom,
+} from "@gargotte/content-schema";
+import type { CreatureDefinition } from "@gargotte/engine";
 import type { TabletopAssetCatalog } from "@gargotte/renderer";
+import creatureData from "../../../content/bastognac/creatures.json";
 import dungeonData from "../../../content/bastognac/dungeon.json";
 import roomData from "../../../content/bastognac/sprint-1-room.json";
 
 export const bastognacDungeon = parseDungeon(dungeonData);
+export const bastognacCreatureCatalog = parseCreatureCatalog(creatureData);
 export const bastognacRoom = parseTacticalRoom(roomData);
+export const bastognacCreatureDefinitions: CreatureDefinition[] =
+  bastognacCreatureCatalog.creatures.map((creature) => ({
+    id: creature.id,
+    name: creature.name,
+    maxHp: creature.maxHp,
+    atk: creature.atk,
+    def: creature.def,
+    range: creature.range,
+    blocksMovement: creature.blocksMovement,
+  }));
 
 export const bastognacAssetCatalog: TabletopAssetCatalog = {
   canvasLabel: "Plateau tactique PixiJS de Bastognac",

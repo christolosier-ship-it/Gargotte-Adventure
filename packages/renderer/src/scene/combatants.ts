@@ -1,5 +1,5 @@
 import { Container, Graphics, Text } from "pixi.js";
-import type { Combatant, HeroState } from "@gargotte/engine";
+import type { CreatureInstance, HeroState } from "@gargotte/engine";
 import tokens from "../../../../design/isometric/tokens.json";
 import { assetStatusKey } from "../catalog";
 import { isometricPlaceholderTokenGeometry, stableDepth } from "../projection";
@@ -9,7 +9,7 @@ import { combatantHitArea } from "./primitives";
 
 export function drawCombatant(
   context: SceneRenderContext,
-  combatant: Combatant | HeroState,
+  combatant: CreatureInstance | HeroState,
   active: boolean,
   attackable: boolean,
   tieBreaker: number,
@@ -87,7 +87,9 @@ export function drawCombatant(
       console.error(`[assets] ombre échouée: ${groundShadowAssetId}`, error);
     });
 
-  const assetId = context.catalog.combatantAssetIds[combatant.id];
+  const assetKey =
+    combatant.kind === "enemy" ? combatant.creatureId : combatant.id;
+  const assetId = context.catalog.combatantAssetIds[assetKey];
   if (!assetId) return;
   void addAssetSprite(context, {
     assetId,

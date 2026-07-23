@@ -84,9 +84,14 @@ jobs:
           path: package-lock.json
           if-no-files-found: error
 
+      - name: Package production build
+        run: |
+          test -f dist/index.html
+          tar -czf gargotte-adventure-dist.tar.gz -C dist .
+
       - name: Upload production build
         uses: actions/upload-artifact@v7
         with:
           name: gargotte-adventure-dist
-          path: dist
+          path: gargotte-adventure-dist.tar.gz
           if-no-files-found: error

@@ -9,6 +9,8 @@ import {
   tapOrClick,
 } from "./helpers/canvas";
 
+const goblinInitialId = "gobelin-bricoleur-initial-1";
+
 test("reste jouable lorsqu’une texture technique manque réellement", async ({
   page,
   isMobile,
@@ -51,7 +53,7 @@ test("charge les sprites pilotes après un manifeste volontairement retardé", a
   await enterRoom(page);
   await expect.poll(() => combatantAssetStatus(page, "brunhilda")).toBe("webp");
   await expect
-    .poll(() => combatantAssetStatus(page, "gobelin-bricoleur"))
+    .poll(() => combatantAssetStatus(page, goblinInitialId))
     .toBe("webp");
   expect(pageErrors).toEqual([]);
 
@@ -83,14 +85,14 @@ test("sélectionne Brünhilda en touchant directement sa silhouette WebP", async
 
 for (const pilot of [
   {
-    id: "brunhilda",
+    combatantId: "brunhilda",
     file: "brunhilda.webp",
-    otherId: "gobelin-bricoleur",
+    otherCombatantId: goblinInitialId,
   },
   {
-    id: "gobelin-bricoleur",
+    combatantId: goblinInitialId,
     file: "gobelin-bricoleur.webp",
-    otherId: "brunhilda",
+    otherCombatantId: "brunhilda",
   },
 ] as const) {
   test(`conserve les placeholders et le picking si ${pilot.file} échoue`, async ({
@@ -106,10 +108,10 @@ for (const pilot of [
 
     await enterRoom(page);
     await expect
-      .poll(() => combatantAssetStatus(page, pilot.id))
+      .poll(() => combatantAssetStatus(page, pilot.combatantId))
       .toBe("texture-error");
     await expect
-      .poll(() => combatantAssetStatus(page, pilot.otherId))
+      .poll(() => combatantAssetStatus(page, pilot.otherCombatantId))
       .toBe("webp");
     await expect(canvasLocator(page)).toBeVisible();
     await moveBrunhilda(page, isMobile);

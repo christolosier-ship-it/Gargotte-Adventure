@@ -10,7 +10,9 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 
 **Désendettement pré-Sprint 3 : livré**
 
-La version actuelle permet de :
+**Sprint 3.1 — Fondation de spawn déterministe : en cours dans la PR #34**
+
+La version stable de `main` permet de :
 
 - sélectionner de 1 à 4 héros officiels ;
 - lancer une salle tactique 8 × 4 ;
@@ -27,21 +29,21 @@ La version actuelle permet de :
 
 Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, les statistiques, les compétences et une partie du bestiaire restent provisoires.
 
-## Prochaine étape
+## Chantier actuel
 
-**Sprint 3.1 — Fondation de spawn déterministe**
+La PR #34 implémente la première fondation du Sprint 3 :
 
-Avant la jauge de Brouhaha complète, le projet introduira :
+- catalogue `CreatureDefinition` séparé des instances runtime ;
+- `CreatureInstance` avec `creatureId` et identifiant propre ;
+- points, demandes, résultats et refus de spawn ;
+- identifiants reproductibles par séquence persistée ;
+- ordre stable des positions candidates ;
+- événements expliquant chaque apparition ou refus ;
+- sauvegarde tactique version 2 et migration défensive de la version 1 ;
+- renfort fixe de contrôle dans la salle pilote ;
+- tests moteur, contenu, sauvegarde, desktop et mobile paysage.
 
-- une séparation entre définition de créature et instance runtime ;
-- des points de spawn ;
-- des demandes et résultats d’apparition ;
-- des identifiants d’instance reproductibles ;
-- des refus explicites pour les positions invalides ou occupées ;
-- des événements de domaine expliquant chaque apparition ;
-- une sauvegarde compatible avec plusieurs instances d’un même archétype.
-
-Cette fondation permettra ensuite aux seuils de Brouhaha, objets, boss et futurs générateurs de demander des renforts sans dupliquer les règles.
+Le générateur de Gargottex a été consulté en lecture seule. Gargottex n’est pas modifié par ce chantier. Son principe de séparation entre catalogue et composition est utile, mais son mélange aléatoire et son budget d’étage historique ne sont pas repris par le moteur de spawn.
 
 Le cadrage complet est disponible dans :
 
@@ -75,19 +77,20 @@ Le générateur de rencontre transformera le budget de chaque salle en plan de p
 7. **Le rendu ne gouverne pas les règles.** L’isométrie appartient au renderer et ne modifie pas le moteur tactique.
 8. **Définition, instance et génération restent séparées.** Le contenu décrit, le spawn instancie et le générateur compose.
 9. **Le budget de menace appartient à la salle.** La progression d’étage peut influencer les budgets, mais chaque rencontre est validée indépendamment.
+10. **Gargottex reste une frontière externe.** Son code peut être étudié en lecture seule, mais Gargotte Adventure ne le modifie ni ne l’importe comme dépendance runtime.
 
 ## Architecture actuelle
 
 ```text
 apps/game                    composition de la PWA et orchestration
-packages/engine              moteur déterministe et salle tactique
+packages/engine              moteur déterministe, salle tactique et spawn
 packages/content-schema      validation Zod du contenu
 packages/renderer            projection isométrique, assets, picking et profondeur PixiJS
 packages/ui                  menus, HUD et commandes accessibles
 packages/save                sauvegardes IndexedDB et migrations
 packages/common              types et utilitaires partagés
 packages/audio               fondation de réglages audio, non connectée à la boucle de jeu
-content/bastognac            paquet de contenu du vertical slice
+content/bastognac            paquet de contenu et catalogue pilote
 design/isometric             tokens, gabarits et handoff graphique
 apps/game/public/assets      exports runtime SVG et WebP
 tools/validators             validation du dépôt, du contenu et des assets

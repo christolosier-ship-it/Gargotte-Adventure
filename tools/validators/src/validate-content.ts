@@ -2,6 +2,7 @@ import { readFile, stat } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 import {
   parseContentManifest,
+  parseCreatureCatalog,
   parseDungeon,
   parseTacticalRoom,
 } from "@gargotte/content-schema";
@@ -14,15 +15,34 @@ const manifest = parseContentManifest(
 const dungeon = parseDungeon(
   JSON.parse(await readFile(resolve(packDirectory, "dungeon.json"), "utf8")),
 );
+const creatureCatalog = parseCreatureCatalog(
+  JSON.parse(await readFile(resolve(packDirectory, "creatures.json"), "utf8")),
+);
 const room = parseTacticalRoom(
   JSON.parse(
     await readFile(resolve(packDirectory, "sprint-1-room.json"), "utf8"),
   ),
 );
-if (!manifest.files.includes("dungeon.json"))
-  throw new Error("Le manifeste Bastognac ne référence pas dungeon.json.");
+
+for (const required of ["dungeon.json", "creatures.json", "sprint-1-room.json"])
+  if (!manifest.files.includes(required))
+    throw new Error(`Le manifeste Bastognac ne référence pas ${required}.`);
 if (manifest.packId !== dungeon.id)
   throw new Error(`Pack incohérent: ${manifest.packId} ≠ ${dungeon.id}.`);
+
+const creatureIds = new Set(
+  creatureCatalog.creatures.map((creature) => creature.id),
+);
+for (const enemy of room.enemies)
+  if (!creatureIds.has(enemy.creatureId))
+    throw new Error(
+      `Instance ${enemy.id}: créature absente ${enemy.creatureId}.`,
+    );
+for (const scripted of room.scriptedSpawns)
+  if (!creatureIds.has(scripted.creatureId))
+    throw new Error(
+      `Spawn ${scripted.id}: créature absente ${scripted.creatureId}.`,
+    );
 
 const root = resolve("apps/game/public");
 const assetManifestPath = resolve(root, "assets/isometric/manifest.json");
@@ -73,5 +93,5 @@ if (total > assetBudgets.pilotTotalBytes)
     `Lot pilote 2B.1: poids total ${total} > ${assetBudgets.pilotTotalBytes}.`,
   );
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · salle ${room.grid.width}x${room.grid.height} · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
 );

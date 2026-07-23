@@ -15,10 +15,18 @@ export interface CanvasHeroState {
 
 export interface CanvasEnemyState {
   id: string;
+  creatureId: string;
   position: GridPosition;
   viewPosition?: GridPosition;
   hp: number;
   alive: boolean;
+}
+
+export interface CanvasSpawnPoint {
+  id: string;
+  position: GridPosition;
+  tags: string[];
+  enabled: boolean;
 }
 
 export interface CanvasWallSegment {
@@ -38,6 +46,9 @@ export interface CanvasState {
   rotation: CameraRotation;
   visibleWalls: string[];
   wallSegments: CanvasWallSegment[];
+  spawnPoints: CanvasSpawnPoint[];
+  processedSpawnRequests: string[];
+  nextEnemyInstanceSequence: number;
   heroes: CanvasHeroState[];
   enemies: CanvasEnemyState[];
 }
@@ -55,6 +66,15 @@ export async function readCanvasState(page: Page): Promise<CanvasState> {
     wallSegments: JSON.parse(
       element.dataset.wallSegments ?? "[]",
     ) as CanvasWallSegment[],
+    spawnPoints: JSON.parse(
+      element.dataset.spawnPoints ?? "[]",
+    ) as CanvasSpawnPoint[],
+    processedSpawnRequests: JSON.parse(
+      element.dataset.processedSpawnRequests ?? "[]",
+    ) as string[],
+    nextEnemyInstanceSequence: Number(
+      element.dataset.nextEnemyInstanceSequence ?? 0,
+    ),
     heroes: JSON.parse(element.dataset.heroes ?? "[]") as CanvasHeroState[],
     enemies: JSON.parse(element.dataset.enemies ?? "[]") as CanvasEnemyState[],
   }));

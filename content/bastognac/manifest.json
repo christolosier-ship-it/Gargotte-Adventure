@@ -6,7 +6,7 @@
     "kind": "gargottex-export",
     "reference": "gargottex_export_2026-05-21.xlsx"
   },
-  "generatedAt": "2026-07-20T00:00:00.000Z",
-  "contentHash": "sprint0-bastognac-foundation",
-  "files": ["dungeon.json", "sprint-1-room.json"]
+  "generatedAt": "2026-07-23T00:00:00.000Z",
+  "contentHash": "sprint-3-1-spawn-foundation",
+  "files": ["dungeon.json", "creatures.json", "sprint-1-room.json"]
 }
