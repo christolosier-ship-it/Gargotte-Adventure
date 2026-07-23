@@ -1,6 +1,6 @@
 # Audit du Sprint 3.1 — Fondation de spawn déterministe
 
-- Statut : validation finale
+- Statut : prêt à fusionner sous réserve de la CI du présent commit
 - Issue : #33
 - Branche : `sprint-3/spawn-engine-validation`
 - Pull Request de livraison : #35
@@ -71,7 +71,8 @@ Le générateur de Gargottex a uniquement servi à identifier des principes réu
 - sauvegarde ;
 - compatibilité tactique ;
 - Playwright desktop et mobile paysage ;
-- restauration après apparition.
+- restauration après apparition ;
+- picking logique après rotation de caméra.
 
 ## Invariants contrôlés
 
@@ -97,7 +98,7 @@ Le générateur de Gargottex a uniquement servi à identifier des principes réu
 
 ## Validation technique
 
-Le run de validation précédant la clôture a franchi :
+Le run complet de contrôle a validé :
 
 - formatage ;
 - validation du contenu ;
@@ -105,10 +106,12 @@ Le run de validation précédant la clôture a franchi :
 - tests unitaires ;
 - build de production ;
 - validation structurelle du dépôt ;
-- Playwright Chromium desktop et mobile paysage.
+- Playwright Chromium desktop et mobile paysage ;
+- vérification et empaquetage de `dist` ;
+- upload des artefacts de contrôle et de production.
 
-Le dernier feu rouge provenait uniquement de l’upload direct du dossier `dist` après ces contrôles. Le workflow a été nettoyé de ses captures temporaires et empaquette désormais le build en archive après vérification de `dist/index.html`.
+La CI a été débarrassée de ses captures temporaires. Le build de production est désormais vérifié par la présence de `dist/index.html`, puis empaqueté dans une archive unique avant publication comme artefact.
 
-## Verdict provisoire
+## Verdict final
 
-Le périmètre fonctionnel et architectural du Sprint 3.1 est conforme. La fusion de la PR #35 reste conditionnée au dernier passage entièrement vert des workflows `Validate application` et `Repository quality`. La PR #34 est fermée sans fusion et ne doit pas être intégrée séparément.
+Le périmètre fonctionnel et architectural du Sprint 3.1 est conforme. La PR #34 est fermée sans fusion et ne doit pas être intégrée séparément. La PR #35 est l’unique livraison autorisée. Sa fusion reste conditionnée aux workflows `Validate application` et `Repository quality` entièrement verts sur le présent état de branche.
