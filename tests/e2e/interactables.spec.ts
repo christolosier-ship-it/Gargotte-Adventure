@@ -67,14 +67,15 @@ test("brise, explique et restaure un objet interactif", async ({
   const interacted = await readCanvasState(page);
   expect(interacted.brouhahaLevel).toBe(1);
   expect(
-    interacted.heroes.find((hero) => hero.id === "brunhilda")
-      ?.actionsRemaining,
+    interacted.heroes.find((hero) => hero.id === "brunhilda")?.actionsRemaining,
   ).toBe(0);
   expect(await readProcessedInteractableRequests(page)).toEqual([
     "interaction-objet-1",
   ]);
   expect(await readNextInteractableSequence(page)).toBe(2);
-  await expect(page.getByText(/Tonneau douteux : intact → brise/)).toBeVisible();
+  await expect(
+    page.getByText(/Tonneau douteux : intact → brise/),
+  ).toBeVisible();
 
   const savedObjects = await readInteractables(page);
   const savedBrouhaha = interacted.brouhahaHistory;
