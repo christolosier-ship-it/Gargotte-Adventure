@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "creatures": [
+    {
+      "id": "gobelin-bricoleur",
+      "name": "Gobelin Bricoleur",
+      "category": "basique",
+      "menace": 1,
+      "maxHp": 6,
+      "atk": 2,
+      "def": 0,
+      "range": 1,
+      "blocksMovement": true,
+      "tags": ["gobelin", "cac", "pilote"]
+    },
+    {
+      "id": "gobelin-lance-tout",
+      "name": "Gobelin Lance-Tout",
+      "category": "tactique",
+      "menace": 2,
+      "maxHp": 5,
+      "atk": 2,
+      "def": 0,
+      "range": 3,
+      "blocksMovement": true,
+      "tags": ["gobelin", "distance", "pilote"]
+    }
+  ]
+}
