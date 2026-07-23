@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
+import type { ChainReactionDefinition } from "./chain-reaction-types";
 import { resolveChainReactions } from "./chain-reactions";
 import { interactWithObject } from "./interactables";
 import { createRoomState } from "./room-state";
 import type {
   BrouhahaEffectDefinition,
-  ChainReactionDefinition,
   CreatureDefinition,
   InteractableDefinition,
   RoomState,
@@ -251,22 +251,25 @@ describe("réactions en chaîne déterministes", () => {
 
     expect(result.rejection).toBeNull();
     expect(result.state.interactables).toMatchObject([
-      { id: "table-1", position: { column: 3, row: 1 }, stateId: "renversee" },
+      {
+        id: "table-1",
+        position: { column: 3, row: 1 },
+        stateId: "renversee",
+      },
       { id: "pilier-1", stateId: "fissure" },
       { id: "grille-1", stateId: "ouverte", blocksMovement: false },
     ]);
-    expect(result.state.heroes[0]).toMatchObject({ hp: 8, actionsRemaining: 2 });
-    expect(result.state.brouhaha.history.map((entry) => entry.requestId)).toEqual([
-      "reaction-1-brouhaha",
-      "reaction-4-brouhaha",
-    ]);
+    expect(result.state.heroes[0]).toMatchObject({
+      hp: 8,
+      actionsRemaining: 2,
+    });
+    expect(
+      result.state.brouhaha.history.map((entry) => entry.requestId),
+    ).toEqual(["reaction-1-brouhaha", "reaction-4-brouhaha"]);
     expect(result.state.brouhaha.level).toBe(2);
-    expect(result.state.chainReactionHistory.map((entry) => entry.actionType)).toEqual([
-      "transition",
-      "damage",
-      "transition",
-      "brouhaha",
-    ]);
+    expect(
+      result.state.chainReactionHistory.map((entry) => entry.actionType),
+    ).toEqual(["transition", "damage", "transition", "brouhaha"]);
     expect(result.state.nextChainReactionSequence).toBe(5);
     expect(result.events.map((event) => event.type)).toContain(
       "chain-reaction-damage-applied",
@@ -276,9 +279,23 @@ describe("réactions en chaîne déterministes", () => {
   it("retourne exactement le même résultat pour les mêmes entrées", () => {
     const current = room();
     expect(
-      interactWithObject(current, definitions, effects, request, context, reactions),
+      interactWithObject(
+        current,
+        definitions,
+        effects,
+        request,
+        context,
+        reactions,
+      ),
     ).toEqual(
-      interactWithObject(current, definitions, effects, request, context, reactions),
+      interactWithObject(
+        current,
+        definitions,
+        effects,
+        request,
+        context,
+        reactions,
+      ),
     );
   });
 
