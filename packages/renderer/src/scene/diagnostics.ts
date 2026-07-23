@@ -42,6 +42,24 @@ export function exposeSceneState(
     visibleBackSides(context.rotation),
   );
   context.canvas.dataset.wallSegments = JSON.stringify(wallSegments);
+  context.canvas.dataset.interactables = JSON.stringify(
+    state.interactables.map((interactable) => ({
+      id: interactable.id,
+      interactableId: interactable.interactableId,
+      kind: interactable.kind,
+      position: interactable.position,
+      viewPosition: context.viewPosition(interactable.position),
+      stateId: interactable.stateId,
+      blocksMovement: interactable.blocksMovement,
+      blocksLineOfSight: interactable.blocksLineOfSight,
+    })),
+  );
+  context.canvas.dataset.processedInteractableRequests = JSON.stringify(
+    state.processedInteractableRequestIds,
+  );
+  context.canvas.dataset.nextInteractableInteractionSequence = String(
+    state.nextInteractableInteractionSequence,
+  );
   context.canvas.dataset.spawnPoints = JSON.stringify(state.spawnPoints);
   context.canvas.dataset.processedSpawnRequests = JSON.stringify(
     state.processedSpawnRequestIds,

@@ -1,0 +1,171 @@
+{
+  "schemaVersion": 1,
+  "interactables": [
+    {
+      "id": "table-bastognac",
+      "name": "Table bancale",
+      "kind": "table",
+      "initialStateId": "debout",
+      "states": [
+        {
+          "id": "debout",
+          "label": "debout",
+          "blocksMovement": true,
+          "blocksLineOfSight": true
+        },
+        {
+          "id": "renversee",
+          "label": "renversée",
+          "blocksMovement": true,
+          "blocksLineOfSight": false
+        }
+      ],
+      "interactions": [
+        {
+          "id": "renverser",
+          "label": "Renverser",
+          "fromStateId": "debout",
+          "toStateId": "renversee",
+          "brouhahaDelta": 0,
+          "reason": "La table se couche dans un grincement peu glorieux."
+        }
+      ]
+    },
+    {
+      "id": "tonneau-bastognac",
+      "name": "Tonneau douteux",
+      "kind": "barrel",
+      "initialStateId": "intact",
+      "states": [
+        {
+          "id": "intact",
+          "label": "intact",
+          "blocksMovement": true,
+          "blocksLineOfSight": true
+        },
+        {
+          "id": "brise",
+          "label": "brisé",
+          "blocksMovement": false,
+          "blocksLineOfSight": false
+        }
+      ],
+      "interactions": [
+        {
+          "id": "briser",
+          "label": "Briser",
+          "fromStateId": "intact",
+          "toStateId": "brise",
+          "brouhahaDelta": 1,
+          "reason": "Un objet vient d'être brisé."
+        }
+      ]
+    },
+    {
+      "id": "grille-bastognac",
+      "name": "Grille grinçante",
+      "kind": "gate",
+      "initialStateId": "fermee",
+      "states": [
+        {
+          "id": "fermee",
+          "label": "fermée",
+          "blocksMovement": true,
+          "blocksLineOfSight": true
+        },
+        {
+          "id": "ouverte",
+          "label": "ouverte",
+          "blocksMovement": false,
+          "blocksLineOfSight": false
+        }
+      ],
+      "interactions": [
+        {
+          "id": "ouvrir",
+          "label": "Ouvrir",
+          "fromStateId": "fermee",
+          "toStateId": "ouverte",
+          "brouhahaDelta": 0,
+          "reason": "La grille s'ouvre."
+        },
+        {
+          "id": "fermer",
+          "label": "Fermer",
+          "fromStateId": "ouverte",
+          "toStateId": "fermee",
+          "brouhahaDelta": 0,
+          "reason": "La grille se referme."
+        }
+      ]
+    },
+    {
+      "id": "torche-bastognac",
+      "name": "Torche murale",
+      "kind": "torch",
+      "initialStateId": "allumee",
+      "states": [
+        {
+          "id": "allumee",
+          "label": "allumée",
+          "blocksMovement": false,
+          "blocksLineOfSight": false
+        },
+        {
+          "id": "eteinte",
+          "label": "éteinte",
+          "blocksMovement": false,
+          "blocksLineOfSight": false
+        }
+      ],
+      "interactions": [
+        {
+          "id": "eteindre",
+          "label": "Éteindre",
+          "fromStateId": "allumee",
+          "toStateId": "eteinte",
+          "brouhahaDelta": 0,
+          "reason": "La torche est étouffée."
+        },
+        {
+          "id": "rallumer",
+          "label": "Rallumer",
+          "fromStateId": "eteinte",
+          "toStateId": "allumee",
+          "brouhahaDelta": 0,
+          "reason": "La torche retrouve sa flamme."
+        }
+      ]
+    },
+    {
+      "id": "pilier-bastognac",
+      "name": "Pilier susceptible",
+      "kind": "pillar",
+      "initialStateId": "intact",
+      "states": [
+        {
+          "id": "intact",
+          "label": "intact",
+          "blocksMovement": true,
+          "blocksLineOfSight": true
+        },
+        {
+          "id": "fissure",
+          "label": "fissuré",
+          "blocksMovement": true,
+          "blocksLineOfSight": true
+        }
+      ],
+      "interactions": [
+        {
+          "id": "fissurer",
+          "label": "Fissurer",
+          "fromStateId": "intact",
+          "toStateId": "fissure",
+          "brouhahaDelta": 1,
+          "reason": "Le pilier encaisse un choc sonore."
+        }
+      ]
+    }
+  ]
+}

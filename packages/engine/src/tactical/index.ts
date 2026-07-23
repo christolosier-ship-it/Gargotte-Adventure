@@ -4,6 +4,7 @@ export * from "./movement";
 export * from "./line-of-sight";
 export * from "./combat";
 export * from "./room-state";
+export * from "./interactables";
 export * from "./spawn";
 export * from "./brouhaha";
 export * from "./turn-machine";

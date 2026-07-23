@@ -54,11 +54,14 @@ const effects: BrouhahaEffectDefinition[] = [
 ];
 
 const room = (level = 0): RoomState => ({
-  version: 3,
+  version: 4,
   scenarioId: "test",
   width: 4,
   height: 4,
   obstacles: [],
+  interactables: [],
+  processedInteractableRequestIds: [],
+  nextInteractableInteractionSequence: 1,
   spawnPoints: [],
   processedSpawnRequestIds: [],
   nextEnemyInstanceSequence: 1,

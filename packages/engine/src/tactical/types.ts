@@ -48,6 +48,78 @@ export interface InitialCreaturePlacement {
   position: GridPosition;
 }
 
+export type InteractableKind = "table" | "barrel" | "gate" | "torch" | "pillar";
+
+export interface InteractableStateDefinition {
+  id: string;
+  label: string;
+  blocksMovement: boolean;
+  blocksLineOfSight: boolean;
+}
+
+export interface InteractableInteractionDefinition {
+  id: string;
+  label: string;
+  fromStateId: string;
+  toStateId: string;
+  brouhahaDelta: number;
+  reason: string;
+}
+
+export interface InteractableDefinition {
+  id: string;
+  name: string;
+  kind: InteractableKind;
+  initialStateId: string;
+  states: InteractableStateDefinition[];
+  interactions: InteractableInteractionDefinition[];
+}
+
+export interface InitialInteractablePlacement {
+  id: string;
+  interactableId: string;
+  position: GridPosition;
+  stateId: string;
+}
+
+export interface InteractableInstance {
+  id: string;
+  interactableId: string;
+  name: string;
+  kind: InteractableKind;
+  position: GridPosition;
+  stateId: string;
+  blocksMovement: boolean;
+  blocksLineOfSight: boolean;
+}
+
+export interface InteractableInteractionRequest {
+  id: string;
+  heroId: string;
+  interactableInstanceId: string;
+  interactionId: string;
+}
+
+export type InteractableRejectionReason =
+  | "duplicate-request"
+  | "terminal-room"
+  | "not-heroes-turn"
+  | "hero-not-found"
+  | "not-active-hero"
+  | "no-actions"
+  | "interactable-not-found"
+  | "definition-not-found"
+  | "interaction-not-found"
+  | "invalid-state"
+  | "out-of-range"
+  | "destination-occupied";
+
+export interface InteractableInteractionRejection {
+  requestId: string;
+  reason: InteractableRejectionReason;
+  details: string[];
+}
+
 export interface SpawnPoint {
   id: string;
   position: GridPosition;
@@ -160,11 +232,14 @@ export interface BrouhahaRejection {
 }
 
 export interface RoomState {
-  version: 3;
+  version: 4;
   scenarioId: string;
   width: number;
   height: number;
   obstacles: GridPosition[];
+  interactables: InteractableInstance[];
+  processedInteractableRequestIds: string[];
+  nextInteractableInteractionSequence: number;
   spawnPoints: SpawnPoint[];
   processedSpawnRequestIds: string[];
   nextEnemyInstanceSequence: number;

@@ -7,11 +7,12 @@
     "reference": "gargottex_export_2026-05-21.xlsx"
   },
   "generatedAt": "2026-07-23T00:00:00.000Z",
-  "contentHash": "sprint-3-2-brouhaha-state",
+  "contentHash": "sprint-3-3-interactable-objects",
   "files": [
     "dungeon.json",
     "creatures.json",
     "brouhaha-effects.json",
+    "interactables.json",
     "sprint-1-room.json"
   ]
 }

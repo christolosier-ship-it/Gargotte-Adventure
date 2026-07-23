@@ -4,9 +4,11 @@ import {
   changeBrouhaha,
   createInitialGameState,
   createRoomState,
+  interactWithObject,
   spawnCreatures,
   type BrouhahaEffectDefinition,
   type CreatureDefinition,
+  type InteractableDefinition,
 } from "@gargotte/engine";
 import {
   clearGameState,
@@ -26,6 +28,39 @@ const enemyDefinition: CreatureDefinition = {
   range: 1,
   blocksMovement: true,
 };
+
+const objectDefinitions: InteractableDefinition[] = [
+  {
+    id: "tonneau-test",
+    name: "Tonneau Test",
+    kind: "barrel",
+    initialStateId: "intact",
+    states: [
+      {
+        id: "intact",
+        label: "intact",
+        blocksMovement: true,
+        blocksLineOfSight: true,
+      },
+      {
+        id: "brise",
+        label: "brisé",
+        blocksMovement: false,
+        blocksLineOfSight: false,
+      },
+    ],
+    interactions: [
+      {
+        id: "briser",
+        label: "Briser",
+        fromStateId: "intact",
+        toStateId: "brise",
+        brouhahaDelta: 1,
+        reason: "Objet brisé",
+      },
+    ],
+  },
+];
 
 const brouhahaEffects: BrouhahaEffectDefinition[] = [
   {
@@ -80,6 +115,15 @@ function createTestRoom() {
     width: 8,
     height: 4,
     obstacles: [{ column: 3, row: 1 }],
+    interactableDefinitions: objectDefinitions,
+    interactables: [
+      {
+        id: "tonneau-1",
+        interactableId: "tonneau-test",
+        position: { column: 2, row: 1 },
+        stateId: "intact",
+      },
+    ],
     spawnPoints: [
       {
         id: "renfort",
@@ -92,7 +136,7 @@ function createTestRoom() {
       {
         id: "h",
         name: "H",
-        position: { column: 2, row: 0 },
+        position: { column: 1, row: 1 },
         hp: 7,
         maxHp: 10,
         atk: 4,
@@ -130,9 +174,21 @@ describe("sauvegarde locale", () => {
 });
 
 describe("sauvegarde tactique", () => {
-  it("restaure exactement spawn, Brouhaha, effets et compteurs", async () => {
-    const initial = createTestRoom();
-    const spawned = spawnCreatures(initial, [enemyDefinition], {
+  it("restaure exactement objets, spawn, Brouhaha et compteurs", async () => {
+    const initial = { ...createTestRoom(), activeHeroId: "h" };
+    const interacted = interactWithObject(
+      initial,
+      objectDefinitions,
+      brouhahaEffects,
+      {
+        id: "interaction-objet-1",
+        heroId: "h",
+        interactableInstanceId: "tonneau-1",
+        interactionId: "briser",
+      },
+      { dungeonId: "bastognac" },
+    ).state;
+    const spawned = spawnCreatures(interacted, [enemyDefinition], {
       id: "renfort-1",
       source: { type: "test", id: "save-test" },
       creatureId: enemyDefinition.id,
@@ -144,7 +200,7 @@ describe("sauvegarde tactique", () => {
       spawned,
       brouhahaEffects,
       {
-        id: "bruit-1",
+        id: "bruit-2",
         delta: 2,
         source: { type: "test", id: "save-test" },
         reason: "Test de sauvegarde",
@@ -153,7 +209,6 @@ describe("sauvegarde tactique", () => {
     ).state;
     const room = {
       ...noisy,
-      activeHeroId: "h",
       turn: 3,
       heroes: noisy.heroes.map((hero) => ({
         ...hero,
@@ -162,7 +217,7 @@ describe("sauvegarde tactique", () => {
     };
     const payload = {
       kind: "tactical-room" as const,
-      version: 3 as const,
+      version: 4 as const,
       room,
       selectedHeroIds: ["h"],
     };
@@ -170,9 +225,41 @@ describe("sauvegarde tactique", () => {
     await expect(loadRoomState()).resolves.toEqual(payload);
   });
 
-  it("migre une sauvegarde tactique version 2 vers le Brouhaha version 3", async () => {
+  it("migre une sauvegarde version 3 vers les objets version 4", async () => {
     const current = createTestRoom();
-    const { brouhaha: _brouhaha, ...legacyRoom } = current;
+    const {
+      interactables: _interactables,
+      processedInteractableRequestIds: _processed,
+      nextInteractableInteractionSequence: _nextSequence,
+      ...legacyRoom
+    } = current;
+    await putRawSave("room-autosave", {
+      kind: "tactical-room",
+      version: 3,
+      room: { ...legacyRoom, version: 3 },
+      selectedHeroIds: ["h"],
+    });
+
+    const migrated = await loadRoomState();
+    expect(migrated).not.toBeNull();
+    expect(migrated).not.toBe("legacy");
+    if (!migrated || migrated === "legacy") return;
+    expect(migrated.version).toBe(4);
+    expect(migrated.room.version).toBe(4);
+    expect(migrated.room.interactables).toEqual([]);
+    expect(migrated.room.processedInteractableRequestIds).toEqual([]);
+    expect(migrated.room.nextInteractableInteractionSequence).toBe(1);
+  });
+
+  it("migre une sauvegarde version 2 vers le Brouhaha et les objets", async () => {
+    const current = createTestRoom();
+    const {
+      brouhaha: _brouhaha,
+      interactables: _interactables,
+      processedInteractableRequestIds: _processed,
+      nextInteractableInteractionSequence: _nextSequence,
+      ...legacyRoom
+    } = current;
     await putRawSave("room-autosave", {
       kind: "tactical-room",
       version: 2,
@@ -184,17 +271,17 @@ describe("sauvegarde tactique", () => {
     expect(migrated).not.toBeNull();
     expect(migrated).not.toBe("legacy");
     if (!migrated || migrated === "legacy") return;
-    expect(migrated.version).toBe(3);
-    expect(migrated.room.version).toBe(3);
+    expect(migrated.version).toBe(4);
     expect(migrated.room.brouhaha).toEqual({
       level: 0,
       processedRequestIds: [],
       nextResolutionSequence: 1,
       history: [],
     });
+    expect(migrated.room.interactables).toEqual([]);
   });
 
-  it("migre une sauvegarde tactique version 1 vers les instances et le Brouhaha version 3", async () => {
+  it("migre une sauvegarde version 1 vers les instances, Brouhaha et objets", async () => {
     const current = createTestRoom();
     const legacyRoom = {
       version: 1,
@@ -221,12 +308,12 @@ describe("sauvegarde tactique", () => {
     expect(migrated).not.toBeNull();
     expect(migrated).not.toBe("legacy");
     if (!migrated || migrated === "legacy") return;
-    expect(migrated.version).toBe(3);
-    expect(migrated.room.version).toBe(3);
+    expect(migrated.version).toBe(4);
     expect(migrated.room.enemies[0]?.creatureId).toBe("e");
     expect(migrated.room.spawnPoints).toEqual([]);
     expect(migrated.room.nextEnemyInstanceSequence).toBe(1);
     expect(migrated.room.brouhaha.level).toBe(0);
+    expect(migrated.room.interactables).toEqual([]);
   });
 
   it("détecte une ancienne sauvegarde Sprint 0", async () => {
@@ -246,18 +333,14 @@ describe("sauvegarde tactique", () => {
     await expect(loadRoomState()).resolves.toBeNull();
   });
 
-  it("rejette une corruption profonde du Brouhaha", async () => {
+  it("rejette une corruption profonde des objets", async () => {
     const initial = createTestRoom();
     await putRawSave("room-autosave", {
       kind: "tactical-room",
-      version: 3,
+      version: 4,
       room: {
         ...initial,
-        brouhaha: {
-          ...initial.brouhaha,
-          level: 13,
-          processedRequestIds: ["doublon", "doublon"],
-        },
+        processedInteractableRequestIds: ["doublon", "doublon"],
       },
       selectedHeroIds: ["h"],
     });
@@ -267,7 +350,7 @@ describe("sauvegarde tactique", () => {
   it("rejette une sélection absente de la salle", async () => {
     await putRawSave("room-autosave", {
       kind: "tactical-room",
-      version: 3,
+      version: 4,
       room: createTestRoom(),
       selectedHeroIds: ["fantome"],
     });
@@ -278,7 +361,7 @@ describe("sauvegarde tactique", () => {
     const room = createTestRoom();
     await saveRoomState({
       kind: "tactical-room",
-      version: 3,
+      version: 4,
       room,
       selectedHeroIds: ["h"],
     });

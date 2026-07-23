@@ -5,6 +5,7 @@ import {
   parseContentManifest,
   parseCreatureCatalog,
   parseDungeon,
+  parseInteractableCatalog,
   parseTacticalRoom,
 } from "@gargotte/content-schema";
 import { assetBudgets, validateRuntimeAssetManifest } from "@gargotte/renderer";
@@ -24,6 +25,11 @@ const brouhahaCatalog = parseBrouhahaEffectCatalog(
     await readFile(resolve(packDirectory, "brouhaha-effects.json"), "utf8"),
   ),
 );
+const interactableCatalog = parseInteractableCatalog(
+  JSON.parse(
+    await readFile(resolve(packDirectory, "interactables.json"), "utf8"),
+  ),
+);
 const room = parseTacticalRoom(
   JSON.parse(
     await readFile(resolve(packDirectory, "sprint-1-room.json"), "utf8"),
@@ -34,6 +40,7 @@ for (const required of [
   "dungeon.json",
   "creatures.json",
   "brouhaha-effects.json",
+  "interactables.json",
   "sprint-1-room.json",
 ])
   if (!manifest.files.includes(required))
@@ -54,6 +61,24 @@ for (const scripted of room.scriptedSpawns)
     throw new Error(
       `Spawn ${scripted.id}: créature absente ${scripted.creatureId}.`,
     );
+
+const interactablesById = new Map(
+  interactableCatalog.interactables.map((definition) => [
+    definition.id,
+    definition,
+  ]),
+);
+for (const placement of room.interactables) {
+  const definition = interactablesById.get(placement.interactableId);
+  if (!definition)
+    throw new Error(
+      `Objet ${placement.id}: définition absente ${placement.interactableId}.`,
+    );
+  if (!definition.states.some((state) => state.id === placement.stateId))
+    throw new Error(
+      `Objet ${placement.id}: état absent ${placement.stateId} dans ${definition.id}.`,
+    );
+}
 
 const dungeonScopedEffects = brouhahaCatalog.effects.filter(
   (effect) => effect.scope.type === "dungeon",
@@ -113,5 +138,5 @@ if (total > assetBudgets.pilotTotalBytes)
     `Lot pilote 2B.1: poids total ${total} > ${assetBudgets.pilotTotalBytes}.`,
   );
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · ${interactableCatalog.interactables.length} objets · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
 );

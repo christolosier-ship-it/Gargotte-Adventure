@@ -1,5 +1,6 @@
 import { Graphics, Text } from "pixi.js";
 import {
+  manhattanDistance,
   samePosition,
   type GridPosition,
   type RoomState,
@@ -10,6 +11,7 @@ import type { VisibleWallSegment } from "../view";
 import { drawCombatant } from "./combatants";
 import type { SceneRenderContext } from "./context";
 import { drawTile, drawWall } from "./environment";
+import { drawInteractable } from "./interactables";
 import { resolveTileState } from "./primitives";
 
 export function renderRoomScene(
@@ -72,7 +74,20 @@ export function renderRoomScene(
       );
     }
 
+  const activeHero = state.heroes.find(
+    (hero) => hero.alive && hero.id === state.activeHeroId,
+  );
   wallSegments.forEach((segment) => drawWall(context, segment));
+  state.interactables.forEach((interactable) =>
+    drawInteractable(
+      context,
+      interactable,
+      state.phase === "heroes-turn" &&
+        Boolean(activeHero) &&
+        (activeHero?.actionsRemaining ?? 0) > 0 &&
+        manhattanDistance(activeHero!.position, interactable.position) === 1,
+    ),
+  );
   state.heroes
     .filter((candidate) => candidate.alive)
     .forEach((hero, index) =>

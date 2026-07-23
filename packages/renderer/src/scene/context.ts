@@ -14,6 +14,7 @@ export interface SceneListeners {
   cell: ((position: GridPosition) => void)[];
   hero: ((id: string) => void)[];
   enemy: ((id: string) => void)[];
+  interactable: ((id: string) => void)[];
 }
 
 export interface SceneRenderContext {

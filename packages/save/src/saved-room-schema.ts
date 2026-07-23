@@ -3,6 +3,7 @@ import { createInitialBrouhahaState, type RoomState } from "@gargotte/engine";
 import {
   legacyRoomStateV1Schema,
   legacyRoomStateV2Schema,
+  legacyRoomStateV3Schema,
   roomStateSchema,
 } from "./room-state-schema";
 
@@ -11,8 +12,18 @@ const idSchema = z.string().min(1);
 export const savedRoomPayloadSchema = z
   .object({
     kind: z.literal("tactical-room"),
-    version: z.literal(3),
+    version: z.literal(4),
     room: roomStateSchema,
+    selectedHeroIds: z.array(idSchema).min(1).max(4),
+  })
+  .strict()
+  .superRefine(validateSelectedHeroes);
+
+const legacySavedRoomPayloadV3Schema = z
+  .object({
+    kind: z.literal("tactical-room"),
+    version: z.literal(3),
+    room: legacyRoomStateV3Schema,
     selectedHeroIds: z.array(idSchema).min(1).max(4),
   })
   .strict()
@@ -64,7 +75,7 @@ function validateSelectedHeroes(
 
 export function parseSavedRoomPayload(value: unknown): {
   kind: "tactical-room";
-  version: 3;
+  version: 4;
   room: RoomState;
   selectedHeroIds: string[];
 } | null {
@@ -72,21 +83,30 @@ export function parseSavedRoomPayload(value: unknown): {
   if (current.success)
     return current.data as {
       kind: "tactical-room";
-      version: 3;
+      version: 4;
       room: RoomState;
       selectedHeroIds: string[];
+    };
+
+  const legacyV3 = legacySavedRoomPayloadV3Schema.safeParse(value);
+  if (legacyV3.success)
+    return {
+      kind: "tactical-room",
+      version: 4,
+      room: withInitialInteractables(legacyV3.data.room),
+      selectedHeroIds: legacyV3.data.selectedHeroIds,
     };
 
   const legacyV2 = legacySavedRoomPayloadV2Schema.safeParse(value);
   if (legacyV2.success)
     return {
       kind: "tactical-room",
-      version: 3,
-      room: {
+      version: 4,
+      room: withInitialInteractables({
         ...legacyV2.data.room,
         version: 3,
         brouhaha: createInitialBrouhahaState(),
-      },
+      }),
       selectedHeroIds: legacyV2.data.selectedHeroIds,
     };
 
@@ -94,8 +114,8 @@ export function parseSavedRoomPayload(value: unknown): {
   if (!legacyV1.success) return null;
   return {
     kind: "tactical-room",
-    version: 3,
-    room: {
+    version: 4,
+    room: withInitialInteractables({
       ...legacyV1.data.room,
       version: 3,
       spawnPoints: [],
@@ -106,7 +126,27 @@ export function parseSavedRoomPayload(value: unknown): {
         ...enemy,
         creatureId: enemy.id,
       })),
-    },
+    }),
     selectedHeroIds: legacyV1.data.selectedHeroIds,
+  };
+}
+
+function withInitialInteractables(
+  room: Omit<
+    RoomState,
+    | "version"
+    | "interactables"
+    | "processedInteractableRequestIds"
+    | "nextInteractableInteractionSequence"
+  > & {
+    version: 3;
+  },
+): RoomState {
+  return {
+    ...room,
+    version: 4,
+    interactables: [],
+    processedInteractableRequestIds: [],
+    nextInteractableInteractionSequence: 1,
   };
 }

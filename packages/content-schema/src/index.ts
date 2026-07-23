@@ -9,6 +9,19 @@ export type {
   BrouhahaEffectCatalog,
   BrouhahaEffectDefinition,
 } from "./brouhaha";
+export {
+  interactableCatalogSchema,
+  interactableDefinitionSchema,
+  interactableInteractionDefinitionSchema,
+  interactableStateDefinitionSchema,
+  parseInteractableCatalog,
+} from "./interactables";
+export type {
+  InteractableCatalog,
+  InteractableDefinition,
+  InteractableInteractionDefinition,
+  InteractableStateDefinition,
+} from "./interactables";
 
 const slugSchema = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/);
 
@@ -129,6 +142,15 @@ const initialCreaturePlacementSchema = z
   })
   .strict();
 
+const initialInteractablePlacementSchema = z
+  .object({
+    id: slugSchema,
+    interactableId: slugSchema,
+    position: gridPositionSchema,
+    stateId: slugSchema,
+  })
+  .strict();
+
 const spawnPointSchema = z
   .object({
     id: slugSchema,
@@ -151,7 +173,7 @@ const scriptedSpawnSchema = z
 
 export const tacticalRoomSchema = z
   .object({
-    schemaVersion: z.literal(2),
+    schemaVersion: z.literal(3),
     id: slugSchema,
     name: z.string().min(1),
     grid: z.object({
@@ -159,6 +181,7 @@ export const tacticalRoomSchema = z
       height: z.number().int().positive(),
     }),
     obstacles: z.array(gridPositionSchema),
+    interactables: z.array(initialInteractablePlacementSchema),
     spawnPoints: z.array(spawnPointSchema),
     scriptedSpawns: z.array(scriptedSpawnSchema),
     heroes: z.array(actorSchema).length(4),
@@ -169,6 +192,7 @@ export const tacticalRoomSchema = z
   .superRefine((room, context) => {
     const occupied = new Map<string, string>();
     const actorIds = new Set<string>();
+    const interactableInstanceIds = new Set<string>();
     const spawnPointIds = new Set<string>();
     const spawnPointPositions = new Map<string, string>();
     const scriptedSpawnIds = new Set<string>();
@@ -198,6 +222,19 @@ export const tacticalRoomSchema = z
         });
       actorIds.add(actor.id);
       addBlockingPosition(actor.position, actor.id);
+    }
+
+    for (const interactable of room.interactables) {
+      if (
+        actorIds.has(interactable.id) ||
+        interactableInstanceIds.has(interactable.id)
+      )
+        context.addIssue({
+          code: "custom",
+          message: `identifiant d'instance dupliqué ${interactable.id}`,
+        });
+      interactableInstanceIds.add(interactable.id);
+      addBlockingPosition(interactable.position, interactable.id);
     }
 
     for (const point of room.spawnPoints) {
