@@ -56,12 +56,7 @@ export interface SpawnPoint {
 }
 
 export type SpawnSourceType =
-  | "scenario"
-  | "brouhaha"
-  | "interactable"
-  | "boss"
-  | "generator"
-  | "test";
+  "scenario" | "brouhaha" | "interactable" | "boss" | "generator" | "test";
 
 export interface SpawnSource {
   type: SpawnSourceType;
@@ -96,8 +91,7 @@ export interface SpawnRejection {
 }
 
 export type BrouhahaEffectScope =
-  | { type: "universal" }
-  | { type: "dungeon"; dungeonId: string };
+  { type: "universal" } | { type: "dungeon"; dungeonId: string };
 
 export interface BrouhahaEffectDefinition {
   id: string;
