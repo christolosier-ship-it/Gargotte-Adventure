@@ -60,6 +60,23 @@ const spawnPointSchema = z
   })
   .strict();
 
+const chainReactionHistoryEntrySchema = z
+  .object({
+    id: idSchema,
+    rootRequestId: idSchema,
+    sequence: z.number().int().positive(),
+    reactionDefinitionId: idSchema,
+    triggerType: z.enum(["state-entered", "moved"]),
+    sourceInstanceId: idSchema,
+    parentReactionId: idSchema.nullable(),
+    actionIndex: z.number().int().nonnegative(),
+    actionType: z.enum(["transition", "move", "damage", "brouhaha", "guard"]),
+    targetId: idSchema.nullable(),
+    outcome: z.enum(["applied", "skipped", "guarded"]),
+    details: z.array(z.string()),
+  })
+  .strict();
+
 function validateCombatant(
   combatant: {
     hp: number;
@@ -100,18 +117,32 @@ const sharedRoomShape = {
   turn: z.number().int().positive(),
 };
 
+const roomV4Shape = {
+  ...sharedRoomShape,
+  interactables: z.array(interactableInstanceSchema),
+  processedInteractableRequestIds: z.array(idSchema),
+  nextInteractableInteractionSequence: z.number().int().positive(),
+  spawnPoints: z.array(spawnPointSchema),
+  processedSpawnRequestIds: z.array(idSchema),
+  nextEnemyInstanceSequence: z.number().int().positive(),
+  brouhaha: brouhahaStateSchema,
+  enemies: z.array(enemySchema).min(1),
+};
+
 export const roomStateSchema = z
   .object({
+    version: z.literal(5),
+    ...roomV4Shape,
+    nextChainReactionSequence: z.number().int().positive(),
+    chainReactionHistory: z.array(chainReactionHistoryEntrySchema),
+  })
+  .strict()
+  .superRefine(validateRoomState);
+
+export const legacyRoomStateV4Schema = z
+  .object({
     version: z.literal(4),
-    ...sharedRoomShape,
-    interactables: z.array(interactableInstanceSchema),
-    processedInteractableRequestIds: z.array(idSchema),
-    nextInteractableInteractionSequence: z.number().int().positive(),
-    spawnPoints: z.array(spawnPointSchema),
-    processedSpawnRequestIds: z.array(idSchema),
-    nextEnemyInstanceSequence: z.number().int().positive(),
-    brouhaha: brouhahaStateSchema,
-    enemies: z.array(enemySchema).min(1),
+    ...roomV4Shape,
   })
   .strict()
   .superRefine(validateRoomState);
@@ -162,6 +193,8 @@ function validateRoomState(
     spawnPoints?: z.infer<typeof spawnPointSchema>[];
     processedSpawnRequestIds?: string[];
     processedInteractableRequestIds?: string[];
+    nextChainReactionSequence?: number;
+    chainReactionHistory?: z.infer<typeof chainReactionHistoryEntrySchema>[];
   },
   context: z.RefinementCtx,
 ): void {
@@ -229,6 +262,7 @@ function validateRoomState(
     "les requêtes d'interaction traitées doivent être uniques",
     context,
   );
+  validateChainHistory(room, context);
 
   if (
     room.activeHeroId &&
@@ -238,6 +272,34 @@ function validateRoomState(
       code: "custom",
       path: ["activeHeroId"],
       message: "le héros actif doit exister et être vivant",
+    });
+}
+
+function validateChainHistory(
+  room: {
+    nextChainReactionSequence?: number;
+    chainReactionHistory?: z.infer<typeof chainReactionHistoryEntrySchema>[];
+  },
+  context: z.RefinementCtx,
+): void {
+  const history = room.chainReactionHistory ?? [];
+  const ids = new Set(history.map((entry) => entry.id));
+  const sequences = new Set(history.map((entry) => entry.sequence));
+  if (ids.size !== history.length || sequences.size !== history.length)
+    context.addIssue({
+      code: "custom",
+      path: ["chainReactionHistory"],
+      message: "l'historique des réactions doit avoir des identifiants et séquences uniques",
+    });
+  const maximum = Math.max(0, ...history.map((entry) => entry.sequence));
+  if (
+    room.nextChainReactionSequence !== undefined &&
+    room.nextChainReactionSequence <= maximum
+  )
+    context.addIssue({
+      code: "custom",
+      path: ["nextChainReactionSequence"],
+      message: "la prochaine séquence doit suivre l'historique",
     });
 }
 
