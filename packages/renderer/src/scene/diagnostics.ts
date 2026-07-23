@@ -42,6 +42,13 @@ export function exposeSceneState(
     visibleBackSides(context.rotation),
   );
   context.canvas.dataset.wallSegments = JSON.stringify(wallSegments);
+  context.canvas.dataset.spawnPoints = JSON.stringify(state.spawnPoints);
+  context.canvas.dataset.processedSpawnRequests = JSON.stringify(
+    state.processedSpawnRequestIds,
+  );
+  context.canvas.dataset.nextEnemyInstanceSequence = String(
+    state.nextEnemyInstanceSequence,
+  );
   context.canvas.dataset.heroes = JSON.stringify(
     state.heroes.map((hero) => ({
       id: hero.id,
@@ -55,6 +62,7 @@ export function exposeSceneState(
   context.canvas.dataset.enemies = JSON.stringify(
     state.enemies.map((enemy) => ({
       id: enemy.id,
+      creatureId: enemy.creatureId,
       position: enemy.position,
       viewPosition: context.viewPosition(enemy.position),
       hp: enemy.hp,
