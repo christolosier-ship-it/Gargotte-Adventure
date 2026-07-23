@@ -79,69 +79,73 @@ export function interactWithObject(
     interactableInstanceId: request.interactableInstanceId,
     interactionId: request.interactionId,
   };
+  const rejectRequest = (
+    reason: InteractableInteractionRejection["reason"],
+    details: string[],
+  ) => reject(state, request, reason, details, requestedEvent);
 
   if (state.processedInteractableRequestIds.includes(request.id))
-    return reject(state, request, "duplicate-request", [
+    return rejectRequest("duplicate-request", [
       "Cette demande d'interaction a déjà été appliquée.",
-    ], requestedEvent);
+    ]);
   if (state.phase === "victory" || state.phase === "defeat")
-    return reject(state, request, "terminal-room", [
+    return rejectRequest("terminal-room", [
       "Aucun objet ne peut être utilisé dans une salle terminée.",
-    ], requestedEvent);
+    ]);
   if (state.phase !== "heroes-turn")
-    return reject(state, request, "not-heroes-turn", [
+    return rejectRequest("not-heroes-turn", [
       "Les objets ne peuvent être utilisés que pendant le tour des héros.",
-    ], requestedEvent);
+    ]);
 
   const hero = state.heroes.find(
     (candidate) => candidate.id === request.heroId && candidate.alive,
   );
   if (!hero)
-    return reject(state, request, "hero-not-found", [
+    return rejectRequest("hero-not-found", [
       `Héros absent ou vaincu : ${request.heroId}.`,
-    ], requestedEvent);
+    ]);
   if (state.activeHeroId !== hero.id)
-    return reject(state, request, "not-active-hero", [
+    return rejectRequest("not-active-hero", [
       "Seul le héros actif peut interagir avec le décor.",
-    ], requestedEvent);
+    ]);
   if (hero.actionsRemaining <= 0)
-    return reject(state, request, "no-actions", [
+    return rejectRequest("no-actions", [
       "Le héros actif n'a plus d'action disponible.",
-    ], requestedEvent);
+    ]);
 
   const instance = state.interactables.find(
     (candidate) => candidate.id === request.interactableInstanceId,
   );
   if (!instance)
-    return reject(state, request, "interactable-not-found", [
+    return rejectRequest("interactable-not-found", [
       `Objet absent : ${request.interactableInstanceId}.`,
-    ], requestedEvent);
+    ]);
   const definition = definitions.find(
     (candidate) => candidate.id === instance.interactableId,
   );
   if (!definition)
-    return reject(state, request, "definition-not-found", [
+    return rejectRequest("definition-not-found", [
       `Définition absente : ${instance.interactableId}.`,
-    ], requestedEvent);
+    ]);
   const interaction = definition.interactions.find(
     (candidate) => candidate.id === request.interactionId,
   );
   if (!interaction)
-    return reject(state, request, "interaction-not-found", [
+    return rejectRequest("interaction-not-found", [
       `Interaction absente : ${request.interactionId}.`,
-    ], requestedEvent);
+    ]);
   if (interaction.fromStateId !== instance.stateId)
-    return reject(state, request, "invalid-state", [
+    return rejectRequest("invalid-state", [
       `${interaction.label} exige l'état ${interaction.fromStateId}, pas ${instance.stateId}.`,
-    ], requestedEvent);
+    ]);
   if (manhattanDistance(hero.position, instance.position) !== 1)
-    return reject(state, request, "out-of-range", [
+    return rejectRequest("out-of-range", [
       "Le héros doit être sur une case orthogonalement adjacente.",
-    ], requestedEvent);
+    ]);
   if (!canTransitionToState(state, instance, definition, interaction))
-    return reject(state, request, "destination-occupied", [
+    return rejectRequest("destination-occupied", [
       "La case de l'objet est occupée et ne peut pas redevenir bloquante.",
-    ], requestedEvent);
+    ]);
 
   const targetState = definition.states.find(
     (candidate) => candidate.id === interaction.toStateId,
