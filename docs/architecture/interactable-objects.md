@@ -42,13 +42,13 @@ Le contenu de Bastognac place les instances et le moteur calcule leurs conséque
 
 Le Sprint 3.3 livre cinq familles, étendues par le Sprint 3.4 :
 
-| Objet              | États pilotes     | Interaction              | Brouhaha |
-| ------------------ | ----------------- | ------------------------ | -------- |
-| Table bancale      | debout, renversée | pousser et renverser     | 0        |
-| Tonneau douteux    | intact, brisé     | briser                   | +1       |
-| Grille grinçante   | fermée, ouverte   | ouvrir ou fermer         | 0        |
-| Torche murale      | allumée, éteinte  | éteindre ou rallumer     | 0        |
-| Pilier susceptible | intact, fissuré   | fissurer                 | +1       |
+| Objet              | États pilotes     | Interaction          | Brouhaha |
+| ------------------ | ----------------- | -------------------- | -------- |
+| Table bancale      | debout, renversée | pousser et renverser | 0        |
+| Tonneau douteux    | intact, brisé     | briser               | +1       |
+| Grille grinçante   | fermée, ouverte   | ouvrir ou fermer     | 0        |
+| Torche murale      | allumée, éteinte  | éteindre ou rallumer | 0        |
+| Pilier susceptible | intact, fissuré   | fissurer             | +1       |
 
 Ces objets n'accordent aucun loot direct.
 
