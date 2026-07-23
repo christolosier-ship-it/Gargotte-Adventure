@@ -9,7 +9,7 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 | Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et premier paquet Bastognac |
 | Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4 jouable, IA déterministe, sauvegarde et reprise           |
 | Sprint 2 : Plateau isométrique             | ✅ Terminé  | Même salle jouable en 2D isométrique avec pipeline graphique réutilisable      |
-| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn livré, Brouhaha 0 à 12 en livraison, décor interactif à venir            |
+| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn et Brouhaha livrés, décor interactif prochain                            |
 | Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs                     |
 | Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition              |
 
@@ -95,9 +95,9 @@ Livré par la PR #35, commit `dd8c749f3afb73104270d87c9e920aab4e926bf3` :
 - sauvegarde tactique version 2 ;
 - renfort fixe de contrôle.
 
-### Sprint 3.2 : Brouhaha 0 à 12 🟡
+### Sprint 3.2 : Brouhaha 0 à 12 ✅
 
-Lot de la PR #37 :
+Livré par la PR #37, commit `306cc037a5e64ef948b45d85e92d45e3a9909eb2` :
 
 - état de jauge borné ;
 - incrémentation et diminution explicites ;
@@ -109,11 +109,14 @@ Lot de la PR #37 :
 - historique et explication ;
 - HUD et commandes de démonstration ;
 - sauvegarde version 3 et migrations ;
-- tests desktop et mobile paysage.
+- tests desktop et mobile paysage ;
+- maintien du picking malgré l'allongement de la colonne de commandes.
 
 Le Brouhaha ne déclenche pas encore de renfort. Cette connexion reste réservée au Sprint 3.5.
 
 ### Sprint 3.3 : Décor interactif
+
+Prochaine phase :
 
 - tables, tonneaux, grilles, torches et piliers ;
 - états et interactions propres aux objets ;
