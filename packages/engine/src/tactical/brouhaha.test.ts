@@ -185,10 +185,14 @@ describe("Brouhaha déterministe", () => {
     expect(duplicate.state).toBe(first.state);
     expect(duplicate.rejection?.reason).toBe("duplicate-request");
 
-    const floor = changeBrouhaha(room(), effects, request("plancher", -2), {
-      dungeonId: "bastognac",
-    });
-    expect(floor.state).toBe(floor.state);
+    const quietRoom = room();
+    const floor = changeBrouhaha(
+      quietRoom,
+      effects,
+      request("plancher", -2),
+      { dungeonId: "bastognac" },
+    );
+    expect(floor.state).toBe(quietRoom);
     expect(floor.state.brouhaha.level).toBe(0);
     expect(floor.rejection?.reason).toBe("no-level-change");
   });
