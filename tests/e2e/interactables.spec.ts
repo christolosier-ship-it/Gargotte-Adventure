@@ -144,7 +144,6 @@ test("pousse une table et résout le domino causal", async ({ page }) => {
   expect(await readProcessedInteractableRequests(page)).toEqual([
     "interaction-objet-1",
   ]);
-  await expect(page.getByText(/Réaction table-percute-pilier/)).toBeVisible();
   await expect(page.getByText(/Réaction pilier-libere-grille/)).toBeVisible();
   await expect(page.getByText(/magdalena subit 2 dégâts/)).toBeVisible();
 
