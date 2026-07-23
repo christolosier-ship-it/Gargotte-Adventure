@@ -28,7 +28,7 @@ import {
   executeBrouhahaControl,
   type BrouhahaControlId,
 } from "./brouhaha-controller";
-import { describeDomainEvent, describeTacticalEvent } from "./event-messages";
+import { appendTacticalEvents, describeDomainEvent } from "./event-messages";
 import { renderGameView } from "./game-view";
 import { readSelectedHeroIds } from "./hero-selection";
 import {
@@ -314,7 +314,7 @@ export class GameController {
   ): void {
     const changed = result.state !== this.room;
     this.room = result.state;
-    this.appendTacticalEvents(result.events);
+    this.writeEvents(result.events);
     if (changed) this.persist();
     else this.render(unchangedText);
   }
@@ -335,19 +335,16 @@ export class GameController {
     }
     this.room = result.value.state;
     if (successMessage) this.shell.appendEvent(successMessage);
-    else this.appendTacticalEvents(result.value.events);
+    else this.writeEvents(result.value.events);
     this.persist();
   }
 
-  private appendTacticalEvents(events: readonly TacticalEvent[]): void {
-    events.forEach((event) =>
-      this.shell.appendEvent(
-        describeTacticalEvent(
-          event,
-          this.creatureDefinitions,
-          this.interactableDefinitions,
-        ),
-      ),
+  private writeEvents(events: readonly TacticalEvent[]): void {
+    appendTacticalEvents(
+      (message) => this.shell.appendEvent(message),
+      events,
+      this.creatureDefinitions,
+      this.interactableDefinitions,
     );
   }
 }
