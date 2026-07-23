@@ -4,7 +4,7 @@ import { hasLineOfSight, supercoverLine } from "./line-of-sight";
 import type { RoomState } from "./types";
 
 const state = (patch: Partial<RoomState> = {}): RoomState => ({
-  version: 2,
+  version: 3,
   scenarioId: "t",
   width: 8,
   height: 4,
@@ -12,6 +12,12 @@ const state = (patch: Partial<RoomState> = {}): RoomState => ({
   spawnPoints: [],
   processedSpawnRequestIds: [],
   nextEnemyInstanceSequence: 1,
+  brouhaha: {
+    level: 0,
+    processedRequestIds: [],
+    nextResolutionSequence: 1,
+    history: [],
+  },
   heroes: [
     {
       id: "h",
