@@ -80,16 +80,17 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 
 ## État documentaire
 
-Pendant le Sprint 3.2 :
+Après la fusion du Sprint 3.2 :
 
 - le Sprint 3.1 est consigné comme fusionné par la PR #35 ;
-- la PR active est la #37 et l'issue active la #36 ;
+- le Sprint 3.2 est consigné comme fusionné par la PR #37 ;
+- les commits de fusion sont référencés dans la roadmap, le suivi et les audits ;
 - l'architecture du Brouhaha décrit l'état, le catalogue, la résolution et les frontières ;
-- la salle tactique passe en sauvegarde version 3 ;
+- la salle tactique utilise la sauvegarde version 3 ;
 - les migrations depuis les versions 1 et 2 sont documentées ;
 - les effets universels et propres à Bastognac sont distingués ;
 - le renderer reste sans règle métier ;
 - le lien avec les Sprints 3.3 à 3.5 est explicité ;
-- l'audit de livraison Sprint 3.2 est indexé ;
+- l'audit de livraison Sprint 3.2 est clôturé ;
 - Gargottex reste strictement en lecture seule ;
-- le verdict final reste conditionné au dernier passage complet de CI de la PR #37.
+- la prochaine phase est le Sprint 3.3 consacré aux objets interactifs.
