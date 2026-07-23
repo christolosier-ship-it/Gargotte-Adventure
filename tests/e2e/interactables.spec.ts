@@ -120,9 +120,7 @@ test("pousse une table et résout le domino causal", async ({ page }) => {
       const objects = await readInteractables(page);
       return {
         table: objects.find((object) => object.id === "table-bancale-1"),
-        pillar: objects.find(
-          (object) => object.id === "pilier-susceptible-1",
-        ),
+        pillar: objects.find((object) => object.id === "pilier-susceptible-1"),
         gate: objects.find((object) => object.id === "grille-grincante-1"),
       };
     })
@@ -137,9 +135,10 @@ test("pousse une table et résout le domino causal", async ({ page }) => {
 
   const chained = await readCanvasState(page);
   expect(chained.brouhahaLevel).toBe(2);
-  expect(
-    chained.heroes.find((hero) => hero.id === "magdalena"),
-  ).toMatchObject({ hp: 7, actionsRemaining: 0 });
+  expect(chained.heroes.find((hero) => hero.id === "magdalena")).toMatchObject({
+    hp: 7,
+    actionsRemaining: 0,
+  });
   expect(await readProcessedInteractableRequests(page)).toEqual([
     "interaction-objet-1",
   ]);
