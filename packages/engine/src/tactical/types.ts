@@ -56,12 +56,7 @@ export interface SpawnPoint {
 }
 
 export type SpawnSourceType =
-  | "scenario"
-  | "brouhaha"
-  | "interactable"
-  | "boss"
-  | "generator"
-  | "test";
+  "scenario" | "brouhaha" | "interactable" | "boss" | "generator" | "test";
 
 export interface SpawnSource {
   type: SpawnSourceType;
