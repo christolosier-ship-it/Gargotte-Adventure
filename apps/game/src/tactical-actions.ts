@@ -5,10 +5,16 @@ import {
   type RoomState,
 } from "@gargotte/engine";
 
+export interface ScriptedSpawnAction {
+  id: string;
+  label: string;
+}
+
 export interface TacticalActionHandlers {
   selectHero(heroId: string): void;
   move(position: GridPosition): void;
   attack(enemyId: string): void;
+  spawn(spawnId: string): void;
 }
 
 function createActionButton(
@@ -29,6 +35,7 @@ export function renderTacticalActions(
   container: HTMLElement,
   room: RoomState | null,
   handlers: TacticalActionHandlers,
+  scriptedSpawns: readonly ScriptedSpawnAction[] = [],
 ): void {
   container.replaceChildren();
   if (!room) return;
@@ -47,6 +54,11 @@ export function renderTacticalActions(
     container.append(message);
     return;
   }
+
+  for (const spawn of scriptedSpawns)
+    container.append(
+      createActionButton(`🧪 ${spawn.label}`, () => handlers.spawn(spawn.id)),
+    );
 
   for (const hero of room.heroes.filter(
     (candidate) => candidate.alive && !candidate.activationCompleted,
