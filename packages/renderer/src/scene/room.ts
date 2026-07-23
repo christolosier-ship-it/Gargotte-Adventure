@@ -1,5 +1,6 @@
 import { Graphics, Text } from "pixi.js";
 import {
+  manhattanDistance,
   samePosition,
   type GridPosition,
   type RoomState,
@@ -73,9 +74,19 @@ export function renderRoomScene(
       );
     }
 
+  const activeHero = state.heroes.find(
+    (hero) => hero.alive && hero.id === state.activeHeroId,
+  );
   wallSegments.forEach((segment) => drawWall(context, segment));
   state.interactables.forEach((interactable) =>
-    drawInteractable(context, interactable),
+    drawInteractable(
+      context,
+      interactable,
+      state.phase === "heroes-turn" &&
+        Boolean(activeHero) &&
+        (activeHero?.actionsRemaining ?? 0) > 0 &&
+        manhattanDistance(activeHero!.position, interactable.position) === 1,
+    ),
   );
   state.heroes
     .filter((candidate) => candidate.alive)
