@@ -83,12 +83,7 @@ describe("grille tactique", () => {
   it("départage les chemins équivalents", () => {
     const state = { ...room(), obstacles: [], enemies: [] };
     expect(
-      shortestPath(
-        state,
-        { column: 0, row: 0 },
-        { column: 1, row: 1 },
-        "h",
-      ),
+      shortestPath(state, { column: 0, row: 0 }, { column: 1, row: 1 }, "h"),
     ).toEqual([
       { column: 1, row: 0 },
       { column: 1, row: 1 },
