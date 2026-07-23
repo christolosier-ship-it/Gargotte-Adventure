@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { chainReactionDefinitionSchema } from "./chain-reactions";
 
 export {
   brouhahaEffectCatalogSchema,
@@ -10,9 +11,20 @@ export type {
   BrouhahaEffectDefinition,
 } from "./brouhaha";
 export {
+  chainReactionActionSchema,
+  chainReactionDefinitionSchema,
+  chainReactionTriggerSchema,
+} from "./chain-reactions";
+export type {
+  ChainReactionActionDefinition,
+  ChainReactionDefinition,
+  ChainReactionTriggerDefinition,
+} from "./chain-reactions";
+export {
   interactableCatalogSchema,
   interactableDefinitionSchema,
   interactableInteractionDefinitionSchema,
+  interactableMovementDefinitionSchema,
   interactableStateDefinitionSchema,
   parseInteractableCatalog,
 } from "./interactables";
@@ -20,6 +32,7 @@ export type {
   InteractableCatalog,
   InteractableDefinition,
   InteractableInteractionDefinition,
+  InteractableMovementDefinition,
   InteractableStateDefinition,
 } from "./interactables";
 
@@ -173,7 +186,7 @@ const scriptedSpawnSchema = z
 
 export const tacticalRoomSchema = z
   .object({
-    schemaVersion: z.literal(3),
+    schemaVersion: z.literal(4),
     id: slugSchema,
     name: z.string().min(1),
     grid: z.object({
@@ -182,6 +195,7 @@ export const tacticalRoomSchema = z
     }),
     obstacles: z.array(gridPositionSchema),
     interactables: z.array(initialInteractablePlacementSchema),
+    chainReactions: z.array(chainReactionDefinitionSchema),
     spawnPoints: z.array(spawnPointSchema),
     scriptedSpawns: z.array(scriptedSpawnSchema),
     heroes: z.array(actorSchema).length(4),
@@ -196,6 +210,7 @@ export const tacticalRoomSchema = z
     const spawnPointIds = new Set<string>();
     const spawnPointPositions = new Map<string, string>();
     const scriptedSpawnIds = new Set<string>();
+    const reactionIds = new Set<string>();
     const addBlockingPosition = (
       position: { column: number; row: number },
       label: string,
@@ -235,6 +250,35 @@ export const tacticalRoomSchema = z
         });
       interactableInstanceIds.add(interactable.id);
       addBlockingPosition(interactable.position, interactable.id);
+    }
+
+    for (const reaction of room.chainReactions) {
+      if (reactionIds.has(reaction.id))
+        context.addIssue({
+          code: "custom",
+          message: `réaction en chaîne dupliquée ${reaction.id}`,
+        });
+      reactionIds.add(reaction.id);
+      if (!interactableInstanceIds.has(reaction.trigger.interactableInstanceId))
+        context.addIssue({
+          code: "custom",
+          message: `${reaction.id}: déclencheur absent ${reaction.trigger.interactableInstanceId}`,
+        });
+      if (reaction.trigger.type === "moved" && reaction.trigger.position)
+        validatePosition(room, reaction.trigger.position, reaction.id, context);
+      for (const action of reaction.actions) {
+        const target =
+          action.type === "damage"
+            ? action.centerInstanceId
+            : action.type === "brouhaha"
+              ? null
+              : action.targetInstanceId;
+        if (target && !interactableInstanceIds.has(target))
+          context.addIssue({
+            code: "custom",
+            message: `${reaction.id}: cible absente ${target}`,
+          });
+      }
     }
 
     for (const point of room.spawnPoints) {
