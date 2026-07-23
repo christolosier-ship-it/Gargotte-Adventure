@@ -3,6 +3,7 @@ import { createTabletopRenderer } from "@gargotte/renderer";
 import { createGameShell } from "@gargotte/ui";
 import {
   bastognacAssetCatalog,
+  bastognacCreatureDefinitions,
   bastognacDungeon,
   bastognacRoom,
 } from "./bastognac";
@@ -31,6 +32,7 @@ export async function bootstrapGame(root: HTMLElement): Promise<void> {
     renderer,
     dungeon: bastognacDungeon,
     roomDefinition: bastognacRoom,
+    creatureDefinitions: bastognacCreatureDefinitions,
     restored,
   });
   registerPwaInstall(shell);
