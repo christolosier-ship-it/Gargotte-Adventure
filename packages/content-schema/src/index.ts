@@ -238,10 +238,7 @@ function validatePosition(
   label: string,
   context: z.RefinementCtx,
 ): void {
-  if (
-    position.column >= room.grid.width ||
-    position.row >= room.grid.height
-  )
+  if (position.column >= room.grid.width || position.row >= room.grid.height)
     context.addIssue({ code: "custom", message: `${label} hors plateau` });
 }
 
