@@ -1,202 +1,179 @@
-# Sprint 3 — Brouhaha, spawn et décor interactif
+# Sprint 3 : Brouhaha, spawn et décor interactif
 
 - Statut : en cours
-- Étape active : Sprint 3.1
-- Issue : #33
-- Pull Request : #34 en brouillon
-- Prérequis : Sprint 2 et désendettement pré-Sprint 3 terminés
+- Étape active : Sprint 3.2
+- Issue active : #36
+- Pull Request active : #37
+- Prérequis : Sprint 3.1 fusionné dans `main`
 
 ## Objectif
 
 Transformer la salle isométrique en système vivant, interactif et explicable, sans perdre le déterminisme du moteur tactique.
 
-Le Sprint 3 doit introduire le Brouhaha 0–12, les objets interactifs, les réactions en chaîne et les renforts, tout en conservant une sauvegarde complète et une lecture claire de chaque conséquence.
+Le Sprint 3 introduit le Brouhaha 0 à 12, les objets interactifs, les réactions en chaîne et les renforts, avec une sauvegarde complète et une lecture claire de chaque conséquence.
 
 ## Décisions structurantes
 
-1. La première étape est un moteur de spawn déterministe.
+1. La fondation de spawn déterministe précède les renforts.
 2. Une définition de créature est séparée de ses instances runtime.
-3. Les renforts du Brouhaha passent par le même moteur de spawn que les futures populations initiales.
-4. Le budget de menace est un budget **par salle**.
-5. Le budget de menace n’est pas consommé implicitement par le moteur de spawn.
-6. La génération complète de la géométrie des salles et des étages appartient au Sprint 5.
-7. Le renderer affiche les nouveaux états mais ne décide jamais de leurs règles.
-8. Gargottex reste une source éditoriale et une référence en lecture seule, jamais un dépôt modifié par Gargotte Adventure.
+3. Les renforts du Brouhaha utilisent le moteur de spawn du Sprint 3.1.
+4. Le budget de menace est un budget par salle.
+5. Le moteur de spawn ne consomme aucun budget implicitement.
+6. La géométrie complète des salles et étages appartient au Sprint 5.
+7. Le renderer affiche les états sans décider des règles.
+8. Gargottex reste une source éditoriale et une référence en lecture seule.
 
 Références :
 
-- [ADR-0007 — Définitions, instances et spawn déterministe](../adr/0007-creature-instances-and-deterministic-spawn.md)
+- [ADR-0007 : définitions, instances et spawn déterministe](../adr/0007-creature-instances-and-deterministic-spawn.md)
 - [Architecture du moteur de spawn](../architecture/spawn-engine.md)
+- [Architecture du Brouhaha](../architecture/brouhaha.md)
 - [Architecture de la salle tactique](../architecture/tactical-room.md)
 
-## Retour d’expérience Gargottex
+## Retour d'expérience Gargottex
 
-Le générateur du dépôt `christolosier-ship-it/Gargotte-V5` a été inspecté sans écriture.
+Le dépôt `christolosier-ship-it/Gargotte-V5` a été inspecté sans écriture pendant le Sprint 3.1. Son générateur de rencontres pourra inspirer la composition par budget du Sprint 5, mais il n'est ni copié ni modifié.
 
-Il filtre les créatures par donjon et catégorie, permet les doublons et cherche une combinaison exacte au moyen d’une recherche récursive mémoïsée. Cette approche sera utile au Sprint 5 pour la composition des rencontres.
-
-Le Sprint 3.1 ne reprend pas directement cet algorithme : Gargottex utilise un mélange `Math.random()`, manipule encore des budgets historiques par étage et retourne des définitions sélectionnées plutôt que des instances runtime persistées.
-
-Le moteur de spawn de Gargotte Adventure reste donc un exécutant déterministe indépendant du futur générateur de rencontre.
+Le Sprint 3.2 ne dépend d'aucun code Gargottex. Son catalogue pilote est écrit dans Gargotte Adventure et respecte les frontières de contenu définies pour le runtime.
 
 ## Champ historique `floorBudgets`
 
-Le paquet Bastognac contient encore un champ `floorBudgets` créé pendant les fondations. Ce champ n’est pas utilisé par le moteur de spawn et ne constitue pas la règle produit définitive.
-
-Sa dénomination reste un placeholder historique. Elle devra être remplacée lors du cadrage technique du Sprint 5 par une politique attribuant un budget propre à chaque salle.
+Le paquet Bastognac conserve un champ `floorBudgets` issu des fondations. Il n'est utilisé ni par le spawn ni par le Brouhaha. Il sera remplacé au Sprint 5 par une politique attribuant un budget explicite à chaque salle.
 
 ## Découpage du Sprint 3
 
-### Sprint 3.1 — Fondation de spawn déterministe
+### Sprint 3.1 : fondation de spawn déterministe
 
-**Statut : implémentation en cours dans la PR #34.**
+**Statut : terminé et fusionné par la PR #35.**
 
-Livrables réalisés sur la branche :
+Livré :
 
 - `CreatureDefinition` et `CreatureInstance` séparées ;
-- `creatureId` distinct de l’identifiant runtime ;
-- `SpawnPoint`, `SpawnRequest`, `SpawnResult` et refus typés ;
+- `creatureId` distinct de l'identifiant runtime ;
+- points, demandes, résultats et refus de spawn typés ;
 - identifiants reproductibles par séquence persistée ;
 - ordre stable des points candidats ;
-- modes apparition totale ou partielle ;
+- apparition totale ou partielle ;
 - événements explicatifs ;
-- catalogue pilote Bastognac ;
-- salle de contenu version 2 avec deux points de renfort ;
+- catalogue et salle pilote Bastognac ;
+- sauvegarde tactique version 2 et migration de la version 1 ;
 - renfort fixe de contrôle ;
-- sauvegarde version 2 et migration défensive de la version 1 ;
-- asset ennemi résolu par `creatureId` ;
-- tests unitaires et parcours navigateur.
+- tests unitaires et navigateur desktop/mobile.
 
-Cette étape n’introduit pas encore la jauge de Brouhaha complète.
+Commit de fusion : `dd8c749f3afb73104270d87c9e920aab4e926bf3`.
 
-### Sprint 3.2 — État et événements de Brouhaha
+### Sprint 3.2 : état, effets et historique du Brouhaha
 
-- jauge 0–12 ;
-- incrémentation et diminution explicites ;
-- historique ;
-- effets universels ou propres au donjon ;
-- un effet aux niveaux 0–9 ;
-- deux effets aux niveaux 10–12 ;
-- événements déterministes et sauvegardables.
+**Statut : implémentation candidate dans la PR #37.**
 
-### Sprint 3.3 — Objets interactifs
+Livré sur la branche :
 
-- tables ;
-- tonneaux ;
-- grilles ;
-- torches ;
-- piliers ;
-- états intacts, activés, déplacés, ouverts, détruits ou épuisés selon l’objet ;
-- interactions validées par le moteur.
+- `BrouhahaState` intégré à `RoomState` version 3 ;
+- jauge bornée de 0 à 12 ;
+- demandes explicites, typées et idempotentes ;
+- historique complet des changements ;
+- séquence de résolution persistée ;
+- catalogue d'effets universels et propres à Bastognac ;
+- un effet aux niveaux 0 à 9 ;
+- deux effets distincts aux niveaux 10 à 12 ;
+- sélection déterministe par identifiant et séquence ;
+- événements de demande, changement, effet et refus ;
+- quatre commandes accessibles de démonstration ;
+- niveau et derniers effets visibles dans le HUD ;
+- diagnostics du canvas ;
+- sauvegarde version 3 ;
+- migrations des versions 1 et 2 ;
+- tests moteur, contenu, sauvegarde et Playwright ;
+- stabilisation de la hauteur du plateau lorsque les commandes s'allongent.
 
-### Sprint 3.4 — Réactions en chaîne
+Les commandes pilotes simulent combat, objet cassé, explosion et tour calme. Elles ne remplacent pas les futurs branchements automatiques.
 
-- déclencheurs ;
-- propagation ordonnée ;
+### Sprint 3.3 : objets interactifs
+
+- tables, tonneaux, grilles, torches et piliers ;
+- états propres à chaque objet ;
+- interactions validées par le moteur ;
+- demandes de Brouhaha émises par les objets.
+
+### Sprint 3.4 : réactions en chaîne
+
+- déclencheurs et propagation ordonnée ;
+- causalité explicite ;
 - dégâts, déplacement, blocage ou ouverture ;
-- prévention des boucles infinies ;
-- journal détaillé de la chaîne causale.
+- protection contre les boucles infinies ;
+- plusieurs demandes de Brouhaha ordonnées.
 
-### Sprint 3.5 — Renforts déclenchés par le Brouhaha
+### Sprint 3.5 : renforts déclenchés par le Brouhaha
 
-- seuils et événements de renfort ;
-- sélection des points de spawn ;
-- demandes d’apparition ;
-- refus ou apparition partielle selon les règles ;
-- limites propres au scénario ;
-- intégration avec le tour et la victoire.
+- seuils de renfort ;
+- sélection déterministe des points ;
+- production de `SpawnRequest` ;
+- apparition partielle ou refus ;
+- limites du scénario ;
+- intégration avec les phases de tour et de victoire.
 
-### Sprint 3.6 — Présentation, sauvegarde et finition du sprint
+### Sprint 3.6 : présentation, sauvegarde et finition
 
-- rendu des nouveaux états ;
+- rendu final des nouveaux états ;
 - overlays et retours visuels ;
 - premiers effets sonores utiles ;
 - journal enrichi ;
-- reprise exacte d’une salle ;
+- reprise exacte d'une salle ;
 - mesures de fluidité ;
 - tests desktop et mobile paysage.
 
-## Invariants du Sprint 3.1
+## Invariants du Sprint 3.2
 
-- moteur pur et déterministe ;
-- mêmes entrées, même résultat ;
-- aucune dépendance navigateur ;
-- aucune décision métier dans le renderer ;
-- aucune utilisation de l’heure, d’un UUID aléatoire ou de `Math.random()` ;
-- positions logiques uniquement ;
-- événements explicatifs ;
-- sauvegarde versionnée ;
-- requête exécutée une seule fois ;
-- refus total sans mutation ;
-- compatibilité des mécaniques Sprint 2 ;
-- aucun équilibrage définitif du bestiaire ;
-- aucune modification du dépôt Gargottex.
+- mêmes état, catalogue et demande, même résultat ;
+- aucun `Math.random()`, temps système ou UUID aléatoire ;
+- niveau toujours compris entre 0 et 12 ;
+- demande exécutée une seule fois ;
+- refus sans mutation ;
+- catalogue universel suffisant pour tous les niveaux ;
+- deux effets distincts aux niveaux 10 à 12 ;
+- coordonnées et règles indépendantes de la caméra ;
+- aucune décision métier dans le renderer ou l'UI ;
+- sauvegarde et migrations versionnées ;
+- aucun spawn automatique avant le Sprint 3.5 ;
+- aucune modification de Gargottex.
 
-## Critères de sortie du Sprint 3.1
+## Critères de sortie du Sprint 3.2
 
-- deux instances d’un même type peuvent coexister ;
-- les identifiants restent uniques après sauvegarde et reprise ;
-- une apparition hors limites ou sur une case occupée est refusée ;
-- une position alternative est choisie selon l’ordre déclaré ;
-- une apparition partielle explique le reliquat ;
-- une requête déjà traitée ne crée aucun doublon ;
-- le journal explique le choix ou le refus ;
-- le renfort fixe est instancié puis restauré ;
-- les ennemis existants continuent de se déplacer et d’attaquer ;
-- desktop et mobile paysage restent fonctionnels ;
-- tous les contrôles automatisés sont verts ;
-- la PR est laissée ouverte pour contrôle avant fusion.
+- la jauge augmente et diminue selon une demande explicite ;
+- les variations sont bornées et expliquées ;
+- une demande dupliquée ne modifie pas la salle ;
+- un effet valide est produit aux niveaux 0 à 9 ;
+- deux effets distincts sont produits aux niveaux 10 à 12 ;
+- les effets propres à un autre donjon sont ignorés ;
+- le niveau, l'historique et la séquence survivent à une reprise ;
+- les sauvegardes versions 1 et 2 sont migrées ;
+- le HUD et le journal rendent le résultat lisible ;
+- le picking reste fonctionnel malgré l'allongement des commandes ;
+- desktop et mobile paysage sont validés ;
+- tous les contrôles automatisés sont verts avant fusion.
 
-## Hors périmètre du Sprint 3.1
+## Hors périmètre du Sprint 3.2
 
-- jauge de Brouhaha complète ;
-- déclenchement automatique des renforts par seuil ;
-- génération complète des salles ;
-- génération de la topologie des étages ;
-- composition procédurale finale par budget de menace ;
-- remplacement runtime du champ historique `floorBudgets` ;
-- seize créatures définitives et équilibrées ;
-- compétences définitives des héros ;
-- vagues complexes ;
-- loot et progression entre salles ;
-- boss final complet.
+- déclenchement automatique depuis les combats et objets ;
+- renforts automatiques par seuil ;
+- conséquences tactiques définitives de tous les effets ;
+- objets interactifs ;
+- réactions en chaîne ;
+- génération de rencontre ;
+- génération géométrique ;
+- équilibrage final du donjon ;
+- audio et animations définitifs.
 
 ## Articulation avec le Sprint 4
 
-Le Sprint 4 enrichira le catalogue de définitions :
-
-- quatre héros définitifs ;
-- seize créatures de Bastognac ;
-- catégories et menace ;
-- compétences ;
-- profils d’IA différenciés ;
-- ciblage et explications enrichis ;
-- sprites progressifs.
-
-Le moteur d’instances du Sprint 3 devra accepter ces définitions sans modification structurelle majeure.
+Le Sprint 4 enrichira les quatre héros et les seize créatures de Bastognac. Le Brouhaha pourra référencer leurs capacités et profils sans modifier son contrat fondamental de demande et de résolution.
 
 ## Articulation avec le Sprint 5
 
-Le Sprint 5 générera les cinq étages complets.
+Le Sprint 5 générera les cinq étages, la géométrie complète de leurs salles et les rencontres propres à chaque salle. Le générateur de rencontre composera un plan selon le budget de la salle, puis le moteur de spawn créera les instances.
 
-Chaque étage sera un graphe de salles reliées. La génération comprendra :
-
-- nombre et ordre des salles ;
-- géométrie complète de chaque salle ;
-- dimensions et formes ;
-- murs, portes, passages, entrées et sorties ;
-- connectivité et chemin critique ;
-- zones, obstacles structurels et points de spawn ;
-- décor initial ;
-- rencontre propre à chaque salle ;
-- validation de jouabilité et de connectivité.
-
-Chaque salle recevra son propre budget de menace. Il n’existe pas de budget unique partagé par tout l’étage.
-
-Le générateur de rencontre pourra reprendre ou adapter l’idée de combinaison exacte observée dans Gargottex, à condition de devenir déterministe à seed identique et de respecter la frontière suivante : il compose un plan, puis le moteur de spawn exécute les demandes d’instanciation.
-
-Le champ historique `floorBudgets` devra être migré vers un modèle de politique d’étage et de budgets de salles explicites avant l’implémentation de ce générateur.
+Le Brouhaha restera un système runtime distinct. Ses renforts pourront dépasser la population initiale uniquement lorsqu'une règle de seuil l'autorise explicitement.
 
 ## État de livraison
 
-La PR #34 est ouverte en brouillon. Le code, le contenu, la sauvegarde et les tests sont en cours de stabilisation. Aucun changement n’a été apporté à Gargottex. Le verdict final de CI et le commit contrôlé seront consignés avant passage de la PR en état prêt à contrôler.
+La PR #37 concentre le lot Sprint 3.2. Le rapport de contrôle se trouve dans [Audit de livraison Sprint 3.2](../audits/sprint-3-2-brouhaha-state.md). Le HEAD final et le verdict complet de CI seront consignés avant passage de la PR en état prêt à fusionner.
