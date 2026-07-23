@@ -211,9 +211,7 @@ function validateRoomState(
 
   if (
     room.activeHeroId &&
-    !room.heroes.some(
-      (hero) => hero.id === room.activeHeroId && hero.alive,
-    )
+    !room.heroes.some((hero) => hero.id === room.activeHeroId && hero.alive)
   )
     context.addIssue({
       code: "custom",
