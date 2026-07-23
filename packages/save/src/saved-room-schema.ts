@@ -4,6 +4,7 @@ import {
   legacyRoomStateV1Schema,
   legacyRoomStateV2Schema,
   legacyRoomStateV3Schema,
+  legacyRoomStateV4Schema,
   roomStateSchema,
 } from "./room-state-schema";
 
@@ -12,8 +13,18 @@ const idSchema = z.string().min(1);
 export const savedRoomPayloadSchema = z
   .object({
     kind: z.literal("tactical-room"),
-    version: z.literal(4),
+    version: z.literal(5),
     room: roomStateSchema,
+    selectedHeroIds: z.array(idSchema).min(1).max(4),
+  })
+  .strict()
+  .superRefine(validateSelectedHeroes);
+
+const legacySavedRoomPayloadV4Schema = z
+  .object({
+    kind: z.literal("tactical-room"),
+    version: z.literal(4),
+    room: legacyRoomStateV4Schema,
     selectedHeroIds: z.array(idSchema).min(1).max(4),
   })
   .strict()
@@ -75,78 +86,92 @@ function validateSelectedHeroes(
 
 export function parseSavedRoomPayload(value: unknown): {
   kind: "tactical-room";
-  version: 4;
+  version: 5;
   room: RoomState;
   selectedHeroIds: string[];
 } | null {
   const current = savedRoomPayloadSchema.safeParse(value);
-  if (current.success)
-    return current.data as {
-      kind: "tactical-room";
-      version: 4;
-      room: RoomState;
-      selectedHeroIds: string[];
-    };
+  if (current.success) return current.data as ReturnTypePayload;
+
+  const legacyV4 = legacySavedRoomPayloadV4Schema.safeParse(value);
+  if (legacyV4.success)
+    return payload(
+      migrateV4(legacyV4.data.room),
+      legacyV4.data.selectedHeroIds,
+    );
 
   const legacyV3 = legacySavedRoomPayloadV3Schema.safeParse(value);
   if (legacyV3.success)
-    return {
-      kind: "tactical-room",
-      version: 4,
-      room: withInitialInteractables(legacyV3.data.room),
-      selectedHeroIds: legacyV3.data.selectedHeroIds,
-    };
+    return payload(
+      migrateV4({
+        ...legacyV3.data.room,
+        version: 4,
+        interactables: [],
+        processedInteractableRequestIds: [],
+        nextInteractableInteractionSequence: 1,
+      }),
+      legacyV3.data.selectedHeroIds,
+    );
 
   const legacyV2 = legacySavedRoomPayloadV2Schema.safeParse(value);
   if (legacyV2.success)
-    return {
-      kind: "tactical-room",
-      version: 4,
-      room: withInitialInteractables({
+    return payload(
+      migrateV4({
         ...legacyV2.data.room,
-        version: 3,
+        version: 4,
         brouhaha: createInitialBrouhahaState(),
+        interactables: [],
+        processedInteractableRequestIds: [],
+        nextInteractableInteractionSequence: 1,
       }),
-      selectedHeroIds: legacyV2.data.selectedHeroIds,
-    };
+      legacyV2.data.selectedHeroIds,
+    );
 
   const legacyV1 = legacySavedRoomPayloadV1Schema.safeParse(value);
   if (!legacyV1.success) return null;
-  return {
-    kind: "tactical-room",
-    version: 4,
-    room: withInitialInteractables({
+  return payload(
+    migrateV4({
       ...legacyV1.data.room,
-      version: 3,
+      version: 4,
       spawnPoints: [],
       processedSpawnRequestIds: [],
       nextEnemyInstanceSequence: 1,
       brouhaha: createInitialBrouhahaState(),
+      interactables: [],
+      processedInteractableRequestIds: [],
+      nextInteractableInteractionSequence: 1,
       enemies: legacyV1.data.room.enemies.map((enemy) => ({
         ...enemy,
         creatureId: enemy.id,
       })),
     }),
-    selectedHeroIds: legacyV1.data.selectedHeroIds,
+    legacyV1.data.selectedHeroIds,
+  );
+}
+
+type ReturnTypePayload = {
+  kind: "tactical-room";
+  version: 5;
+  room: RoomState;
+  selectedHeroIds: string[];
+};
+
+function payload(room: RoomState, selectedHeroIds: string[]): ReturnTypePayload {
+  return {
+    kind: "tactical-room",
+    version: 5,
+    room,
+    selectedHeroIds,
   };
 }
 
-function withInitialInteractables(
-  room: Omit<
-    RoomState,
-    | "version"
-    | "interactables"
-    | "processedInteractableRequestIds"
-    | "nextInteractableInteractionSequence"
-  > & {
-    version: 3;
-  },
+function migrateV4(
+  room: z.infer<typeof legacyRoomStateV4Schema>,
 ): RoomState {
   return {
     ...room,
-    version: 4,
-    interactables: [],
-    processedInteractableRequestIds: [],
-    nextInteractableInteractionSequence: 1,
+    version: 5,
+    nextChainReactionSequence: 1,
+    chainReactionHistory: [],
   };
 }
