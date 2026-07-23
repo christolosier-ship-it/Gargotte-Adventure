@@ -73,11 +73,7 @@ const room = () =>
 
 describe("moteur de spawn déterministe", () => {
   it("crée plusieurs instances d'un même archétype dans l'ordre demandé", () => {
-    const result = spawnCreatures(
-      room(),
-      [creature],
-      request({ quantity: 2 }),
-    );
+    const result = spawnCreatures(room(), [creature], request({ quantity: 2 }));
 
     expect(result.created.map((instance) => instance.id)).toEqual([
       "gobelin-bricoleur-spawn-1",
@@ -174,18 +170,12 @@ describe("moteur de spawn déterministe", () => {
         ?.reason,
     ).toBe("invalid-quantity");
     expect(
-      spawnCreatures(
-        room(),
-        [],
-        request({ creatureId: "fantome" }),
-      ).rejected[0]?.reason,
+      spawnCreatures(room(), [], request({ creatureId: "fantome" })).rejected[0]
+        ?.reason,
     ).toBe("creature-not-found");
     expect(
-      spawnCreatures(
-        { ...room(), phase: "victory" },
-        [creature],
-        request(),
-      ).rejected[0]?.reason,
+      spawnCreatures({ ...room(), phase: "victory" }, [creature], request())
+        .rejected[0]?.reason,
     ).toBe("terminal-room");
   });
 
