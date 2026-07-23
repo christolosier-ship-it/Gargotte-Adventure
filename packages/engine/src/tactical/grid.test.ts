@@ -2,12 +2,16 @@ import { describe, expect, it } from "vitest";
 import { getOrthogonalNeighbors, isBlocked, isWithinBounds } from "./grid";
 import { moveCombatant, reachablePositions, shortestPath } from "./movement";
 import type { RoomState } from "./types";
+
 const room = (): RoomState => ({
-  version: 1,
+  version: 2,
   scenarioId: "t",
   width: 4,
   height: 4,
   obstacles: [{ column: 1, row: 1 }],
+  spawnPoints: [],
+  processedSpawnRequestIds: [],
+  nextEnemyInstanceSequence: 1,
   heroes: [
     {
       id: "h",
@@ -28,6 +32,7 @@ const room = (): RoomState => ({
   enemies: [
     {
       id: "e",
+      creatureId: "enemy-test",
       name: "E",
       kind: "enemy",
       position: { column: 2, row: 0 },
@@ -44,42 +49,57 @@ const room = (): RoomState => ({
   phase: "heroes-turn",
   turn: 1,
 });
+
 describe("grille tactique", () => {
   it("rejette sortie obstacle et occupation", () => {
-    const s = room();
+    const state = room();
     expect(isWithinBounds({ column: -1, row: 0 }, 4, 4)).toBe(false);
-    expect(isBlocked(s, { column: 1, row: 1 })).toBe(true);
-    expect(isBlocked(s, { column: 2, row: 0 })).toBe(true);
+    expect(isBlocked(state, { column: 1, row: 1 })).toBe(true);
+    expect(isBlocked(state, { column: 2, row: 0 })).toBe(true);
   });
+
   it("liste voisins dans un coin", () => {
     expect(getOrthogonalNeighbors({ column: 0, row: 0 }, 4, 4)).toEqual([
       { column: 1, row: 0 },
       { column: 0, row: 1 },
     ]);
   });
+
   it("calcule atteignables et chemin impossible", () => {
-    const s = room();
-    expect(reachablePositions(s, s.heroes[0]!.position, 2, "h")).toContainEqual(
-      { column: 0, row: 2 },
-    );
+    const state = room();
     expect(
-      shortestPath(s, s.heroes[0]!.position, { column: 2, row: 0 }, "h"),
+      reachablePositions(state, state.heroes[0]!.position, 2, "h"),
+    ).toContainEqual({ column: 0, row: 2 });
+    expect(
+      shortestPath(
+        state,
+        state.heroes[0]!.position,
+        { column: 2, row: 0 },
+        "h",
+      ),
     ).toBeNull();
   });
+
   it("départage les chemins équivalents", () => {
-    const s = { ...room(), obstacles: [], enemies: [] };
+    const state = { ...room(), obstacles: [], enemies: [] };
     expect(
-      shortestPath(s, { column: 0, row: 0 }, { column: 1, row: 1 }, "h"),
+      shortestPath(
+        state,
+        { column: 0, row: 0 },
+        { column: 1, row: 1 },
+        "h",
+      ),
     ).toEqual([
       { column: 1, row: 0 },
       { column: 1, row: 1 },
     ]);
   });
+
   it("déplace une ou plusieurs cases avec un événement par action", () => {
-    const s = { ...room(), obstacles: [], enemies: [] };
-    const one = moveCombatant(s, "h", { column: 1, row: 0 });
+    const state = { ...room(), obstacles: [], enemies: [] };
+    const one = moveCombatant(state, "h", { column: 1, row: 0 });
     expect(one.ok && one.value.events).toHaveLength(1);
-    const many = moveCombatant(s, "h", { column: 0, row: 3 });
+    const many = moveCombatant(state, "h", { column: 0, row: 3 });
     expect(many.ok && many.value.events).toHaveLength(3);
     expect(many.ok && many.value.state.heroes[0]!.actionsRemaining).toBe(0);
   });
