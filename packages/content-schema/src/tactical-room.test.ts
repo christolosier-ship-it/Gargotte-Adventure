@@ -24,9 +24,9 @@ describe("contenu tactique", () => {
       "gobelin-bricoleur",
       "gobelin-lance-tout",
     ]);
-    expect(interactableCatalog.interactables.map((object) => object.kind)).toEqual(
-      ["table", "barrel", "gate", "torch", "pillar"],
-    );
+    expect(
+      interactableCatalog.interactables.map((object) => object.kind),
+    ).toEqual(["table", "barrel", "gate", "torch", "pillar"]);
     expect(parsed.heroes.map(({ id, name }) => [id, name])).toEqual(
       officialHeroes,
     );
