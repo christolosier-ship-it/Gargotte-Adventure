@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { HERO_ACTIONS } from "@gargotte/engine";
 import { brouhahaStateSchema } from "./brouhaha-schema";
+import { interactableInstanceSchema } from "./interactable-schema";
 
 const idSchema = z.string().min(1);
 const gridPositionSchema = z
@@ -101,6 +102,22 @@ const sharedRoomShape = {
 
 export const roomStateSchema = z
   .object({
+    version: z.literal(4),
+    ...sharedRoomShape,
+    interactables: z.array(interactableInstanceSchema),
+    processedInteractableRequestIds: z.array(idSchema),
+    nextInteractableInteractionSequence: z.number().int().positive(),
+    spawnPoints: z.array(spawnPointSchema),
+    processedSpawnRequestIds: z.array(idSchema),
+    nextEnemyInstanceSequence: z.number().int().positive(),
+    brouhaha: brouhahaStateSchema,
+    enemies: z.array(enemySchema).min(1),
+  })
+  .strict()
+  .superRefine(validateRoomState);
+
+export const legacyRoomStateV3Schema = z
+  .object({
     version: z.literal(3),
     ...sharedRoomShape,
     spawnPoints: z.array(spawnPointSchema),
@@ -138,11 +155,13 @@ function validateRoomState(
     width: number;
     height: number;
     obstacles: { column: number; row: number }[];
+    interactables?: z.infer<typeof interactableInstanceSchema>[];
     heroes: z.infer<typeof heroSchema>[];
     enemies: z.infer<typeof legacyEnemySchema>[];
     activeHeroId: string | null;
     spawnPoints?: z.infer<typeof spawnPointSchema>[];
     processedSpawnRequestIds?: string[];
+    processedInteractableRequestIds?: string[];
   },
   context: z.RefinementCtx,
 ): void {
@@ -171,16 +190,19 @@ function validateRoomState(
   for (const [index, obstacle] of room.obstacles.entries())
     validatePosition(obstacle, `obstacle ${index + 1}`);
   for (const combatant of [...room.heroes, ...room.enemies]) {
-    if (ids.has(combatant.id))
-      context.addIssue({
-        code: "custom",
-        message: `identifiant dupliqué ${combatant.id}`,
-      });
-    ids.add(combatant.id);
+    validateUniqueId(combatant.id, ids, context);
     validatePosition(
       combatant.position,
       combatant.id,
       combatant.alive && combatant.blocksMovement,
+    );
+  }
+  for (const interactable of room.interactables ?? []) {
+    validateUniqueId(interactable.id, ids, context);
+    validatePosition(
+      interactable.position,
+      interactable.id,
+      interactable.blocksMovement,
     );
   }
 
@@ -195,15 +217,18 @@ function validateRoomState(
     validatePosition(point.position, point.id, false);
   }
 
-  if (
-    new Set(room.processedSpawnRequestIds ?? []).size !==
-    (room.processedSpawnRequestIds ?? []).length
-  )
-    context.addIssue({
-      code: "custom",
-      path: ["processedSpawnRequestIds"],
-      message: "les requêtes de spawn traitées doivent être uniques",
-    });
+  validateUniqueRequests(
+    room.processedSpawnRequestIds ?? [],
+    "processedSpawnRequestIds",
+    "les requêtes de spawn traitées doivent être uniques",
+    context,
+  );
+  validateUniqueRequests(
+    room.processedInteractableRequestIds ?? [],
+    "processedInteractableRequestIds",
+    "les requêtes d'interaction traitées doivent être uniques",
+    context,
+  );
 
   if (
     room.activeHeroId &&
@@ -214,4 +239,24 @@ function validateRoomState(
       path: ["activeHeroId"],
       message: "le héros actif doit exister et être vivant",
     });
+}
+
+function validateUniqueId(
+  id: string,
+  ids: Set<string>,
+  context: z.RefinementCtx,
+): void {
+  if (ids.has(id))
+    context.addIssue({ code: "custom", message: `identifiant dupliqué ${id}` });
+  ids.add(id);
+}
+
+function validateUniqueRequests(
+  ids: string[],
+  path: string,
+  message: string,
+  context: z.RefinementCtx,
+): void {
+  if (new Set(ids).size !== ids.length)
+    context.addIssue({ code: "custom", path: [path], message });
 }
