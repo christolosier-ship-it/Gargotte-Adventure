@@ -1,6 +1,7 @@
 import { readFile, stat } from "node:fs/promises";
 import { relative, resolve, sep } from "node:path";
 import {
+  parseBrouhahaEffectCatalog,
   parseContentManifest,
   parseCreatureCatalog,
   parseDungeon,
@@ -18,13 +19,23 @@ const dungeon = parseDungeon(
 const creatureCatalog = parseCreatureCatalog(
   JSON.parse(await readFile(resolve(packDirectory, "creatures.json"), "utf8")),
 );
+const brouhahaCatalog = parseBrouhahaEffectCatalog(
+  JSON.parse(
+    await readFile(resolve(packDirectory, "brouhaha-effects.json"), "utf8"),
+  ),
+);
 const room = parseTacticalRoom(
   JSON.parse(
     await readFile(resolve(packDirectory, "sprint-1-room.json"), "utf8"),
   ),
 );
 
-for (const required of ["dungeon.json", "creatures.json", "sprint-1-room.json"])
+for (const required of [
+  "dungeon.json",
+  "creatures.json",
+  "brouhaha-effects.json",
+  "sprint-1-room.json",
+])
   if (!manifest.files.includes(required))
     throw new Error(`Le manifeste Bastognac ne référence pas ${required}.`);
 if (manifest.packId !== dungeon.id)
@@ -42,6 +53,15 @@ for (const scripted of room.scriptedSpawns)
   if (!creatureIds.has(scripted.creatureId))
     throw new Error(
       `Spawn ${scripted.id}: créature absente ${scripted.creatureId}.`,
+    );
+
+const dungeonScopedEffects = brouhahaCatalog.effects.filter(
+  (effect) => effect.scope.type === "dungeon",
+);
+for (const effect of dungeonScopedEffects)
+  if (effect.scope.type === "dungeon" && effect.scope.dungeonId !== dungeon.id)
+    throw new Error(
+      `Effet ${effect.id}: donjon absent ${effect.scope.dungeonId}.`,
     );
 
 const root = resolve("apps/game/public");
@@ -93,5 +113,5 @@ if (total > assetBudgets.pilotTotalBytes)
     `Lot pilote 2B.1: poids total ${total} > ${assetBudgets.pilotTotalBytes}.`,
   );
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
 );
