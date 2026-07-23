@@ -225,10 +225,13 @@ export const tacticalRoomSchema = z
     }
 
     for (const interactable of room.interactables) {
-      if (interactableInstanceIds.has(interactable.id))
+      if (
+        actorIds.has(interactable.id) ||
+        interactableInstanceIds.has(interactable.id)
+      )
         context.addIssue({
           code: "custom",
-          message: `instance d'objet dupliquée ${interactable.id}`,
+          message: `identifiant d'instance dupliqué ${interactable.id}`,
         });
       interactableInstanceIds.add(interactable.id);
       addBlockingPosition(interactable.position, interactable.id);
