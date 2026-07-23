@@ -132,7 +132,13 @@ export function parseSavedRoomPayload(value: unknown): {
 }
 
 function withInitialInteractables(
-  room: Omit<RoomState, "version" | "interactables" | "processedInteractableRequestIds" | "nextInteractableInteractionSequence"> & {
+  room: Omit<
+    RoomState,
+    | "version"
+    | "interactables"
+    | "processedInteractableRequestIds"
+    | "nextInteractableInteractionSequence"
+  > & {
     version: 3;
   },
 ): RoomState {
