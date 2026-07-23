@@ -14,4 +14,5 @@ export interface TabletopRenderer {
   onCellSelected(listener: (position: GridPosition) => void): void;
   onHeroSelected(listener: (heroId: string) => void): void;
   onEnemySelected(listener: (enemyId: string) => void): void;
+  onInteractableSelected(listener: (interactableId: string) => void): void;
 }
