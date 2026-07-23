@@ -4,12 +4,7 @@ import type {
   ChainReactionActionDefinition,
   ChainReactionActionResolution,
 } from "./chain-reaction-types";
-import {
-  isObstacle,
-  isWithinBounds,
-  occupantAt,
-  samePosition,
-} from "./grid";
+import { isObstacle, isWithinBounds, occupantAt, samePosition } from "./grid";
 import type {
   BrouhahaEffectDefinition,
   InteractableDefinition,
@@ -37,13 +32,7 @@ export function resolveChainReactionAction(
   if (action.type === "move") return resolveMove(state, action, reactionId);
   if (action.type === "damage")
     return resolveChainReactionDamage(state, action, reactionId);
-  return resolveBrouhaha(
-    state,
-    brouhahaEffects,
-    action,
-    reactionId,
-    dungeonId,
-  );
+  return resolveBrouhaha(state, brouhahaEffects, action, reactionId, dungeonId);
 }
 
 function resolveTransition(
