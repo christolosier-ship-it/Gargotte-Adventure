@@ -2,13 +2,14 @@
 
 ## Statut
 
-- Issue : #42
-- Pull Request : #43
-- Branche : `sprint-3/interactable-objects`
-- HEAD fonctionnel validé : `2cb37af1bd6cd5b89258ccb310f2e0a24c82cd3f`
-- Repository quality : run #288, succès
-- Validate application : run #274, succès complet
-- Verdict : prêt pour fusion par squash après le dernier contrôle du commit documentaire
+- Issue : #42, clôturée
+- Pull Request : #43, fusionnée par squash
+- Branche de travail : `sprint-3/interactable-objects`
+- HEAD fonctionnel validé avant fusion : `6360ea870e0c0a153595d71683f692e7e3e531a6`
+- Commit de fusion : `83d1aa48eeb8411f01584d8321ea52357c2e6e07`
+- Repository quality : run #289, succès
+- Validate application : run #275, succès complet
+- Verdict : Sprint 3.3 livré et clôturé ; passage autorisé au Sprint 3.4
 
 ## Périmètre contrôlé
 
@@ -68,11 +69,11 @@ Cinq fils de revue ont été traités et résolus :
 4. contrôleur principal maintenu sous la limite du dépôt ;
 5. formatage Prettier de tous les fichiers touchés.
 
-Aucun fil de revue ouvert ne reste avant fusion.
+Aucun fil de revue ouvert ne restait avant fusion.
 
 ## Validation automatisée
 
-Le HEAD `2cb37af1bd6cd5b89258ccb310f2e0a24c82cd3f` a validé :
+Le HEAD `6360ea870e0c0a153595d71683f692e7e3e531a6` a validé :
 
 - formatage Prettier ;
 - catalogue et références de contenu ;
@@ -98,8 +99,8 @@ Le diagnostic TypeScript temporaire utilisé pendant la correction a été retir
 
 Ces éléments restent réservés aux Sprints 3.4 à 3.6.
 
-## Verdict
+## Verdict final
 
 Le Sprint 3.3 respecte les règles V2, les frontières d'architecture et les garde-fous du dépôt. Son périmètre fonctionnel est complet, reproductible, sauvegardable et jouable au clavier, à la souris et au toucher.
 
-La fusion par squash de la PR #43 est autorisée dès que le dernier passage de CI sur ce rapport est entièrement vert. Après fusion, l'issue #42 doit être clôturée, le déploiement GitHub Pages contrôlé et le compte rendu Google Drive complété avec le commit final.
+La PR #43 a été fusionnée par squash au commit `83d1aa48eeb8411f01584d8321ea52357c2e6e07`, l'issue #42 est clôturée et le compte rendu Google Drive est aligné. La prochaine phase autorisée est le Sprint 3.4 consacré aux réactions en chaîne.
