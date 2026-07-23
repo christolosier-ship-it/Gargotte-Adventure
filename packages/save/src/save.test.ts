@@ -139,8 +139,8 @@ describe("sauvegarde tactique", () => {
       height: current.height,
       obstacles: current.obstacles,
       heroes: current.heroes,
-      enemies: current.enemies.map(({ creatureId: _creatureId, ...enemy }) =>
-        enemy,
+      enemies: current.enemies.map(
+        ({ creatureId: _creatureId, ...enemy }) => enemy,
       ),
       activeHeroId: current.activeHeroId,
       phase: current.phase,
