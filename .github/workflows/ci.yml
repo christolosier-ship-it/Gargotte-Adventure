@@ -50,29 +50,13 @@ jobs:
         run: npm run validate:content
 
       - name: TypeScript strict check
-        run: npm run typecheck 2>&1 | tee typecheck.log
-
-      - name: Upload TypeScript diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: typecheck-diagnostics
-          path: typecheck.log
-          if-no-files-found: error
+        run: npm run typecheck
 
       - name: Unit tests
         run: npm run test
 
       - name: Production build
-        run: npm run build 2>&1 | tee build.log
-
-      - name: Upload build diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: build-diagnostics
-          path: build.log
-          if-no-files-found: error
+        run: npm run build
 
       - name: Validate repository
         run: python tools/validate_repository.py
@@ -81,7 +65,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Browser smoke tests
-        run: npm run test:e2e 2>&1 | tee playwright.log
+        run: npm run test:e2e
 
       - name: Upload Playwright diagnostics
         if: failure()
@@ -89,10 +73,9 @@ jobs:
         with:
           name: playwright-diagnostics
           path: |
-            playwright.log
             test-results
             playwright-report
-          if-no-files-found: error
+          if-no-files-found: warn
 
       - name: Upload package lock
         uses: actions/upload-artifact@v7
@@ -101,9 +84,14 @@ jobs:
           path: package-lock.json
           if-no-files-found: error
 
+      - name: Package production build
+        run: |
+          test -f dist/index.html
+          tar -czf gargotte-adventure-dist.tar.gz -C dist .
+
       - name: Upload production build
         uses: actions/upload-artifact@v7
         with:
           name: gargotte-adventure-dist
-          path: dist
+          path: gargotte-adventure-dist.tar.gz
           if-no-files-found: error
