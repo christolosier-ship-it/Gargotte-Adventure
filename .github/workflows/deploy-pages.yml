@@ -50,3 +50,26 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+      - name: Publish test link
+        env:
+          DEPLOYED_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          echo "## 🎮 Tester Gargotte Adventure" >> "$GITHUB_STEP_SUMMARY"
+          echo "[Ouvrir l'application déployée]($DEPLOYED_URL)" >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Verify deployed application
+        env:
+          DEPLOYED_URL: ${{ steps.deployment.outputs.page_url }}
+        run: |
+          for attempt in 1 2 3 4 5 6; do
+            if curl --fail --silent --show-error --location "$DEPLOYED_URL" > /dev/null; then
+              echo "Application accessible : $DEPLOYED_URL"
+              exit 0
+            fi
+            echo "Tentative $attempt/6 : l'application n'est pas encore accessible."
+            sleep 10
+          done
+
+          echo "::error::Application inaccessible après le déploiement : $DEPLOYED_URL"
+          exit 1
