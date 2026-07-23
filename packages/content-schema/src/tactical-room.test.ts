@@ -93,10 +93,10 @@ describe("contenu tactique", () => {
       parseTacticalRoom({
         ...room,
         spawnPoints: [
-          room.spawnPoints[0],
+          room.spawnPoints[0]!,
           {
-            ...room.spawnPoints[1],
-            position: room.spawnPoints[0].position,
+            ...room.spawnPoints[1]!,
+            position: room.spawnPoints[0]!.position,
           },
         ],
       }),
@@ -109,10 +109,10 @@ describe("contenu tactique", () => {
         ...room,
         scriptedSpawns: [
           {
-            ...room.scriptedSpawns[0],
+            ...room.scriptedSpawns[0]!,
             candidateSpawnPointIds: [
-              room.spawnPoints[0].id,
-              room.spawnPoints[0].id,
+              room.spawnPoints[0]!.id,
+              room.spawnPoints[0]!.id,
             ],
           },
         ],
