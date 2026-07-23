@@ -43,7 +43,7 @@ export function createRoomState(input: {
   );
 
   return {
-    version: 4,
+    version: 5,
     scenarioId: input.scenarioId,
     width: input.width,
     height: input.height,
@@ -53,6 +53,8 @@ export function createRoomState(input: {
     ),
     processedInteractableRequestIds: [],
     nextInteractableInteractionSequence: 1,
+    nextChainReactionSequence: 1,
+    chainReactionHistory: [],
     spawnPoints: input.spawnPoints,
     processedSpawnRequestIds: [],
     nextEnemyInstanceSequence: 1,
