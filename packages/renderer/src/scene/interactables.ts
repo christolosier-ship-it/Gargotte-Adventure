@@ -9,20 +9,22 @@ import { tokenNumber } from "./primitives";
 export function drawInteractable(
   context: SceneRenderContext,
   interactable: InteractableInstance,
+  selectable: boolean,
 ): void {
   const screen = context.projectedPosition(interactable.position);
   const container = new Container();
-  container.eventMode = "static";
-  container.cursor = "pointer";
-  container.hitArea = new Rectangle(-38, -78, 76, 84);
+  container.eventMode = selectable ? "static" : "none";
+  container.cursor = selectable ? "pointer" : "default";
+  container.hitArea = new Rectangle(-38, -62, 76, 68);
   container.label = `interactable:${interactable.id}:${interactable.stateId}`;
   container.position.set(screen.x, screen.y);
   container.zIndex = stableDepth(screen.y, context.projection.tileHeight, 80);
-  container.on("pointertap", () =>
-    context.listeners.interactable.forEach((listener) =>
-      listener(interactable.id),
-    ),
-  );
+  if (selectable)
+    container.on("pointertap", () =>
+      context.listeners.interactable.forEach((listener) =>
+        listener(interactable.id),
+      ),
+    );
 
   const fallback = drawFallback(interactable);
   fallback.eventMode = "none";
