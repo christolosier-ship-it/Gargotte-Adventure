@@ -41,7 +41,6 @@ import {
 } from "./persistence-controller";
 import { buildTacticalRoom } from "./room-builder";
 import { executeScriptedSpawn } from "./scripted-spawn-controller";
-
 interface GameControllerOptions {
   shell: GameShell;
   renderer: TabletopRenderer;
