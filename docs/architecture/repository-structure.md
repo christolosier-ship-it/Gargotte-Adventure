@@ -4,12 +4,9 @@
 
 La structure suit les responsabilités réelles du projet. Aucun dossier vide n’est créé uniquement pour anticiper une fonctionnalité future.
 
-Cette page distingue :
+Cette page distingue la structure présente sur la branche Sprint 3.1 des extensions prévues pour les sprints suivants.
 
-- **la structure actuelle**, qui doit correspondre au dépôt ;
-- **les extensions cibles**, créées seulement lorsqu’un sprint en a besoin.
-
-## Arborescence actuelle
+## Arborescence active du Sprint 3.1
 
 ```text
 Gargotte-Adventure/
@@ -21,6 +18,7 @@ Gargotte-Adventure/
 │           ├── bootstrap.ts
 │           ├── bastognac.ts
 │           ├── game-controller.ts
+│           ├── scripted-spawn-controller.ts
 │           ├── tactical-actions.ts
 │           ├── persistence-controller.ts
 │           ├── pwa-install.ts
@@ -32,6 +30,9 @@ Gargotte-Adventure/
 │   ├── content-schema/
 │   ├── engine/
 │   │   └── src/tactical/
+│   │       ├── spawn.ts
+│   │       ├── spawn.test.ts
+│   │       └── ...
 │   ├── renderer/
 │   │   └── src/
 │   │       ├── scene/
@@ -48,25 +49,20 @@ Gargotte-Adventure/
 │   │       └── index.ts
 │   └── ui/
 │       └── src/
-│           ├── shell-template.ts
-│           ├── types.ts
-│           └── index.ts
+├── content/
+│   └── bastognac/
+│       ├── manifest.json
+│       ├── dungeon.json
+│       ├── creatures.json
+│       └── sprint-1-room.json
 ├── design/isometric/
 ├── tools/
 │   ├── validators/
 │   └── validate_repository.py
-├── content/bastognac/
 ├── tests/e2e/
-│   └── helpers/
+│   ├── helpers/
+│   └── spawn.spec.ts
 ├── docs/
-│   ├── adr/
-│   ├── architecture/
-│   ├── audits/
-│   ├── design/
-│   ├── external/
-│   ├── product/
-│   ├── security/
-│   └── sprints/
 ├── .github/
 ├── package.json
 ├── playwright.config.ts
@@ -76,7 +72,7 @@ Gargotte-Adventure/
 
 Le dossier racine `public/` n’est pas utilisé. La racine publique de Vite est `apps/game/public`.
 
-## Responsabilités actuelles
+## Responsabilités
 
 ### `apps/game`
 
@@ -84,94 +80,116 @@ Point de composition de la PWA.
 
 - `main.ts` importe les styles et déclenche le bootstrap ;
 - `bootstrap.ts` assemble les dépendances ;
-- `bastognac.ts` valide le contenu et décrit les assets propres au donjon ;
-- `game-controller.ts` orchestre état, moteur, UI et renderer ;
+- `bastognac.ts` valide le donjon, la salle, le catalogue pilote et décrit les assets ;
+- `game-controller.ts` orchestre état, moteur, UI, renderer et sauvegarde ;
+- `scripted-spawn-controller.ts` traduit un spawn de scénario en `SpawnRequest` et formate ses événements ;
 - `tactical-actions.ts` crée les commandes accessibles dérivées de l’état ;
 - `persistence-controller.ts` restaure la session et sérialise les écritures ;
 - `pwa-install.ts` isole le cycle d’installation ;
-- `theme.css` relie les tokens de conception aux variables historiques du CSS.
+- `theme.css` relie les tokens de conception aux variables du CSS.
 
-Les règles de déplacement, combat, IA, spawn ou phase ne doivent jamais être réimplémentées dans cette couche.
+Les règles de déplacement, combat, IA, spawn ou phase ne sont jamais réimplémentées dans cette couche.
 
 ### `packages/engine`
 
-Contient la logique de jeu pure : état, grille, déplacement, ligne de vue, combat, tours, IA, événements et erreurs métier.
+Contient la logique de jeu pure : état, grille, déplacement, ligne de vue, combat, tours, IA, spawn, événements et erreurs métier.
 
-Le moteur de spawn du Sprint 3 appartiendra à cette frontière, car il transforme un `RoomState` par une intention métier et produit des événements. Il ne sera pas placé dans `apps/game` ni dans le renderer.
+`src/tactical/spawn.ts` :
 
-Le moteur ne doit importer ni PixiJS, ni API navigateur, ni UI, ni IndexedDB.
+- valide une demande ;
+- parcourt les points candidats dans un ordre stable ;
+- crée les identifiants d’instance ;
+- met à jour `RoomState` ;
+- produit les événements et refus explicatifs.
+
+Le moteur n’importe ni PixiJS, ni API navigateur, ni UI, ni IndexedDB.
 
 ### `packages/content-schema`
 
-Définit les schémas Zod du contenu consommé par le jeu : paquet, donjon, salle, positions, statistiques, unicité et collisions initiales.
+Définit les schémas Zod du contenu consommé par le jeu :
 
-Le Sprint 3.1 devra y définir ou valider les archétypes minimaux, les points de spawn et les données de scénario nécessaires. Le Sprint 4 enrichira les `CreatureDefinition` définitives.
+- manifeste ;
+- donjon ;
+- catalogue de créatures ;
+- salle version 2 ;
+- placements initiaux ;
+- points de spawn ;
+- scripts de spawn ;
+- positions, unicité et collisions.
+
+Le schéma pilote de `CreatureDefinition` sera enrichi au Sprint 4 sans déplacer la logique de spawn.
 
 ### `packages/renderer`
 
 Traduit `RoomState` en plateau PixiJS 2D isométrique.
 
 - `tabletop-renderer.ts` : cycle de vie PixiJS, caméra et reconstruction ;
-- `catalog.ts` : contrat générique d’assets fourni par l’application ;
+- `catalog.ts` : contrat générique d’assets ;
 - `projection.ts` : projection et fit caméra ;
 - `view.ts` : rotation logique et murs physiques ;
-- `scene/context.ts` : contexte partagé d’un rendu ;
-- `scene/asset-sprite.ts` : chargement asynchrone ;
-- `scene/diagnostics.ts` : instrumentation E2E ;
-- `scene/primitives.ts` : formes et styles élémentaires ;
+- `scene/diagnostics.ts` : instrumentation E2E, y compris spawn ;
 - `scene/environment.ts` : sols, obstacles et murs ;
-- `scene/combatants.ts` : héros, ennemis et ombres ;
+- `scene/combatants.ts` : héros, créatures et résolution d’asset par `creatureId` ;
 - `scene/room.ts` : composition d’une image de salle ;
 - `index.ts` : API publique uniquement.
 
-Le renderer ne décide jamais si une action ou une apparition est autorisée et ne connaît aucun identifiant de donjon.
-
-Plusieurs instances d’un même archétype pourront partager la même référence d’asset sans que le renderer connaisse leur logique de création.
+Le renderer ne décide jamais si une apparition est autorisée.
 
 ### `packages/ui`
 
 Composants DOM accessibles : template, contrats, sélection des héros, HUD, boutons fixes, journal et mise à jour de la coque.
 
-Les actions tactiques variables appartiennent à l’application, car elles traduisent l’état moteur en intentions utilisateur.
+Les commandes tactiques variables restent dans l’application, car elles traduisent un état moteur en intentions utilisateur.
 
 ### `packages/save`
 
 Persistance IndexedDB et validation profonde :
 
 - état général de l’application ;
-- salle tactique complète ;
+- salle tactique version 2 ;
+- instances et `creatureId` ;
+- points de spawn ;
+- requêtes traitées ;
+- compteur d’instances ;
 - héros sélectionnés ;
-- détection des anciennes sauvegardes ;
+- migration de la salle version 1 ;
 - rejet des données incompatibles ou corrompues ;
 - connexion IndexedDB réutilisée.
 
-Le Sprint 3.1 devra sauvegarder les identifiants d’instance, leur archétype, la séquence déterministe et les points de spawn si ces données entrent dans `RoomState`.
-
 ### `packages/common`
 
-Socle minimal partagé : label de build et création d’identifiants.
+Socle minimal partagé : label de build et création d’identifiants pour les événements applicatifs.
 
-La création des identifiants runtime déterministes ne doit pas devenir un utilitaire opaque dépendant de l’heure. Elle restera liée au contrat métier du moteur de spawn.
+La séquence d’instances ennemies reste dans le moteur tactique. Elle ne dépend pas de l’utilitaire général `createId`, qui utilise une autre finalité.
 
 ### `packages/audio`
 
 Fondation inactive de réglages audio. Elle ne possède aucun consommateur applicatif et ne charge aucun média.
 
-### `design/isometric`
+### `content/bastognac`
 
-Handoff graphique versionné : tokens JSON et CSS, gabarits, projection, pipeline runtime, sources artistiques et historique de conception.
+Contenu du vertical slice :
 
-`tokens.json` nourrit le renderer. `tokens.css` nourrit la présentation DOM. Leur cohérence est contrôlée automatiquement.
+- `manifest.json` référence tous les fichiers du paquet ;
+- `dungeon.json` décrit le donjon et conserve le placeholder historique `floorBudgets` ;
+- `creatures.json` contient le catalogue pilote ;
+- `sprint-1-room.json` décrit la salle, les placements, points et spawn de contrôle.
+
+Ce dossier ne contient jamais l’état mutable d’une partie.
 
 ### `tools/validators`
 
-Validation TypeScript hors bundle du jeu : contenu Bastognac, manifeste runtime, chemins, formats, dimensions et budgets.
+Validation TypeScript hors bundle du jeu :
 
-Les futurs contenus de créatures, points de spawn, salles et plans générés devront être validés avant leur consommation.
+- paquet Bastognac ;
+- catalogue de créatures ;
+- références des placements et scripts ;
+- manifeste runtime ;
+- chemins, formats, dimensions et budgets d’assets.
 
 ### `tools/validate_repository.py`
 
-Garde-fous transversaux sans dépendance tierce :
+Garde-fous transversaux :
 
 - fichiers requis ;
 - UTF-8 et fins de ligne ;
@@ -184,25 +202,15 @@ Garde-fous transversaux sans dépendance tierce :
 - cohérence des tokens ;
 - complétude de l’index documentaire.
 
-### `content/bastognac`
-
-Contenu compilé du vertical slice : manifeste, définition du donjon et salle tactique. Les statistiques restent provisoires.
-
-À terme, ce paquet contiendra ou référencera les définitions de créatures, règles de donjon, contraintes de génération, familles de salles et données nécessaires à Bastognac. Il ne contiendra pas l’état mutable d’une partie.
-
 ### `tests/e2e`
 
 Parcours Playwright sur le build de production, en Chromium desktop et mobile paysage.
 
-`tests/e2e/helpers/canvas.ts` centralise lecture de scène, conversion logique-écran, scroll, clic/toucher, attentes de héros et statuts d’assets.
+`helpers/canvas.ts` centralise la lecture de scène, la conversion logique-écran, le scroll, le clic ou toucher, les combattants, points de spawn, requêtes traitées et statuts d’assets.
 
-Les tests futurs vérifieront la présence de plusieurs instances, les apparitions, les refus, la reprise et l’affichage partagé des assets.
+`spawn.spec.ts` vérifie l’apparition du renfort, l’asset partagé, la disparition du bouton et la restauration exacte après rechargement.
 
-### `docs/audits`
-
-Rapports transversaux comparant l’état réel de `main` aux critères de sprint, décisions et risques architecturaux.
-
-## Dépendances autorisées actuelles
+## Dépendances autorisées
 
 ```text
 apps/game
@@ -221,45 +229,23 @@ engine   ─► common
 
 `content-schema`, `common` et `audio` ne dépendent d’aucun autre package Gargotte. Aucun cycle n’est autorisé.
 
-Ces frontières sont vérifiées par `tools/validate_repository.py`.
+Gargottex n’est pas une dépendance du dépôt. Son code peut être étudié en lecture seule, mais il n’est ni importé, ni sous-module, ni package npm de Gargotte Adventure.
 
 ## Limites de taille
-
-Les fichiers principaux restent volontairement bornés :
 
 - `apps/game/src/main.ts` : 80 lignes maximum ;
 - `packages/renderer/src/index.ts` : 120 lignes maximum ;
 - autre module TypeScript de production : 350 lignes maximum.
 
-Une limite dépassée doit conduire à créer une responsabilité stable, pas à augmenter silencieusement le seuil.
+Une limite dépassée conduit à extraire une responsabilité stable, pas à augmenter silencieusement le seuil.
 
-## Extensions cibles du Sprint 3
-
-Les noms précis seront validés pendant l’implémentation. La frontière attendue est la suivante :
-
-```text
-packages/engine/src/tactical/
-├── spawn.ts              validation et création déterministe des instances
-├── spawn.test.ts         cas de succès, refus, ordre et reproductibilité
-└── types.ts              contrats runtime ou imports depuis un module dédié
-
-packages/content-schema/src/
-└── ...                   schémas des définitions et points de spawn
-
-packages/save/src/
-├── schema.ts             validation du nouvel état
-└── migrations.ts         uniquement si une migration distincte devient nécessaire
-```
-
-Aucun dossier ne sera créé avant le premier code utile.
-
-La séparation peut évoluer vers un sous-dossier `spawn/` si plusieurs responsabilités stables apparaissent, par exemple sélection des points, fabrique d’instances et événements. La limite de taille existante décidera, pas une arborescence décorative.
+Le contrôleur de spawn scripté a été séparé du contrôleur principal pour éviter que celui-ci absorbe les futures règles de Brouhaha.
 
 ## Extension cible du Sprint 5
 
 La génération complète mérite une frontière distincte du moteur tactique, car elle produit des plans avant l’instanciation d’une salle.
 
-Structure cible indicative :
+Structure indicative :
 
 ```text
 packages/generator/
@@ -282,26 +268,15 @@ Responsabilités :
 - `validation` : connectivité, limites, occupation et cohérence ;
 - `types` : `DungeonPlan`, `FloorPlan`, `RoomTemplate` et `EncounterPlan`.
 
-Dépendances cibles probables :
-
-```text
-apps/game ─► generator
-
-generator ─► common + content-schema
-engine    ─► common
-```
-
-Le générateur ne devra pas dépendre du renderer, de l’UI, d’IndexedDB ni du contrôleur applicatif.
+L’idée de recherche de combinaison exacte observée dans Gargottex pourra être adaptée dans `encounter-generator`, avec une seed explicite et sans modifier Gargottex.
 
 Le plan généré sera validé puis transmis au moteur de salle et au moteur de spawn.
 
-## Budget de menace dans l’architecture
+## Budget de menace
 
 Le budget de menace appartient à `RoomTemplate` ou `EncounterGenerationRequest`.
 
-Il ne doit pas être stocké comme un total unique consommé à l’échelle du `FloorPlan`.
-
-Un étage peut définir une courbe ou une politique attribuant des budgets à ses salles, mais chaque `EncounterPlan` est calculé et validé séparément.
+Il n’est pas stocké comme un total unique consommé à l’échelle du `FloorPlan`. Un étage peut définir une courbe attribuant des budgets à ses salles, mais chaque `EncounterPlan` est calculé et validé séparément.
 
 ## Autres extensions cibles
 
@@ -326,5 +301,3 @@ Ces dossiers ne seront créés que lorsqu’un sprint les rend nécessaires.
 ## Fichiers générés
 
 Chaque paquet généré doit indiquer source, date, version de schéma, empreinte et outil utilisé. Les sources humaines ne sont jamais écrasées automatiquement.
-
-Chaque plan généré de salle ou d’étage doit également conserver la seed, la version du générateur et les contraintes utilisées afin de rester reproductible.
