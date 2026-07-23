@@ -17,7 +17,9 @@ export async function readInteractables(
 ): Promise<CanvasInteractableState[]> {
   return canvasLocator(page).evaluate(
     (element) =>
-      JSON.parse(element.dataset.interactables ?? "[]") as CanvasInteractableState[],
+      JSON.parse(
+        element.dataset.interactables ?? "[]",
+      ) as CanvasInteractableState[],
   );
 }
 
