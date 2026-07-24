@@ -50,20 +50,7 @@ jobs:
         run: npm run validate:content
 
       - name: TypeScript strict check
-        shell: bash
-        run: |
-          set +e
-          npm run typecheck 2>&1 | tee typecheck.log
-          status=${PIPESTATUS[0]}
-          exit "$status"
-
-      - name: Upload TypeScript diagnostics
-        if: failure()
-        uses: actions/upload-artifact@v7
-        with:
-          name: typescript-diagnostics
-          path: typecheck.log
-          if-no-files-found: error
+        run: npm run typecheck
 
       - name: Unit tests
         run: npm run test
