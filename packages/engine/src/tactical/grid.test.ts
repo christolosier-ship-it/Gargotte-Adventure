@@ -69,6 +69,7 @@ const room = (): RoomState => ({
       blocksMovement: true,
     },
   ],
+  enemyTurnRoster: [],
   activeHeroId: "h",
   phase: "heroes-turn",
   turn: 1,
