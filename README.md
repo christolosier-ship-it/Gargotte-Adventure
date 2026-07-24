@@ -13,7 +13,9 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 - **Sprint 2** : plateau isométrique livré ;
 - **Sprint 3.1** : spawn déterministe livré par la PR #35 ;
 - **Sprint 3.2** : Brouhaha 0 à 12 livré par la PR #37 ;
-- **Sprint 3.3** : objets interactifs livrés par la PR #43.
+- **Sprint 3.3** : objets interactifs livrés par la PR #43 ;
+- **Sprint 3.4** : réactions en chaîne livrées par la PR #45 ;
+- **Sprint 3.5** : prochaine étape, renforts déclenchés par le Brouhaha.
 
 La version stable permet de :
 
@@ -21,39 +23,49 @@ La version stable permet de :
 - jouer une salle tactique 8 × 4 ;
 - déplacer, attaquer et résoudre une IA déterministe ;
 - gagner ou perdre la salle ;
-- instancier des renforts avec des identifiants reproductibles ;
+- instancier des renforts scriptés avec des identifiants reproductibles ;
 - faire évoluer une jauge de Brouhaha de 0 à 12 ;
 - interagir avec tables, tonneaux, grilles, torches et piliers ;
-- produire automatiquement du Brouhaha depuis les interactions bruyantes ;
-- prendre en compte l'état du décor dans déplacement, spawn et ligne de vue ;
+- pousser certains objets et propager des réactions déclarées par la salle ;
+- appliquer des transitions, déplacements, dégâts et demandes de Brouhaha en cascade ;
+- conserver une causalité persistante et interrompre les cycles explicitement ;
+- prendre en compte le décor dans le déplacement, le spawn et la ligne de vue ;
 - sauvegarder et reprendre exactement la salle dans IndexedDB ;
 - jouer au clavier, à la souris ou sur écran tactile en paysage ;
-- utiliser un plateau PixiJS avec caméra responsive ;
 - rester jouable grâce aux formes de repli lorsqu'un asset manque.
 
 Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, statistiques, compétences et une partie du bestiaire restent provisoires.
 
-## Livraison Sprint 3.3
+## Livraison Sprint 3.4
 
-La PR #43 livre :
+La PR #45, fusionnée par squash au commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`, livre :
 
-- un catalogue d'objets Bastognac versionné ;
-- la séparation entre définition éditoriale et instance runtime ;
-- des états et transitions propres à chaque famille ;
-- une interaction adjacente coûtant une action ;
-- des demandes idempotentes et refus sans mutation ;
-- le Brouhaha automatique pour le tonneau brisé et le pilier fissuré ;
-- l'ouverture et la fermeture contrôlée d'une grille ;
-- le rendu isométrique, le clic direct et les commandes accessibles ;
-- la sauvegarde tactique version 4 ;
-- les migrations depuis les versions 1 à 3 ;
-- les tests moteur, contenu, sauvegarde et Playwright desktop/mobile.
+- la poussée déterministe d'objets selon la position logique du héros ;
+- un graphe de réactions déclaré par salle ;
+- une propagation FIFO stable des transitions, déplacements, dégâts et demandes de Brouhaha ;
+- une causalité explicite depuis l'interaction racine jusqu'à chaque conséquence ;
+- un historique persistant avec identifiants monotones ;
+- des garde-fous contre les cycles et les propagations excessives ;
+- la sauvegarde tactique version 5 et les migrations depuis les versions 1 à 4 ;
+- un scénario pilote Bastognac validé sur bureau et mobile paysage.
 
-Les réactions en chaîne, dégâts de zone, poussées et renforts automatiques restent réservés aux phases suivantes.
-
-La prochaine phase est le **Sprint 3.4, réactions en chaîne**.
+Aucun renfort n'est encore déclenché automatiquement. Le Sprint 3.5 reliera les franchissements de seuil du Brouhaha au moteur de spawn existant.
 
 Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
+
+## Prochaine étape : Sprint 3.5
+
+Le cadrage prévoit :
+
+- des règles de seuil déclarées par salle ;
+- un déclenchement uniquement lors d'un franchissement montant ;
+- des `SpawnRequest` déterministes ;
+- des limites d'activation persistées ;
+- des succès totaux, partiels ou refus expliqués ;
+- une victoire calculée après les renforts de la résolution courante ;
+- une sauvegarde sans déclenchement rétroactif après migration.
+
+Voir [Renforts déclenchés par le Brouhaha](docs/architecture/brouhaha-reinforcements.md).
 
 ## Génération future du donjon
 
@@ -87,14 +99,14 @@ Le générateur compose une rencontre, puis le moteur de spawn crée les instanc
 
 ```text
 apps/game                    composition de la PWA et orchestration
-packages/engine              moteur tactique, spawn, Brouhaha et objets
+packages/engine              moteur tactique, spawn, Brouhaha, objets et réactions
 packages/content-schema      validation Zod du contenu
 packages/renderer            projection, assets, picking et profondeur PixiJS
 packages/ui                  menus, HUD et commandes accessibles
 packages/save                sauvegardes IndexedDB versionnées et migrations
 packages/common              types et utilitaires partagés
 packages/audio               fondation audio non connectée à la boucle
-content/bastognac            donjon, créatures, effets et objets pilotes
+content/bastognac            donjon, créatures, effets, objets et salle pilote
 design/isometric             tokens et gabarits graphiques
 apps/game/public/assets      exports runtime SVG et WebP
 tools/validators             validation du dépôt, contenu et assets
@@ -143,8 +155,10 @@ npm run test:e2e
 - [Moteur de spawn](docs/architecture/spawn-engine.md)
 - [Moteur de Brouhaha](docs/architecture/brouhaha.md)
 - [Objets interactifs](docs/architecture/interactable-objects.md)
+- [Réactions en chaîne](docs/architecture/chain-reactions.md)
+- [Renforts de Brouhaha, cadrage Sprint 3.5](docs/architecture/brouhaha-reinforcements.md)
 - [Suivi du Sprint 3](docs/sprints/sprint-3.md)
-- [Audit Sprint 3.3](docs/audits/sprint-3-3-interactable-objects.md)
+- [Audit Sprint 3.4](docs/audits/sprint-3-4-chain-reactions.md)
 - [Décisions d'architecture](docs/adr/README.md)
 - [Contribution](CONTRIBUTING.md)
 
