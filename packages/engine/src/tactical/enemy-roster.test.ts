@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { runEnemyTurn } from "./enemy-ai";
 import { createRoomState } from "./room-state";
 import { endHeroesTurn, finishEnemyTurn } from "./turn-machine";
 import type { CreatureDefinition } from "./types";
@@ -43,6 +44,20 @@ const room = () =>
   });
 
 describe("roster du tour ennemi", () => {
+  it("conserve un roster vivant pour un appel direct sans roster prérempli", () => {
+    const direct = runEnemyTurn({
+      ...room(),
+      phase: "enemy-turn",
+      enemyTurnRoster: [],
+    });
+
+    expect(
+      direct.events
+        .filter((event) => event.type === "enemy-decision")
+        .map((event) => event.enemyId),
+    ).toEqual(["ancien"]);
+  });
+
   it("ignore jusqu'au prochain tour un ennemi ajouté après l'ouverture", () => {
     const opened = endHeroesTurn(room());
     expect(opened.ok).toBe(true);
