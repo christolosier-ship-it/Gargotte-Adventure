@@ -1,7 +1,9 @@
 import { changeBrouhaha, type BrouhahaResult } from "./brouhaha";
+import type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcement-types";
 import type { TacticalEvent } from "./events";
 import type {
   BrouhahaEffectDefinition,
+  CreatureDefinition,
   InteractableInteractionDefinition,
   RoomState,
 } from "./types";
@@ -15,6 +17,8 @@ export interface DirectInteractableBrouhahaResult {
 export function applyDirectInteractableBrouhaha(
   state: RoomState,
   effects: readonly BrouhahaEffectDefinition[],
+  creatureDefinitions: readonly CreatureDefinition[],
+  reinforcementDefinitions: readonly BrouhahaReinforcementDefinition[],
   interaction: InteractableInteractionDefinition,
   instanceId: string,
   requestId: string | null,
@@ -30,7 +34,7 @@ export function applyDirectInteractableBrouhaha(
       source: { type: "object", id: instanceId },
       reason: interaction.reason,
     },
-    { dungeonId },
+    { dungeonId, creatureDefinitions, reinforcementDefinitions },
   );
   return { state: result.state, events: result.events, result };
 }
