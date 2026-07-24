@@ -43,7 +43,7 @@ export function createRoomState(input: {
   );
 
   return {
-    version: 5,
+    version: 6,
     scenarioId: input.scenarioId,
     width: input.width,
     height: input.height,
@@ -59,6 +59,8 @@ export function createRoomState(input: {
     processedSpawnRequestIds: [],
     nextEnemyInstanceSequence: 1,
     brouhaha: createInitialBrouhahaState(),
+    nextBrouhahaReinforcementSequence: 1,
+    brouhahaReinforcementHistory: [],
     heroes: input.heroes.map((hero) => ({
       ...hero,
       kind: "hero",
