@@ -5,17 +5,29 @@ import { shortestPath } from "./movement";
 import type { EnemyDecisionExplanation, TacticalEvent } from "./events";
 import type { GridPosition, RoomState } from "./types";
 
-export function runEnemyTurn(state: RoomState): {
+export function createEnemyTurnRoster(state: RoomState): string[] {
+  return state.enemies
+    .filter((candidate) => candidate.alive)
+    .map((enemy) => enemy.id)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+export function runEnemyTurn(
+  state: RoomState,
+  roster: readonly string[] = createEnemyTurnRoster(state),
+): {
   state: RoomState;
   events: TacticalEvent[];
 } {
   let next = state;
   const events: TacticalEvent[] = [];
 
-  for (const enemy of [...next.enemies]
-    .filter((candidate) => candidate.alive)
-    .sort((a, b) => a.id.localeCompare(b.id))) {
+  for (const enemyId of roster) {
     if (next.phase === "victory" || next.phase === "defeat") break;
+    const enemy = next.enemies.find(
+      (candidate) => candidate.id === enemyId && candidate.alive,
+    );
+    if (!enemy) continue;
 
     const decision = chooseEnemyDecision(next, enemy.id);
     events.push({
