@@ -15,7 +15,7 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 - **Sprint 3.2** : Brouhaha 0 à 12 livré par la PR #37 ;
 - **Sprint 3.3** : objets interactifs livrés par la PR #43 ;
 - **Sprint 3.4** : réactions en chaîne livrées par la PR #45 ;
-- **Sprint 3.5** : renforts déclenchés par le Brouhaha livrés par la PR #49 ;
+- **Sprint 3.5** : renforts déclenchés par le Brouhaha livrés par la PR #49 et stabilisés par les PR #53 et #54 ;
 - **Sprint 3.6** : prochaine étape, présentation et finition du Sprint 3.
 
 La version stable permet de :
@@ -33,6 +33,7 @@ La version stable permet de :
 - expliquer les apparitions totales, partielles ou refusées ;
 - respecter des limites d'activation persistantes ;
 - calculer la victoire seulement après les renforts de la résolution courante ;
+- figer le roster de la machine de tour sans casser les appels directs au moteur ennemi ;
 - conserver une causalité complète et interrompre les cycles explicitement ;
 - prendre en compte le décor dans le déplacement, le spawn et la ligne de vue ;
 - sauvegarder et reprendre exactement la salle dans IndexedDB ;
@@ -43,7 +44,7 @@ Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres pers
 
 ## Livraison Sprint 3.5
 
-La PR #49, fusionnée au commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`, livre :
+La PR #49, complétée par les correctifs #53 et #54 et stabilisée au commit `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`, livre :
 
 - des règles `brouhahaReinforcements` déclarées par salle ;
 - un déclenchement uniquement lorsque `previousLevel < threshold <= level` ;
@@ -53,6 +54,7 @@ La PR #49, fusionnée au commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`, livr
 - des résultats réussis, partiels ou refusés historisés ;
 - des limites `maxActivations`, y compris lorsqu'un spawn est refusé ;
 - un roster ennemi figé au début de la phase ;
+- un fallback vivant pour les appels directs à `runEnemyTurn` ;
 - une phase terminale calculée après la résolution complète ;
 - une sauvegarde tactique version 6 avec migrations depuis les versions 1 à 5 ;
 - un scénario pilote Bastognac validant deux seuils sans bouton de spawn manuel.

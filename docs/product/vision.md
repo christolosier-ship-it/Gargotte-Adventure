@@ -28,13 +28,13 @@ Le Sprint 1 valide ce pilier avec une première salle jouable, une ligne de vue 
 
 Le bruit est à la fois une ressource, un risque et un moteur narratif. Les seuils du Brouhaha doivent modifier le plateau de manière visible et mémorable.
 
-Ce pilier constitue le cœur du Sprint 3. Sa première fondation est un moteur de spawn déterministe permettant aux seuils de faire apparaître des renforts explicables et sauvegardables.
+Les Sprints 3.1 à 3.5 ont livré le spawn déterministe, la jauge 0–12, son historique et les renforts déclenchés par franchissement montant. Le Sprint 3.6 doit maintenant rendre ces conséquences plus lisibles et audibles.
 
 ### 3. Décor acteur
 
 Tables, tonneaux, grilles, torches, piliers et autres objets ne sont pas de simples illustrations. Ils créent des choix tactiques, des réactions en chaîne et des catastrophes comiques.
 
-Le décor interactif est construit au Sprint 3 après la fondation de spawn et l’état de Brouhaha.
+Les objets interactifs, leurs poussées et leurs réactions en chaîne déterministes sont livrés. Le Sprint 3.6 porte leur finition visuelle, sonore et textuelle.
 
 ### 4. Personnages immédiatement identifiables
 
@@ -98,17 +98,21 @@ Le **Château de Bastognac** doit valider :
 - déplacement, portée, ligne de vue et combat ;
 - première IA déterministe ;
 - victoire et défaite de salle ;
-- sauvegarde et reprise ;
+- sauvegarde et reprise tactique versionnée ;
 - plateau isométrique et rotation de contrôle ;
 - pipeline d’assets et fallbacks ;
+- moteur de spawn déterministe et instances multiples ;
+- Brouhaha 0–12, historique et effets par niveau ;
+- tables, tonneaux, grilles, torches et piliers interactifs ;
+- poussées et réactions en chaîne déterministes ;
+- renforts de Brouhaha explicables, limités et persistants ;
+- roster ennemi figé pour la machine de tour avec fallback direct compatible ;
 - tests desktop et mobile paysage ;
 - désendettement structurel avant Sprint 3.
 
 ### Restant
 
-- moteur de spawn et instances multiples ;
-- Brouhaha ;
-- décor interactif ;
+- présentation et finition du Sprint 3.6 ;
 - compétences et rôles définitifs ;
 - bestiaire complet ;
 - génération complète des salles et étages ;

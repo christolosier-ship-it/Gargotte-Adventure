@@ -90,7 +90,7 @@ Livré par la PR #45, commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` :
 
 ### Sprint 3.5 : renforts de Brouhaha ✅
 
-Livré par la PR #49, commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac` :
+Livré par la PR #49 puis stabilisé par les PR #53 et #54, commit final `ecc933cf4c05bf0426d2198c92e748d2052ecdd3` :
 
 - règles de renfort déclarées par salle ;
 - déclenchement uniquement lors d'un franchissement montant ;
@@ -102,6 +102,7 @@ Livré par la PR #49, commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac` :
 - aucune apparition rétroactive lors d'une migration ;
 - victoire calculée après les renforts de la résolution courante ;
 - roster ennemi figé au début de la phase ;
+- fallback vivant conservé pour les appels directs à `runEnemyTurn` ;
 - sauvegarde tactique version 6 et migrations depuis les versions 1 à 5 ;
 - tests unitaires et Playwright bureau/mobile paysage.
 
