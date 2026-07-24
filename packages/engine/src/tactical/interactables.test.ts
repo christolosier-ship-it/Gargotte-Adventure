@@ -290,6 +290,10 @@ describe("objets interactifs déterministes", () => {
         position: { column: 3, row: 1 },
       })),
     };
+    expect(
+      listAvailableInteractableInteractions(current, definitions, "hero"),
+    ).toEqual([]);
+
     const result = interactWithObject(
       current,
       definitions,
