@@ -4,7 +4,7 @@
 
 La structure suit les responsabilités réelles du projet. Aucun dossier vide n'est créé uniquement pour anticiper une fonctionnalité future.
 
-Cette page décrit l'état de `main` après le Sprint 3.4 et distingue les extensions prévues pour le Sprint 3.5.
+Cette page décrit l'état livré par le Sprint 3.5.
 
 ## Arborescence active
 
@@ -35,7 +35,9 @@ Gargotte-Adventure/
 │   ├── content-schema/
 │   │   └── src/
 │   │       ├── index.ts
+│   │       ├── tactical-room.ts
 │   │       ├── brouhaha.ts
+│   │       ├── brouhaha-reinforcements.ts
 │   │       ├── interactables.ts
 │   │       └── chain-reactions.ts
 │   ├── engine/
@@ -43,12 +45,15 @@ Gargotte-Adventure/
 │   │       ├── types.ts
 │   │       ├── spawn.ts
 │   │       ├── brouhaha.ts
+│   │       ├── brouhaha-reinforcements.ts
+│   │       ├── brouhaha-reinforcement-types.ts
 │   │       ├── interactables.ts
 │   │       ├── chain-reactions.ts
+│   │       ├── chain-reaction-actions.ts
 │   │       ├── chain-reaction-types.ts
 │   │       ├── grid.ts
 │   │       ├── combat.ts
-│   │       ├── turns.ts
+│   │       ├── turn-machine.ts
 │   │       ├── enemy-ai.ts
 │   │       └── tests associés
 │   ├── renderer/
@@ -66,6 +71,9 @@ Gargotte-Adventure/
 │   │       ├── schema.ts
 │   │       ├── saved-room-schema.ts
 │   │       ├── room-state-schema.ts
+│   │       ├── brouhaha-reinforcement-schema.ts
+│   │       ├── chain-reaction-schema.ts
+│   │       ├── history-validation.ts
 │   │       └── index.ts
 │   └── ui/
 │       └── src/
@@ -91,7 +99,7 @@ Gargotte-Adventure/
 └── vite.config.ts
 ```
 
-Le dossier racine `public/` n'est pas utilisé. La racine publique de Vite est `apps/game/public`.
+La racine publique de Vite est `apps/game/public`. Le dossier racine `public/` n'est pas utilisé.
 
 ## Responsabilités
 
@@ -99,150 +107,92 @@ Le dossier racine `public/` n'est pas utilisé. La racine publique de Vite est `
 
 Point de composition de la PWA.
 
-- `main.ts` importe les styles et déclenche le bootstrap ;
 - `bootstrap.ts` assemble les dépendances ;
-- `bastognac.ts` valide le donjon, la salle, les catalogues et les assets ;
+- `bastognac.ts` valide donjon, salle, catalogues et assets ;
 - `game-controller.ts` orchestre état, moteur, UI, renderer et sauvegarde ;
-- `game-controller-options.ts` isole le contrat de construction du contrôleur ;
-- `brouhaha-controller.ts` transforme les commandes de démonstration en demandes moteur ;
-- `interactable-controller.ts` adapte les interactions d'objets et leurs événements ;
-- `scripted-spawn-controller.ts` traduit un spawn de scénario en `SpawnRequest` ;
-- `event-messages.ts` produit les phrases du journal sans décider des règles ;
-- `game-view.ts` prépare les données de présentation ;
-- `tactical-actions.ts` crée les commandes accessibles dérivées de l'état ;
-- `persistence-controller.ts` restaure la session et sérialise les écritures ;
-- `pwa-install.ts` isole le cycle d'installation ;
-- `theme.css` relie les tokens de conception aux variables du CSS.
+- `brouhaha-controller.ts` adapte commandes et événements de Brouhaha et renfort ;
+- `interactable-controller.ts` adapte les interactions d'objets ;
+- `scripted-spawn-controller.ts` adapte les spawns de scénario ;
+- `event-messages.ts` produit les phrases du journal ;
+- `persistence-controller.ts` restaure et sérialise les écritures.
 
-Les règles de déplacement, combat, IA, spawn, Brouhaha, objet, réaction ou phase ne sont jamais réimplémentées dans cette couche.
+Cette couche transmet les règles de salle et catalogues, mais ne réimplémente aucune règle de déplacement, combat, IA, spawn, Brouhaha, objet, réaction, renfort ou phase.
 
 ### `packages/engine`
 
-Contient la logique de jeu pure : état, grille, déplacement, ligne de vue, combat, tours, IA, spawn, Brouhaha, objets, réactions, événements et erreurs métier.
+Logique de jeu pure : état, grille, déplacement, ligne de vue, combat, tours, IA, spawn, Brouhaha, objets, réactions, renforts, événements et erreurs.
 
-Principaux modules du Sprint 3 :
+Modules principaux du Sprint 3 :
 
-- `spawn.ts` valide les points candidats et crée les instances ;
+- `spawn.ts` valide les points et crée les instances ;
 - `brouhaha.ts` résout niveau, effets et historique ;
-- `interactables.ts` valide les transitions, poussées et coûts d'action ;
-- `chain-reactions.ts` propage les conséquences dans une file FIFO ;
-- `chain-reaction-types.ts` décrit les causes et l'historique persistant ;
-- `types.ts` porte les contrats publics et `RoomState` version 5.
+- `brouhaha-reinforcements.ts` détecte les seuils, applique les limites et délègue au spawn ;
+- `interactables.ts` valide transitions, poussées et coûts ;
+- `chain-reactions.ts` propage la file FIFO et calcule la phase terminale à la fin ;
+- `enemy-ai.ts` capture et exécute un roster ennemi figé ;
+- `types.ts` porte les contrats publics et `RoomState` version 6.
 
 Le moteur n'importe ni PixiJS, ni API navigateur, ni UI, ni IndexedDB.
 
 ### `packages/content-schema`
 
-Définit les schémas Zod du contenu consommé par le jeu :
+Schémas Zod du contenu : manifeste, donjon, créatures, effets de Brouhaha, objets, réactions, salle tactique version 5, points, scripts de spawn et règles de renfort.
 
-- manifeste ;
-- donjon ;
-- catalogue de créatures ;
-- catalogue d'effets de Brouhaha ;
-- catalogue d'objets interactifs ;
-- salle tactique version 4 ;
-- placements initiaux ;
-- points et scripts de spawn ;
-- réactions en chaîne ;
-- positions, unicité, références et collisions.
-
-Le Sprint 3.5 prévoit une salle version 5 ajoutant les règles de renfort. Aucun fichier ou dossier anticipatif n'est créé avant l'implémentation.
+Le schéma contrôle positions, unicité, références, collisions, créatures de renfort, points candidats et limites d'activation.
 
 ### `packages/renderer`
 
-Traduit `RoomState` en plateau PixiJS 2D isométrique.
+Projection isométrique, caméra, picking, profondeur, environnement, combattants, assets et diagnostics E2E.
 
-- `tabletop-renderer.ts` : cycle de vie PixiJS, caméra et reconstruction ;
-- `catalog.ts` : contrat générique d'assets ;
-- `projection.ts` : projection et fit caméra ;
-- `view.ts` : rotation logique et murs physiques ;
-- `scene/diagnostics.ts` : instrumentation E2E des systèmes tactiques ;
-- `scene/environment.ts` : sols, obstacles, murs et objets ;
-- `scene/combatants.ts` : héros, créatures et résolution d'asset par `creatureId` ;
-- `scene/room.ts` : composition d'une image de salle ;
-- `index.ts` : API publique uniquement.
-
-Le renderer ne décide jamais si une interaction, réaction ou apparition est autorisée.
+Le renderer ne décide jamais si une interaction, réaction, règle de seuil ou apparition est autorisée. Les diagnostics de renfort exposent uniquement l'état déjà calculé.
 
 ### `packages/ui`
 
-Composants DOM accessibles : template, contrats, sélection des héros, HUD, boutons, journal et mise à jour de la coque.
-
-Les commandes tactiques variables restent dans l'application, car elles traduisent un état moteur en intentions utilisateur sans porter la règle métier.
+Composants DOM accessibles : template, sélection des héros, HUD, boutons, journal et mise à jour de la coque.
 
 ### `packages/save`
 
 Persistance IndexedDB et validation profonde :
 
-- état général de l'application ;
-- salle tactique version 5 ;
-- héros, ennemis, objets et références éditoriales ;
+- salle tactique version 6 ;
+- héros, ennemis, objets et références ;
 - points et demandes de spawn ;
 - Brouhaha et historique ;
-- interactions d'objets et séquence ;
-- réactions en chaîne, causalité et séquence ;
+- réactions et causalité ;
+- activations, résultats et séquence des renforts ;
 - héros sélectionnés ;
-- migrations depuis les versions 1 à 4 ;
-- rejet des données incompatibles ou corrompues ;
-- connexion IndexedDB réutilisée.
+- migrations depuis les versions 1 à 5 ;
+- rejet des données incompatibles ou corrompues.
 
-Le Sprint 3.5 prévoit une version 6 pour l'historique des renforts. La migration ne devra déclencher aucune règle runtime.
+Les schémas d'historique sont isolés et la validation des séquences est mutualisée. Une migration ne déclenche aucune règle runtime.
 
 ### `packages/common`
 
-Socle minimal partagé : label de build et utilitaires génériques.
-
-Les séquences métier restent dans `RoomState`. Elles ne dépendent pas d'un identifiant créé depuis l'heure ou un UUID.
+Label de build et utilitaires génériques. Les séquences métier restent dans `RoomState` et ne dépendent pas de l'heure ou d'un UUID.
 
 ### `packages/audio`
 
-Fondation inactive de réglages audio. Elle ne possède aucun consommateur applicatif et ne charge aucun média.
+Fondation inactive de réglages audio, sans média ni consommateur applicatif.
 
 ### `content/bastognac`
 
-Contenu du vertical slice :
+Contenu du vertical slice : donjon, créatures, effets, objets et salle pilote.
 
-- `manifest.json` référence tous les fichiers du paquet ;
-- `dungeon.json` décrit le donjon et conserve le placeholder historique `floorBudgets` ;
-- `creatures.json` contient le catalogue pilote ;
-- `brouhaha-effects.json` contient les effets universels et Bastognac ;
-- `interactables.json` contient les cinq familles d'objets ;
-- `sprint-1-room.json` décrit la salle, les placements, réactions, points et spawn de contrôle.
-
-Ce dossier ne contient jamais l'état mutable d'une partie.
+`sprint-1-room.json` décrit les placements, réactions, points, spawn de contrôle et deux règles pilotes de renfort. Ce dossier ne contient jamais l'état mutable d'une partie.
 
 ### `tools/validators`
 
-Validation TypeScript hors bundle du jeu :
-
-- paquet Bastognac ;
-- catalogues et références ;
-- placements, scripts et réactions ;
-- manifeste runtime ;
-- chemins, formats, dimensions et budgets d'assets.
+Valide le paquet Bastognac, les catalogues, références, placements, scripts, réactions, renforts, manifeste runtime et budgets d'assets.
 
 ### `tools/validate_repository.py`
 
-Garde-fous transversaux :
-
-- fichiers requis ;
-- UTF-8 et fins de ligne ;
-- motifs de secrets ;
-- assets runtime ;
-- frontières et cycles de packages ;
-- taille des modules ;
-- neutralité du renderer ;
-- unicité de la racine publique ;
-- cohérence des tokens ;
-- complétude de l'index documentaire.
+Contrôle fichiers requis, UTF-8, secrets, assets, frontières de packages, cycles, taille des modules, neutralité du renderer, racine publique, tokens et index documentaire.
 
 ### `tests/e2e`
 
-Parcours Playwright sur le build de production, en Chromium desktop et mobile paysage.
+Parcours Playwright sur le build de production, Chromium desktop et mobile paysage.
 
-Les helpers centralisent lecture de scène, conversion logique-écran, clic ou toucher, combattants, objets, points de spawn, Brouhaha, réactions et statuts d'assets.
-
-Les scénarios couvrent la boucle tactique, les apparitions, les interactions, les réactions en chaîne, la sauvegarde et la reprise.
+Les helpers centralisent scène, conversion logique-écran, combattants, objets, points de spawn, Brouhaha, réactions, renforts et assets.
 
 ## Dépendances autorisées
 
@@ -263,7 +213,7 @@ engine   ─► common
 
 `content-schema`, `common` et `audio` ne dépendent d'aucun autre package Gargotte. Aucun cycle n'est autorisé.
 
-Gargottex n'est pas une dépendance du dépôt. Son code peut être étudié en lecture seule, mais il n'est ni importé, ni sous-module, ni package npm de Gargotte Adventure.
+Gargottex n'est pas une dépendance. Son code peut être étudié en lecture seule, mais il n'est ni importé, ni sous-module, ni package npm.
 
 ## Limites de taille
 
@@ -271,72 +221,27 @@ Gargottex n'est pas une dépendance du dépôt. Son code peut être étudié en 
 - `packages/renderer/src/index.ts` : 120 lignes maximum ;
 - autre module TypeScript de production : 350 lignes maximum.
 
-Une limite dépassée conduit à extraire une responsabilité stable, pas à augmenter silencieusement le seuil.
-
-La future politique de renfort devra être isolée dans un module dédié, au lieu d'alourdir `brouhaha.ts`, `spawn.ts` ou `game-controller.ts`.
-
-## Extension prévue du Sprint 3.5
-
-Structure indicative, à créer seulement pendant l'implémentation :
-
-```text
-packages/engine/src/tactical/
-├── brouhaha-reinforcements.ts
-├── brouhaha-reinforcement-types.ts
-└── brouhaha-reinforcements.test.ts
-
-packages/content-schema/src/
-└── brouhaha-reinforcements.ts
-```
-
-Responsabilités :
-
-- détection des franchissements montants ;
-- ordre stable des règles ;
-- limites d'activation ;
-- création des `SpawnRequest` ;
-- historique persistant ;
-- événements de renfort ;
-- aucune logique d'occupation dupliquée hors du moteur de spawn.
+Une limite dépassée conduit à extraire une responsabilité stable. La politique de renfort et ses contrats ont ainsi été isolés au lieu d'alourdir `brouhaha.ts`, `spawn.ts` ou `game-controller.ts`.
 
 ## Extension cible du Sprint 5
 
-La génération complète mérite une frontière distincte du moteur tactique, car elle produit des plans avant l'instanciation d'une salle.
+La génération complète mérite un paquet distinct produisant des plans avant l'instanciation : donjon, étages, géométrie, rencontres, validation et types.
 
-Structure indicative :
-
-```text
-packages/generator/
-└── src/
-    ├── dungeon-generator.ts
-    ├── floor-generator.ts
-    ├── room-geometry-generator.ts
-    ├── encounter-generator.ts
-    ├── validation.ts
-    ├── types.ts
-    └── index.ts
-```
-
-Le générateur de rencontre utilisera le budget propre à chaque salle pour produire des plans ou `SpawnRequest` initiales. Le moteur de spawn restera l'exécutant des demandes.
+Le générateur de rencontre utilisera le budget propre à chaque salle pour produire des plans ou `SpawnRequest` initiales. Le moteur de spawn restera l'exécutant.
 
 ## Budget de menace
 
-Le budget de menace appartient à `RoomTemplate` ou `EncounterGenerationRequest`.
+Le budget appartient à une salle ou une demande de génération de rencontre. Il n'est pas stocké comme un total unique d'étage.
 
-Il n'est pas stocké comme un total unique consommé à l'échelle du `FloorPlan`. Un étage peut définir une courbe attribuant des budgets à ses salles, mais chaque rencontre est calculée et validée séparément.
-
-Les renforts du Sprint 3.5 ne lisent ni ne dépensent automatiquement ce budget.
+Les renforts ne lisent ni ne dépensent automatiquement ce budget.
 
 ## Nommage
 
-- dossiers et fichiers techniques : `kebab-case` ;
+- dossiers et fichiers : `kebab-case` ;
 - types et classes : `PascalCase` ;
 - fonctions et variables : `camelCase` ;
-- identifiants de contenu : minuscules avec tirets ;
-- identifiants d'instance : stables, uniques et distincts des identifiants de contenu ;
-- versions de schéma : entiers croissants ;
-- branches : `sprint-N/sujet`, `feature/sujet`, `fix/sujet`, `refactor/sujet` ou `docs/sujet`.
-
-## Fichiers générés
-
-Chaque paquet généré doit indiquer source, date, version de schéma, empreinte et outil utilisé. Les sources humaines ne sont jamais écrasées automatiquement.
+- identifiants de contenu : slugs ASCII en minuscules ;
+- chemins d'assets : relatifs à `apps/game/public` ;
+- documents de sprint : `sprint-N.md` ;
+- audits : `docs/audits/<sujet>.md` ;
+- ADR : `docs/adr/NNNN-<sujet>.md`.
