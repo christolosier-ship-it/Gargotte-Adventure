@@ -2,40 +2,36 @@
 
 ## Statut
 
-- Cible : Sprint 3.4
-- État : livré dans `main`
-- Issue : #44, clôturée
-- Pull Request : #45, fusionnée
-- Commit de fusion : `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`
+- Cible initiale : Sprint 3.4
+- État : livré, raccordé aux renforts du Sprint 3.5
+- Issue initiale : #44, clôturée
+- Pull Request initiale : #45, fusionnée
+- Commit initial : `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`
 
 ## Objet
 
-Le Sprint 3.4 étend les objets interactifs du Sprint 3.3 avec une propagation déterministe de conséquences. Une interaction directe peut déplacer un objet, changer son état, déclencher d'autres transitions, appliquer des dégâts et produire plusieurs demandes de Brouhaha.
+Le moteur propage de façon déterministe les conséquences d'une interaction : déplacement d'objet, transition, dégâts et demandes de Brouhaha.
 
-Le moteur reste autoritaire. Le renderer affiche l'état reçu et l'interface propose seulement les commandes calculées par le moteur.
+Le renderer affiche l'état reçu. L'interface propose uniquement les commandes calculées par le moteur.
 
 ## Modèle de contenu
 
-Une salle tactique `schemaVersion: 4` peut déclarer une liste `chainReactions`.
+Une salle tactique `schemaVersion: 5` peut déclarer une liste `chainReactions`.
 
-Chaque réaction possède :
-
-- un identifiant stable ;
-- un déclencheur `state-entered` ou `moved` ;
-- une ou plusieurs actions exécutées dans l'ordre déclaré.
+Chaque réaction possède un identifiant stable, un déclencheur `state-entered` ou `moved`, et une ou plusieurs actions exécutées dans l'ordre déclaré.
 
 Actions disponibles :
 
-- `transition` : applique une interaction d'objet sans coût d'action héroïque ;
-- `move` : déplace un objet d'une case orthogonale si la destination est libre ;
-- `damage` : inflige des dégâts fixes autour d'un objet centre ;
-- `brouhaha` : soumet une demande de Brouhaha ordinaire au moteur dédié.
+- `transition` ;
+- `move` ;
+- `damage` ;
+- `brouhaha`.
 
 Les références aux instances, interactions et positions sont contrôlées avant le build.
 
 ## Poussée directe
 
-Une interaction d'objet peut déclarer :
+Une interaction peut déclarer :
 
 ```json
 {
@@ -43,80 +39,85 @@ Une interaction d'objet peut déclarer :
 }
 ```
 
-La direction est calculée avec le vecteur allant du héros vers l'objet. La poussée est refusée sans mutation si la destination :
-
-- sort du plateau ;
-- contient un obstacle ;
-- contient un combattant vivant ;
-- contient une autre instance d'objet.
+La direction est calculée du héros vers l'objet. La poussée est refusée sans mutation si la destination sort du plateau ou contient un obstacle, un combattant ou un autre objet.
 
 Le refus ne consomme aucune action et ne marque pas la demande comme traitée.
 
 ## Ordre de résolution
 
-La propagation utilise une file FIFO locale à la demande racine.
+La propagation utilise une file FIFO locale à la demande racine :
 
-1. L'interaction héroïque est validée et appliquée atomiquement.
-2. Son Brouhaha direct éventuel est résolu.
-3. Les déclencheurs racines sont ajoutés à la file dans l'ordre `state-entered`, puis `moved`.
-4. Pour chaque déclencheur, les définitions correspondantes sont triées par identifiant.
-5. Les actions d'une définition sont exécutées dans l'ordre du contenu.
-6. Les nouveaux déclencheurs sont ajoutés à la fin de la file.
+1. interaction héroïque validée et appliquée ;
+2. Brouhaha direct éventuel et ses renforts ;
+3. déclencheurs racines `state-entered`, puis `moved` ;
+4. définitions correspondantes triées par identifiant ;
+5. actions exécutées dans l'ordre du contenu ;
+6. Brouhaha secondaire et renforts résolus immédiatement ;
+7. nouveaux déclencheurs ajoutés à la fin de la file ;
+8. phase terminale calculée après épuisement de la file.
 
-À état, contenu et demande identiques, l'état final, les événements, l'historique et les numéros de séquence sont identiques.
+À entrées identiques, état final, événements, historiques et séquences sont identiques.
 
 ## Causalité
 
 Chaque action propagée reçoit un identifiant monotone `reaction-N` et conserve :
 
-- la demande racine ;
-- la définition de réaction ;
-- le déclencheur et son objet source ;
-- la réaction parente éventuelle ;
-- l'index et le type de l'action ;
-- la cible ;
-- le résultat `applied`, `skipped` ou `guarded` ;
-- les détails explicatifs.
+- demande racine ;
+- définition de réaction ;
+- déclencheur et objet source ;
+- réaction parente ;
+- index et type de l'action ;
+- cible ;
+- résultat `applied`, `skipped` ou `guarded` ;
+- détails explicatifs.
 
-Les événements de changement d'état et de déplacement distinguent une cause `hero-interaction` d'une cause `chain-reaction`.
+Les événements distinguent une cause `hero-interaction` d'une cause `chain-reaction`.
+
+Une demande de Brouhaha issue d'une réaction conserve son identifiant causal. Les événements de renfort conservent ensuite cette demande comme racine.
 
 ## Garde-fous
 
-Une définition ne peut être exécutée qu'une fois dans une propagation racine. Si elle est rencontrée de nouveau, le moteur enregistre `cycle-detected` et n'exécute pas ses actions.
+Une définition ne peut être exécutée qu'une fois dans une propagation racine. Une nouvelle rencontre enregistre `cycle-detected` sans rejouer ses actions.
 
-Une propagation est également limitée à 32 définitions exécutées. Le dépassement produit `max-steps` et arrête explicitement la chaîne.
+La propagation est limitée à 32 définitions. Le dépassement produit `max-steps` et arrête explicitement la chaîne.
 
-Ces interruptions sont persistées et visibles dans le journal. Elles ne reposent ni sur le temps système, ni sur un UUID, ni sur un hasard implicite.
+Ces interruptions sont persistées et ne reposent ni sur le temps système, ni sur un UUID, ni sur du hasard.
+
+## Phase terminale et renforts
+
+Depuis le Sprint 3.5, les dégâts de réaction ne calculent plus immédiatement la victoire.
+
+La phase terminale est évaluée après toutes les actions, demandes de Brouhaha et apparitions de la résolution racine. Si le dernier ennemi initial est vaincu mais qu'un seuil fait entrer un renfort, la salle reste active.
+
+Les réactions ne choisissent aucun seuil, aucune créature et aucun point. Elles produisent uniquement une demande de Brouhaha ordinaire.
+
+Voir [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
 
 ## Sauvegarde
 
-L'état tactique version 5 ajoute :
+La version 5 a introduit :
 
 - `nextChainReactionSequence` ;
 - `chainReactionHistory`.
 
-Les sauvegardes tactiques versions 1 à 4 sont migrées vers la version 5. Elles reçoivent un historique vide et une prochaine séquence égale à 1, sans inventer de conséquences passées.
+La sauvegarde courante est la version 6. Elle conserve ces champs sans modification et ajoute séparément l'historique des renforts.
+
+Les versions 1 à 5 migrent sans inventer de réactions ni déclencher d'apparitions rétroactives.
 
 ## Validation livrée
 
-Le scénario pilote table → pilier → grille démontre :
+Le scénario table → pilier → grille démontre :
 
-- une poussée ;
-- une transition secondaire ;
-- des dégâts de zone ;
-- l'ouverture d'un passage ;
-- deux demandes de Brouhaha causales ;
-- une reprise exacte ;
-- le même résultat sur Chrome bureau et mobile paysage.
+- poussée ;
+- transition secondaire ;
+- dégâts de zone ;
+- ouverture d'un passage ;
+- deux demandes de Brouhaha ;
+- renfort total puis partiel ;
+- phase terminale calculée à la fin ;
+- reprise exacte ;
+- même résultat sur Chrome bureau et mobile paysage.
 
-Les cycles, la limite maximale et les destinations bloquées sont également testés.
-
-## Frontière avec le Sprint 3.5
-
-Les réactions peuvent produire du Brouhaha, mais elles ne choisissent aucun renfort.
-
-Le Sprint 3.5 observera chaque changement de niveau accepté, détectera les franchissements montants et produira des `SpawnRequest` ordinaires. La politique détaillée se trouve dans [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
-
-Le calcul de victoire devra intervenir après les renforts de la résolution courante afin d'éviter une phase `victory` transitoire avant une apparition.
+Cycles, profondeur maximale, destinations bloquées et scénario où un renfort empêche une victoire prématurée sont également testés.
 
 Gargottex reste une source de contenu en lecture seule et n'est pas modifié par cette mécanique.
