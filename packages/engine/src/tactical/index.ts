@@ -10,6 +10,8 @@ export * from "./chain-reaction-types";
 export * from "./chain-reactions";
 export * from "./spawn";
 export * from "./brouhaha";
+export * from "./brouhaha-reinforcement-types";
+export * from "./brouhaha-reinforcements";
 export * from "./turn-machine";
 export * from "./enemy-ai";
 export * from "./events";
