@@ -1,5 +1,13 @@
 # Réactions en chaîne tactiques
 
+## Statut
+
+- Cible : Sprint 3.4
+- État : livré dans `main`
+- Issue : #44, clôturée
+- Pull Request : #45, fusionnée
+- Commit de fusion : `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`
+
 ## Objet
 
 Le Sprint 3.4 étend les objets interactifs du Sprint 3.3 avec une propagation déterministe de conséquences. Une interaction directe peut déplacer un objet, changer son état, déclencher d'autres transitions, appliquer des dégâts et produire plusieurs demandes de Brouhaha.
@@ -82,15 +90,33 @@ Ces interruptions sont persistées et visibles dans le journal. Elles ne reposen
 
 ## Sauvegarde
 
-L'état tactique passe en version 5 et ajoute :
+L'état tactique version 5 ajoute :
 
 - `nextChainReactionSequence` ;
 - `chainReactionHistory`.
 
 Les sauvegardes tactiques versions 1 à 4 sont migrées vers la version 5. Elles reçoivent un historique vide et une prochaine séquence égale à 1, sans inventer de conséquences passées.
 
-## Frontières
+## Validation livrée
 
-Le Sprint 3.4 ne déclenche aucun renfort automatique. Les réactions peuvent produire du Brouhaha, mais le lien Brouhaha vers apparition appartient au Sprint 3.5.
+Le scénario pilote table → pilier → grille démontre :
 
-Gargottex reste une source de contenu en lecture seule et n'est pas modifié par ce sprint.
+- une poussée ;
+- une transition secondaire ;
+- des dégâts de zone ;
+- l'ouverture d'un passage ;
+- deux demandes de Brouhaha causales ;
+- une reprise exacte ;
+- le même résultat sur Chrome bureau et mobile paysage.
+
+Les cycles, la limite maximale et les destinations bloquées sont également testés.
+
+## Frontière avec le Sprint 3.5
+
+Les réactions peuvent produire du Brouhaha, mais elles ne choisissent aucun renfort.
+
+Le Sprint 3.5 observera chaque changement de niveau accepté, détectera les franchissements montants et produira des `SpawnRequest` ordinaires. La politique détaillée se trouve dans [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
+
+Le calcul de victoire devra intervenir après les renforts de la résolution courante afin d'éviter une phase `victory` transitoire avant une apparition.
+
+Gargottex reste une source de contenu en lecture seule et n'est pas modifié par cette mécanique.

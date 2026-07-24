@@ -1,16 +1,19 @@
 # Audit de livraison du Sprint 3.4
 
 - Date de contrôle : 24 juillet 2026
-- Issue : #44
-- Pull Request : #45
+- Statut final : fusionné dans `main`
+- Issue : #44, clôturée
+- Pull Request : #45, fusionnée par squash
 - Branche : `sprint-3/chain-reactions`
 - Base de départ : `d4d0419903a0695fb736bffb239c35c351c6def7`
 - Commit fonctionnel validé : `665f20e8f82c5546026342db2180625805b0e4c9`
+- HEAD validé avant fusion : `088efdeef3b9b9e15279b8fc434d109a18eac3b4`
+- Commit de fusion : `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`
 - Prochaine étape : Sprint 3.5
 
 ## Conclusion
 
-Le Sprint 3.4 est conforme au périmètre documenté. Le moteur tactique peut pousser des objets, propager des réactions en chaîne dans un ordre reproductible, appliquer des transitions et des dégâts, ouvrir ou bloquer un passage et soumettre plusieurs demandes de Brouhaha dans leur ordre causal.
+Le Sprint 3.4 est conforme au périmètre documenté et fusionné dans `main`. Le moteur tactique peut pousser des objets, propager des réactions en chaîne dans un ordre reproductible, appliquer des transitions et des dégâts, ouvrir ou bloquer un passage et soumettre plusieurs demandes de Brouhaha dans leur ordre causal.
 
 La livraison respecte les frontières d'architecture : aucune règle métier n'a été ajoutée dans l'interface ou le renderer, aucun renfort automatique n'est déclenché avant le Sprint 3.5 et Gargottex n'a pas été modifié.
 
@@ -120,4 +123,6 @@ Le journal visible conserve volontairement une fenêtre courte des événements 
 
 ## Décision de sortie
 
-Le Sprint 3.4 peut être fusionné. Le dépôt est prêt à démarrer le Sprint 3.5, consacré aux renforts déclenchés par les seuils du Brouhaha.
+Le Sprint 3.4 a été fusionné après validation complète. Le dépôt stable au commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` est prêt à démarrer le Sprint 3.5, consacré aux renforts déclenchés par les seuils du Brouhaha.
+
+Le cadrage de l'étape suivante se trouve dans [Renforts déclenchés par le Brouhaha](../architecture/brouhaha-reinforcements.md).

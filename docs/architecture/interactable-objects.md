@@ -2,11 +2,12 @@
 
 ## Statut
 
-- Cible initiale : Sprint 3.3
-- Extension : Sprint 3.4
-- Issue initiale : #42
-- Pull Request initiale : #43
+- Cible initiale : Sprint 3.3, livré
+- Extension Sprint 3.4 : livrée
+- Issue initiale : #42, clôturée
+- Pull Request initiale : #43, fusionnée
 - Réactions en chaîne : [architecture dédiée](chain-reactions.md)
+- Prochaine intégration : [renforts de Brouhaha](brouhaha-reinforcements.md)
 
 ## Responsabilité
 
@@ -14,7 +15,7 @@ Le moteur d'objets transforme une demande explicite d'un héros actif en une tra
 
 Le Sprint 3.4 étend cette frontière avec la poussée d'objets et l'émission de déclencheurs vers un moteur de propagation séparé. Les dégâts de zone, transitions secondaires et demandes de Brouhaha propagées restent résolus hors de l'interface et du renderer.
 
-Le loot et les renforts automatiques restent exclus. Les renforts appartiennent au Sprint 3.5.
+Le loot et les renforts automatiques restent exclus de cette responsabilité. Les renforts appartiennent au Sprint 3.5 et consomment les changements de Brouhaha, jamais les objets directement.
 
 ## Séparation définition et instance
 
@@ -40,7 +41,7 @@ Le contenu de Bastognac place les instances et le moteur calcule leurs conséque
 
 ## Catalogue pilote Bastognac
 
-Le Sprint 3.3 livre cinq familles, étendues par le Sprint 3.4 :
+Les Sprints 3.3 et 3.4 livrent cinq familles :
 
 | Objet              | États pilotes     | Interaction          | Brouhaha |
 | ------------------ | ----------------- | -------------------- | -------- |
@@ -80,7 +81,7 @@ Un refus retourne exactement le même `RoomState` et ne consomme aucune action.
 
 Une transition dont `brouhahaDelta` est non nul produit une demande stable portant l'identifiant `<requestId>-brouhaha`.
 
-Le moteur d'objets ne choisit aucun effet de Brouhaha. Il délègue au moteur livré au Sprint 3.2, puis concatène les événements dans l'ordre causal :
+Le moteur d'objets ne choisit aucun effet de Brouhaha. Il délègue au moteur dédié, puis concatène les événements dans l'ordre causal :
 
 1. demande d'interaction ;
 2. déplacement éventuel de l'objet ;
@@ -90,6 +91,8 @@ Le moteur d'objets ne choisit aucun effet de Brouhaha. Il délègue au moteur li
 6. propagation des réactions secondaires.
 
 Chaque demande de Brouhaha secondaire est soumise au même moteur et conserve son propre identifiant séquentiel.
+
+Au Sprint 3.5, les franchissements de seuil seront observés après chaque demande acceptée. L'objet ne référencera aucune règle de renfort.
 
 ## Déplacement, spawn et ligne de vue
 
@@ -125,10 +128,12 @@ Le Sprint 3.3 a introduit la salle tactique version 4. Le Sprint 3.4 passe l'ét
 
 Les versions 1 à 4 sont migrées avec un historique vide et une séquence initiale à 1. Une ancienne sauvegarde reste donc lisible sans inventer rétroactivement des réactions.
 
+Le Sprint 3.5 ajoutera l'historique des renforts dans une version 6, sans modifier la structure des instances d'objets.
+
 ## Frontière avec les phases suivantes
 
-- Sprint 3.4 : poussée, propagation et réactions en chaîne ordonnées ;
-- Sprint 3.5 : renforts déclenchés par les seuils du Brouhaha ;
+- Sprint 3.4 : poussée, propagation et réactions en chaîne ordonnées, livré ;
+- Sprint 3.5 : renforts déclenchés par les seuils du Brouhaha, cadré ;
 - Sprint 3.6 : retours visuels, audio utile et finition de reprise.
 
 Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
