@@ -1,11 +1,11 @@
 # Audit de livraison du Sprint 3.4
 
-- Date de contrôle : 23 juillet 2026
+- Date de contrôle : 24 juillet 2026
 - Issue : #44
 - Pull Request : #45
 - Branche : `sprint-3/chain-reactions`
 - Base de départ : `d4d0419903a0695fb736bffb239c35c351c6def7`
-- Commit fonctionnel validé : `0bab7d8f487761df7e93475cc706fb78dde933c3`
+- Commit fonctionnel validé : `665f20e8f82c5546026342db2180625805b0e4c9`
 - Prochaine étape : Sprint 3.5
 
 ## Conclusion
@@ -75,7 +75,7 @@ Les contrôles rejettent les historiques dont les identifiants ou séquences son
 
 ### Validate application
 
-Exécution GitHub Actions `30049262620` : succès complet.
+Exécution GitHub Actions `30070552316` : succès complet.
 
 - formatage Prettier ;
 - validation du contenu ;
@@ -90,7 +90,7 @@ Exécution GitHub Actions `30049262620` : succès complet.
 
 ### Repository quality
 
-Exécution GitHub Actions `30049262840` : succès complet.
+Exécution GitHub Actions `30070552367` : succès complet.
 
 - structure du dépôt ;
 - limites de taille des fichiers ;
@@ -107,11 +107,14 @@ Les tests automatisés vérifient notamment :
 - la persistance de l'historique causal ;
 - les migrations versions 1 à 4 ;
 - la corruption des séquences ;
-- le scénario pilote sur desktop et mobile paysage.
+- le scénario pilote sur desktop et mobile paysage ;
+- l'absence d'action de fermeture proposée lorsqu'une grille ouverte est occupée.
 
 ## Écarts et arbitrages
 
-Aucun écart fonctionnel non autorisé n'a été introduit.
+Le contrôle final de la PR a détecté une incohérence mineure entre l'interface et le moteur : la fermeture d'une grille occupée pouvait encore être proposée dans la liste des actions, alors que la résolution la refusait correctement. La disponibilité des actions utilise désormais la même règle de destination que l'exécution, et un test dédié verrouille ce comportement.
+
+Aucun écart fonctionnel non autorisé ne subsiste.
 
 Le journal visible conserve volontairement une fenêtre courte des événements récents. L'ordre causal complet est donc contrôlé par l'historique persistant et les tests unitaires, tandis que le test navigateur vérifie les événements encore visibles et l'état final.
 
