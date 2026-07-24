@@ -20,7 +20,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Moteur de Brouhaha](architecture/brouhaha.md)
 - [Objets interactifs](architecture/interactable-objects.md)
 - [Réactions en chaîne déterministes](architecture/chain-reactions.md)
-- [Renforts déclenchés par le Brouhaha, cadrage Sprint 3.5](architecture/brouhaha-reinforcements.md)
+- [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md)
 - [Décisions d'architecture](adr/README.md)
 - [ADR-0006 : plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 - [ADR-0007 : définitions, instances et spawn déterministe](adr/0007-creature-instances-and-deterministic-spawn.md)
@@ -42,6 +42,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 3.2 : état et effets du Brouhaha](audits/sprint-3-2-brouhaha-state.md)
 - [Sprint 3.3 : objets interactifs](audits/sprint-3-3-interactable-objects.md)
 - [Sprint 3.4 : réactions en chaîne déterministes](audits/sprint-3-4-chain-reactions.md)
+- [Sprint 3.5 : renforts de Brouhaha](audits/sprint-3-5-brouhaha-reinforcements.md)
 
 ## Design et sources externes
 
@@ -86,18 +87,18 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 
 ## État documentaire
 
-Après fusion de la PR #45 et préparation du Sprint 3.5 :
+Après livraison de la PR #49 :
 
-- les Sprints 3.1, 3.2, 3.3 et 3.4 sont fusionnés dans `main` ;
-- le commit stable du Sprint 3.4 est `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` ;
-- les réactions en chaîne sont déclarées par salle et résolues par le moteur ;
-- la poussée, les transitions secondaires, les dégâts et le Brouhaha causal sont documentés ;
-- les cycles et propagations excessives possèdent des garde-fous explicites ;
-- la salle tactique utilise la sauvegarde version 5 ;
-- les migrations depuis les versions 1 à 4 sont documentées ;
-- les renforts automatiques restent non implémentés ;
-- leur cadrage prévoit franchissement montant, idempotence, limites, phase terminale et sauvegarde version 6 ;
+- les Sprints 3.1 à 3.5 sont implémentés ;
+- les renforts sont déclarés par salle et déclenchés uniquement lors d'un franchissement montant ;
+- les règles sont triées par seuil puis identifiant et délèguent au moteur de spawn ;
+- succès total, partiel et refus sont historisés et expliqués ;
+- les activations sont limitées, idempotentes et persistantes ;
+- la phase terminale est calculée après les renforts de la résolution racine ;
+- le roster ennemi est figé au début de la phase ;
+- la salle tactique utilise la sauvegarde version 6 ;
+- les migrations depuis les versions 1 à 5 ne déclenchent aucun renfort rétroactif ;
 - le renderer reste sans règle métier ;
-- l'audit de livraison Sprint 3.4 est indexé ;
-- le compte rendu Google Drive est aligné sur la clôture du Sprint 3.4 et la préparation du Sprint 3.5 ;
+- l'audit de livraison Sprint 3.5 est indexé ;
+- le compte rendu Google Drive doit être aligné lors de la fusion ;
 - Gargottex reste strictement en lecture seule.
