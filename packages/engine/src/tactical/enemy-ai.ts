@@ -14,9 +14,7 @@ export function createEnemyTurnRoster(state: RoomState): string[] {
 
 export function runEnemyTurn(
   state: RoomState,
-  roster: readonly string[] = state.phase === "enemy-turn"
-    ? state.enemyTurnRoster
-    : createEnemyTurnRoster(state),
+  roster: readonly string[] = createEnemyTurnRoster(state),
 ): {
   state: RoomState;
   events: TacticalEvent[];
