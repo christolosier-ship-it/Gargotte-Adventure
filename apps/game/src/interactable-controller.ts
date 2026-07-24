@@ -2,7 +2,9 @@ import {
   interactWithObject,
   listAvailableInteractableInteractions,
   type BrouhahaEffectDefinition,
+  type BrouhahaReinforcementDefinition,
   type ChainReactionDefinition,
+  type CreatureDefinition,
   type InteractableDefinition,
   type InteractableInteractionResult,
   type RoomState,
@@ -38,6 +40,8 @@ export function executeInteractableAction(
   definitions: readonly InteractableDefinition[],
   brouhahaEffects: readonly BrouhahaEffectDefinition[],
   chainReactions: readonly ChainReactionDefinition[],
+  creatureDefinitions: readonly CreatureDefinition[],
+  reinforcementDefinitions: readonly BrouhahaReinforcementDefinition[],
   dungeonId: string,
   interactableInstanceId: string,
   interactionId: string,
@@ -53,7 +57,7 @@ export function executeInteractableAction(
       interactableInstanceId,
       interactionId,
     },
-    { dungeonId },
+    { dungeonId, creatureDefinitions, reinforcementDefinitions },
     chainReactions,
   );
 }
