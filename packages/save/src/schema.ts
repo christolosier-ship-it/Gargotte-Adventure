@@ -2,12 +2,17 @@ import { z } from "zod";
 import type { GameState } from "@gargotte/engine";
 
 export { brouhahaStateSchema } from "./brouhaha-schema";
+export {
+  brouhahaReinforcementHistoryEntrySchema,
+} from "./brouhaha-reinforcement-schema";
+export { chainReactionHistoryEntrySchema } from "./chain-reaction-schema";
 export { interactableInstanceSchema } from "./interactable-schema";
 export {
   legacyRoomStateV1Schema,
   legacyRoomStateV2Schema,
   legacyRoomStateV3Schema,
   legacyRoomStateV4Schema,
+  legacyRoomStateV5Schema,
   roomStateSchema,
 } from "./room-state-schema";
 export {
