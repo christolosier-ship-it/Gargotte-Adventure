@@ -1,3 +1,4 @@
+import type { BrouhahaReinforcementHistoryEntry } from "./brouhaha-reinforcement-types";
 import type { ChainReactionHistoryEntry } from "./chain-reaction-types";
 
 export interface GridPosition {
@@ -241,7 +242,7 @@ export interface BrouhahaRejection {
 }
 
 export interface RoomState {
-  version: 5;
+  version: 6;
   scenarioId: string;
   width: number;
   height: number;
@@ -255,6 +256,8 @@ export interface RoomState {
   processedSpawnRequestIds: string[];
   nextEnemyInstanceSequence: number;
   brouhaha: BrouhahaState;
+  nextBrouhahaReinforcementSequence: number;
+  brouhahaReinforcementHistory: BrouhahaReinforcementHistoryEntry[];
   heroes: HeroState[];
   enemies: EnemyState[];
   activeHeroId: string | null;
