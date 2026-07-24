@@ -77,9 +77,7 @@ export const tacticalRoomSchema = z
     chainReactions: z.array(chainReactionDefinitionSchema),
     spawnPoints: z.array(spawnPointSchema),
     scriptedSpawns: z.array(scriptedSpawnSchema),
-    brouhahaReinforcements: z.array(
-      brouhahaReinforcementDefinitionSchema,
-    ),
+    brouhahaReinforcements: z.array(brouhahaReinforcementDefinitionSchema),
     heroes: z.array(actorSchema).length(4),
     enemies: z.array(initialCreaturePlacementSchema).min(1),
     notes: z.string().min(1),
