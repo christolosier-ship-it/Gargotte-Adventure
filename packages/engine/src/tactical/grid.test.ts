@@ -4,7 +4,7 @@ import { moveCombatant, reachablePositions, shortestPath } from "./movement";
 import type { RoomState } from "./types";
 
 const room = (): RoomState => ({
-  version: 5,
+  version: 6,
   scenarioId: "t",
   width: 4,
   height: 4,
@@ -34,6 +34,8 @@ const room = (): RoomState => ({
     nextResolutionSequence: 1,
     history: [],
   },
+  nextBrouhahaReinforcementSequence: 1,
+  brouhahaReinforcementHistory: [],
   heroes: [
     {
       id: "h",
