@@ -260,6 +260,7 @@ export interface RoomState {
   brouhahaReinforcementHistory: BrouhahaReinforcementHistoryEntry[];
   heroes: HeroState[];
   enemies: EnemyState[];
+  enemyTurnRoster: string[];
   activeHeroId: string | null;
   phase: RoomPhase;
   turn: number;
