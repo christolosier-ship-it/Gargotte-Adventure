@@ -90,7 +90,7 @@ Livré par la PR #45, commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` :
 
 ### Sprint 3.5 : renforts de Brouhaha ✅
 
-Livré par la PR #49 :
+Livré par la PR #49, commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac` :
 
 - règles de renfort déclarées par salle ;
 - déclenchement uniquement lors d'un franchissement montant ;
@@ -105,16 +105,37 @@ Livré par la PR #49 :
 - sauvegarde tactique version 6 et migrations depuis les versions 1 à 5 ;
 - tests unitaires et Playwright bureau/mobile paysage.
 
-Référence : [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md).
+Références :
+
+- [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md) ;
+- [Audit de livraison du Sprint 3.5](audits/sprint-3-5-brouhaha-reinforcements.md).
 
 ### Sprint 3.6 : présentation et finition
 
-- overlays et retours visuels ;
-- premiers effets sonores utiles ;
-- journal enrichi ;
-- reprise de tous les états ;
-- mesures de fluidité ;
-- tests desktop et mobile paysage.
+Objectif : rendre les conséquences déjà calculées plus lisibles, audibles et confortables sans ajouter de règle métier dans le renderer, l'UI ou l'audio.
+
+Périmètre cadré :
+
+- routeur de cues dérivé des événements tactiques ;
+- overlays pour sélection, impacts, Brouhaha, renforts et phase terminale ;
+- premiers sons locaux pour interaction, dégâts, seuil, apparition, victoire et défaite ;
+- respect du volume, du mode muet et des règles d'autoplay ;
+- journal enrichi et regroupement des conséquences d'une même action racine ;
+- reprise immédiate de l'état stable sans rejouer les effets transitoires ;
+- prise en charge de `prefers-reduced-motion` ;
+- contrôle de la croissance des objets PixiJS, listeners, cache d'assets et entrées du journal ;
+- tests unitaires, renderer, UI et Playwright sur bureau et mobile paysage.
+
+Principes verrouillés :
+
+- l'état final et les événements restent la source de vérité ;
+- le temps d'animation n'est jamais sauvegardé ;
+- aucun son ou overlay ne peut modifier `RoomState` ;
+- un asset manquant ne bloque jamais la partie ;
+- aucune optimisation structurelle n'est engagée sans mesure préalable ;
+- aucun appel réseau tiers ou secret n'est ajouté.
+
+Référence : [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md).
 
 **Sortie attendue du Sprint 3 :** le bruit et le décor créent des décisions tactiques et des catastrophes lisibles, tandis que les renforts utilisent un moteur générique et reproductible.
 
@@ -186,9 +207,10 @@ Les renforts de Brouhaha sont des augmentations runtime autorisées par les règ
 5. Brouhaha persistant avant objets qui le produisent ;
 6. objets isolés avant réactions en chaîne ;
 7. réactions ordonnées avant renforts automatiques ;
-8. définitions de créatures stabilisées avant génération massive ;
-9. budget de menace calculé par salle ;
-10. Bastognac complet avant un second donjon ;
-11. données et assets versionnés avant automatisation massive ;
-12. mesures de performance avant WebAssembly ou véritable 3D ;
-13. aucune dépendance à l'API OpenAI pour jouer une partie.
+8. événements stables avant effets de présentation ;
+9. définitions de créatures stabilisées avant génération massive ;
+10. budget de menace calculé par salle ;
+11. Bastognac complet avant un second donjon ;
+12. données et assets versionnés avant automatisation massive ;
+13. mesures de performance avant WebAssembly ou véritable 3D ;
+14. aucune dépendance à l'API OpenAI pour jouer une partie.
