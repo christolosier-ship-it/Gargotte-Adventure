@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { HERO_ACTIONS } from "@gargotte/engine";
-import { brouhahaStateSchema } from "./brouhaha-schema";
 import { brouhahaReinforcementHistoryEntrySchema } from "./brouhaha-reinforcement-schema";
+import { validateReinforcementHistory } from "./brouhaha-reinforcement-history-validation";
+import { brouhahaStateSchema } from "./brouhaha-schema";
 import { chainReactionHistoryEntrySchema } from "./chain-reaction-schema";
+import { validateEnemyTurnRoster } from "./enemy-turn-roster-validation";
 import { validateSequencedHistory } from "./history-validation";
 import { interactableInstanceSchema } from "./interactable-schema";
 
@@ -293,79 +295,6 @@ function validateRoomState(
       code: "custom",
       path: ["activeHeroId"],
       message: "le héros actif doit exister et être vivant",
-    });
-}
-
-function validateReinforcementHistory(
-  room: {
-    nextBrouhahaReinforcementSequence?: number;
-    brouhahaReinforcementHistory?: z.infer<
-      typeof brouhahaReinforcementHistoryEntrySchema
-    >[];
-  },
-  context: z.RefinementCtx,
-): void {
-  const history = room.brouhahaReinforcementHistory ?? [];
-  validateSequencedHistory(
-    history,
-    room.nextBrouhahaReinforcementSequence,
-    "brouhahaReinforcementHistory",
-    "nextBrouhahaReinforcementSequence",
-    "l'historique des renforts",
-    context,
-  );
-  const activations = new Set(
-    history.map(
-      (entry) => `${entry.reinforcementDefinitionId}:${entry.activation}`,
-    ),
-  );
-  const requests = new Set(history.map((entry) => entry.spawnRequestId));
-  if (activations.size !== history.length || requests.size !== history.length)
-    context.addIssue({
-      code: "custom",
-      path: ["brouhahaReinforcementHistory"],
-      message: "les activations et demandes de renfort doivent être uniques",
-    });
-}
-
-function validateEnemyTurnRoster(
-  room: {
-    enemies: { id: string }[];
-    phase: "heroes-turn" | "enemy-turn" | "victory" | "defeat";
-    enemyTurnRoster?: string[];
-  },
-  context: z.RefinementCtx,
-): void {
-  const roster = room.enemyTurnRoster ?? [];
-  validateUniqueRequests(
-    roster,
-    "enemyTurnRoster",
-    "le roster du tour ennemi doit contenir des identifiants uniques",
-    context,
-  );
-
-  const enemyIds = new Set(room.enemies.map((enemy) => enemy.id));
-  for (const enemyId of roster)
-    if (!enemyIds.has(enemyId))
-      context.addIssue({
-        code: "custom",
-        path: ["enemyTurnRoster"],
-        message: `ennemi absent du roster persistant: ${enemyId}`,
-      });
-
-  if (room.phase !== "enemy-turn" && roster.length > 0)
-    context.addIssue({
-      code: "custom",
-      path: ["enemyTurnRoster"],
-      message: "le roster doit être vide hors de la phase enemy-turn",
-    });
-
-  const sorted = [...roster].sort((a, b) => a.localeCompare(b));
-  if (roster.some((enemyId, index) => enemyId !== sorted[index]))
-    context.addIssue({
-      code: "custom",
-      path: ["enemyTurnRoster"],
-      message: "le roster du tour ennemi doit être trié",
     });
 }
 
