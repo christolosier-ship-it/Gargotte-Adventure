@@ -1,8 +1,10 @@
 import {
   changeBrouhaha,
   type BrouhahaEffectDefinition,
+  type BrouhahaReinforcementDefinition,
   type BrouhahaRequest,
   type BrouhahaResult,
+  type CreatureDefinition,
   type RoomState,
   type TacticalEvent,
 } from "@gargotte/engine";
@@ -25,6 +27,8 @@ export const brouhahaControlActions: readonly BrouhahaControlAction[] = [
 export function executeBrouhahaControl(
   room: RoomState,
   effectDefinitions: readonly BrouhahaEffectDefinition[],
+  creatureDefinitions: readonly CreatureDefinition[],
+  reinforcementDefinitions: readonly BrouhahaReinforcementDefinition[],
   dungeonId: string,
   controlId: BrouhahaControlId,
 ): BrouhahaResult {
@@ -32,7 +36,7 @@ export function executeBrouhahaControl(
     room,
     effectDefinitions,
     requestForControl(room, controlId),
-    { dungeonId },
+    { dungeonId, creatureDefinitions, reinforcementDefinitions },
   );
 }
 
@@ -46,6 +50,10 @@ export function describeBrouhahaEvent(event: TacticalEvent): string | null {
       return `Effet ${event.effectIndex + 1}/${event.effectCount}: ${event.effectName} · ${event.effectDescription}`;
     case "brouhaha-change-rejected":
       return `Brouhaha inchangé (${event.reason})${event.details.length ? ` · ${event.details.join(" · ")}` : ""}.`;
+    case "reinforcement-triggered":
+      return `Seuil ${event.threshold} franchi : renfort ${event.reinforcementDefinitionId}, activation ${event.activation}.`;
+    case "reinforcement-resolved":
+      return `Renfort ${event.reinforcementDefinitionId} ${reinforcementLabel(event.result)} · ${event.details.join(" · ")}`;
     default:
       return null;
   }
@@ -87,6 +95,14 @@ function requestForControl(
         reason: "Les héros passent un tour calme",
       };
   }
+}
+
+function reinforcementLabel(
+  result: "succeeded" | "partial" | "rejected",
+): string {
+  if (result === "succeeded") return "réussi";
+  if (result === "partial") return "partiel";
+  return "refusé";
 }
 
 function formatDelta(delta: number): string {
