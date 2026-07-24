@@ -1,3 +1,5 @@
+import type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcement-types";
+import { resolveBrouhahaReinforcements } from "./brouhaha-reinforcements";
 import type { TacticalEvent } from "./events";
 import type {
   BrouhahaEffectDefinition,
@@ -5,6 +7,7 @@ import type {
   BrouhahaRejection,
   BrouhahaRequest,
   BrouhahaState,
+  CreatureDefinition,
   RoomState,
 } from "./types";
 
@@ -13,6 +16,8 @@ export const BROUHAHA_MAX_LEVEL = 12;
 
 export interface BrouhahaContext {
   dungeonId: string;
+  creatureDefinitions?: readonly CreatureDefinition[];
+  reinforcementDefinitions?: readonly BrouhahaReinforcementDefinition[];
 }
 
 export interface BrouhahaResult {
@@ -157,7 +162,23 @@ export function changeBrouhaha(
     })),
   ];
 
-  return { state: nextState, events, effects, rejection: null };
+  const reinforcements = resolveBrouhahaReinforcements(
+    nextState,
+    context.creatureDefinitions ?? [],
+    context.reinforcementDefinitions ?? [],
+    {
+      requestId: request.id,
+      previousLevel: state.brouhaha.level,
+      level: nextLevel,
+    },
+  );
+
+  return {
+    state: reinforcements.state,
+    events: [...events, ...reinforcements.events],
+    effects,
+    rejection: null,
+  };
 }
 
 export function clampBrouhahaLevel(level: number): number {
