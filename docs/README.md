@@ -21,6 +21,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Objets interactifs](architecture/interactable-objects.md)
 - [Réactions en chaîne déterministes](architecture/chain-reactions.md)
 - [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md)
+- [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md)
 - [Décisions d'architecture](adr/README.md)
 - [ADR-0006 : plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 - [ADR-0007 : définitions, instances et spawn déterministe](adr/0007-creature-instances-and-deterministic-spawn.md)
@@ -84,21 +85,23 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 10. Les documents distinguent définition éditoriale, instance runtime et génération.
 11. Toute étude de code Gargottex mentionne son caractère strictement non modifiant.
 12. Une migration de sauvegarde ne doit jamais déclencher rétroactivement une règle runtime.
+13. Un effet de présentation ne doit jamais modifier l'état ou l'ordre des règles métier.
 
 ## État documentaire
 
-Après livraison de la PR #49 :
+Après fusion de la PR #49 et préparation du Sprint 3.6 :
 
 - les Sprints 3.1 à 3.5 sont implémentés ;
+- le Sprint 3.5 est clôturé au commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac` ;
+- l'audit de livraison 3.5 contient les références finales de fusion et de CI ;
 - les renforts sont déclarés par salle et déclenchés uniquement lors d'un franchissement montant ;
-- les règles sont triées par seuil puis identifiant et délèguent au moteur de spawn ;
 - succès total, partiel et refus sont historisés et expliqués ;
-- les activations sont limitées, idempotentes et persistantes ;
-- la phase terminale est calculée après les renforts de la résolution racine ;
-- le roster ennemi est figé au début de la phase ;
 - la salle tactique utilise la sauvegarde version 6 ;
 - les migrations depuis les versions 1 à 5 ne déclenchent aucun renfort rétroactif ;
-- le renderer reste sans règle métier ;
-- l'audit de livraison Sprint 3.5 est indexé ;
-- le compte rendu Google Drive doit être aligné lors de la fusion ;
+- le Sprint 3.6 est cadré comme une couche de présentation dérivée des événements ;
+- overlays, animations, sons et journal ne modifient jamais `RoomState` ;
+- la reprise ne rejoue aucun effet transitoire historique ;
+- les diagnostics du renderer servent de garde-fous de stabilité ;
 - Gargottex reste strictement en lecture seule.
+
+Le présent lot est limité à GitHub. Le relais Google Drive n'est pas modifié par cette mise à jour.

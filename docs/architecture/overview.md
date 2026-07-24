@@ -92,6 +92,27 @@ La politique de renfort est séparée du Brouhaha et du spawn. Elle applique les
 
 Voir [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
 
+## Flux de présentation cible au Sprint 3.6
+
+```text
+RoomState final + événements ordonnés
+                │
+                ▼
+       routeur de présentation
+          ┌─────┼──────────┐
+          ▼     ▼          ▼
+      overlays  audio    journal
+          │     │          │
+          └─────┴──────────┘
+                │
+                ▼
+       expérience lisible
+```
+
+Les cues visuels, audio et textuels sont dérivés de l'état et des événements. Ils ne mutent jamais `RoomState`, ne recalculent aucune règle et ne sont pas rejoués après une reprise.
+
+Voir [Présentation et finition du Sprint 3.6](presentation-and-finishing.md).
+
 ## Flux de génération prévu au Sprint 5
 
 ```text
@@ -164,11 +185,21 @@ Le moteur conserve exclusivement des coordonnées logiques. Les séquences de sp
 - `persistence-controller.ts` sérialise les écritures ;
 - `bastognac.ts` constitue la frontière du donjon.
 
+Le Sprint 3.6 ajoutera une orchestration de cues dans cette couche applicative au lieu d'introduire des décisions métier dans le renderer ou l'audio.
+
 ### Renderer isométrique
 
 `packages/renderer` projette `RoomState` sur un plateau PixiJS : caméra responsive, rotation, picking, profondeur, murs, environnement, objets, combattants, overlays et diagnostics.
 
 Il reçoit un catalogue d'assets et ne décide jamais d'une interaction, réaction, règle de seuil ou apparition.
+
+Le Sprint 3.6 prévoit une couche transitoire dédiée aux effets, annulable et détruite lors d'un nouveau rendu ou d'une reprise.
+
+### Audio
+
+`packages/audio` expose actuellement `AudioDirector`, le volume général et le mode muet. La lecture n'est pas encore connectée à la boucle de jeu.
+
+Le Sprint 3.6 y branchera uniquement des cues locaux issus des événements, avec gestion de l'autoplay, du fallback et du cache.
 
 ### Sauvegardes
 
@@ -186,6 +217,8 @@ La sauvegarde tactique version 6 conserve :
 
 Les versions 1 à 5 sont migrées défensivement. Les données corrompues sont rejetées. La migration n'exécute aucune règle runtime.
 
+Les effets visuels ou sonores transitoires ne justifient pas une nouvelle version tactique et ne sont pas sauvegardés.
+
 ### Tests et plateforme
 
 - Vitest pour moteur, contenu, renderer et sauvegarde ;
@@ -194,6 +227,8 @@ Les versions 1 à 5 sont migrées défensivement. Les données corrompues sont r
 - GitHub Actions pour qualité et validation ;
 - GitHub Pages pour publication et contrôle HTTP.
 
+Le Sprint 3.6 ajoutera des contrôles de cues, mouvement réduit, mute, absence de replay et stabilité des diagnostics.
+
 ## Définitions, instances et plans
 
 - **Définition** : décrit une créature, un objet, un effet, une réaction ou une règle de salle.
@@ -201,6 +236,8 @@ Les versions 1 à 5 sont migrées défensivement. Les données corrompues sont r
 - **Plan généré** : structure à instancier, telle qu'une topologie, une géométrie ou une rencontre.
 
 Ces trois niveaux ne partagent pas le même objet mutable.
+
+Un cue de présentation n'est ni une définition métier, ni une instance tactique, ni un plan généré. Il est transitoire et dérivé.
 
 ## Frontières externes
 
@@ -230,7 +267,7 @@ packages/renderer         projection, scène PixiJS et assets
 packages/ui               interface DOM accessible
 packages/save             persistance, validation et migrations
 packages/common           utilitaires partagés
-packages/audio            fondation inactive
+packages/audio            réglages disponibles, lecture non connectée
 design/isometric          tokens, gabarits et handoff
 content/bastognac         donjon, catalogues et salle pilote
 tools/validators          validation du contenu et du dépôt
@@ -240,7 +277,7 @@ docs                      produit, architecture, audits, ADR et sprints
 
 ## Éléments non encore intégrés
 
-- finition visuelle et audio du Sprint 3.6 ;
+- routeur de cues, finition visuelle et audio du Sprint 3.6 ;
 - importeur complet Gargottex ;
 - catalogue complet Bastognac ;
 - compétences et équilibrage définitifs ;
@@ -253,6 +290,7 @@ docs                      produit, architecture, audits, ADR et sprints
 - état sérialisable et versionné ;
 - règles testables sans navigateur ;
 - rendu indépendant des décisions métier ;
+- effets de présentation sans mutation de l'état ;
 - sauvegardes validées avant utilisation ;
 - packages sans cycles ;
 - modules principaux de taille bornée ;

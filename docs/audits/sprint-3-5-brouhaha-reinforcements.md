@@ -1,16 +1,18 @@
 # Audit de livraison du Sprint 3.5
 
 - Date de contrôle : 24 juillet 2026
-- Issue : #48
-- Pull Request : #49
+- Statut final : fusionné dans `main`
+- Issue : #48, clôturée comme terminée
+- Pull Request : #49, fusionnée par squash
 - Branche : `sprint-3/brouhaha-reinforcements`
 - Base de départ : `66f2d30543c77327c86c460d8be874254719ecd0`
-- HEAD fonctionnel et documentaire validé : `264fae4463dce682a32912ad520ba4776dd4b188`
+- HEAD final validé avant fusion : `709ada30b224cf1923b149256b29511330bc441d`
+- Commit de fusion : `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`
 - Prochaine étape : Sprint 3.6
 
 ## Conclusion
 
-Le Sprint 3.5 respecte entièrement le périmètre de l'issue #48.
+Le Sprint 3.5 respecte entièrement le périmètre de l'issue #48 et est fusionné dans `main`.
 
 Une variation acceptée du Brouhaha peut désormais déclencher une ou plusieurs règles de renfort lors d'un franchissement montant. Chaque activation produit une demande reproductible, déléguée au moteur de spawn existant, puis historisée comme réussite totale, réussite partielle ou refus expliqué.
 
@@ -178,11 +180,11 @@ Magdalena pousse la table :
 
 Ce scénario ne dépend pas du bouton de spawn manuel.
 
-## Validation automatisée
+## Validation automatisée finale
 
 ### Repository quality
 
-Exécution GitHub Actions `30080543433` : succès complet.
+Exécution GitHub Actions `30080935529` : succès complet.
 
 - structure du dépôt ;
 - limites de taille ;
@@ -192,7 +194,7 @@ Exécution GitHub Actions `30080543433` : succès complet.
 
 ### Validate application
 
-Exécution GitHub Actions `30080543369` : succès complet.
+Exécution GitHub Actions `30080935520` : succès complet.
 
 - formatage Prettier ;
 - validation du contenu ;
@@ -254,6 +256,6 @@ Les valeurs des seuils et quantités pilotes restent provisoires et seront équi
 
 ## Décision de sortie
 
-Le Sprint 3.5 peut être fusionné par squash.
+Le Sprint 3.5 a été fusionné par squash le 24 juillet 2026 après validation complète. L'issue #48 est clôturée comme terminée et `main` pointe sur le commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`.
 
-Après fusion de la PR #49 et clôture de l'issue #48, le projet pourra démarrer le Sprint 3.6 consacré à la présentation et à la finition du Sprint 3.
+Le projet peut démarrer le Sprint 3.6 consacré à la présentation et à la finition. Son cadrage se trouve dans [Présentation et finition du Sprint 3.6](../architecture/presentation-and-finishing.md).
