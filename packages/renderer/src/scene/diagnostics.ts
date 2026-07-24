@@ -77,6 +77,12 @@ export function exposeSceneState(
   context.canvas.dataset.nextBrouhahaResolutionSequence = String(
     state.brouhaha.nextResolutionSequence,
   );
+  context.canvas.dataset.brouhahaReinforcementHistory = JSON.stringify(
+    state.brouhahaReinforcementHistory,
+  );
+  context.canvas.dataset.nextBrouhahaReinforcementSequence = String(
+    state.nextBrouhahaReinforcementSequence,
+  );
   context.canvas.dataset.heroes = JSON.stringify(
     state.heroes.map((hero) => ({
       id: hero.id,

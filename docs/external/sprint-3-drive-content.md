@@ -6,18 +6,16 @@ Le cadrage humain et les comptes rendus du Sprint 3 sont conservés dans Google 
 
 ## État du document Drive
 
-Le document suit désormais :
+Le document suit :
 
 - le cadrage initial du Sprint 3 ;
 - la livraison du spawn déterministe 3.1 ;
 - la livraison du Brouhaha 3.2 ;
 - la livraison des objets interactifs 3.3 ;
 - la livraison des réactions en chaîne 3.4 ;
-- la préparation documentaire des renforts de Brouhaha 3.5.
+- le cadrage puis la livraison des renforts de Brouhaha 3.5.
 
-Le Sprint 3.4 est fusionné dans `main` par la PR #45 au commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`.
-
-Le Sprint 3.5 est cadré mais non implémenté.
+La PR #49 livre le Sprint 3.5 et son compte rendu de clôture doit être ajouté au document Drive après fusion, avec le commit final et les exécutions CI validées.
 
 ## Rôle du document Drive
 
@@ -30,7 +28,7 @@ Le Sprint 3.5 est cadré mais non implémenté.
 
 ## Source technique active
 
-Les contrats exécutables, formats, ADR, critères de tests et architectures détaillées restent versionnés dans GitHub :
+Les contrats exécutables, formats, critères de tests et architectures restent versionnés dans GitHub :
 
 - [Roadmap](../roadmap.md) ;
 - [Suivi du Sprint 3](../sprints/sprint-3.md) ;
@@ -38,12 +36,12 @@ Les contrats exécutables, formats, ADR, critères de tests et architectures dé
 - [Architecture du Brouhaha](../architecture/brouhaha.md) ;
 - [Architecture des objets](../architecture/interactable-objects.md) ;
 - [Architecture des réactions](../architecture/chain-reactions.md) ;
-- [Cadrage des renforts de Brouhaha](../architecture/brouhaha-reinforcements.md) ;
-- [Audit de livraison Sprint 3.4](../audits/sprint-3-4-chain-reactions.md) ;
+- [Renforts de Brouhaha](../architecture/brouhaha-reinforcements.md) ;
+- [Audit de livraison Sprint 3.5](../audits/sprint-3-5-brouhaha-reinforcements.md) ;
 - [ADR-0007](../adr/0007-creature-instances-and-deterministic-spawn.md).
 
 ## Frontières
 
 Le document Drive ne remplace pas les fichiers GitHub et n'est pas chargé par la PWA.
 
-Gargottex reste la source de vérité éditoriale consultable en lecture seule. Aucune écriture dans le dépôt Gargottex n'est réalisée par les travaux documentaires de Gargotte Adventure.
+Gargottex reste la source de vérité éditoriale consultable en lecture seule. Aucune écriture dans le dépôt Gargottex n'est réalisée par Gargotte Adventure.

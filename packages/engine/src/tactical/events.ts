@@ -7,6 +7,7 @@ import type {
   SpawnRejectionReason,
   SpawnSource,
 } from "./types";
+import type { BrouhahaReinforcementResult } from "./brouhaha-reinforcement-types";
 import type {
   ChainReactionActionType,
   ChainReactionTriggerDefinition,
@@ -112,6 +113,29 @@ export type TacticalEvent =
       rootRequestId: string;
       reactionDefinitionId: string;
       reason: "cycle-detected" | "max-steps";
+    }
+  | {
+      type: "reinforcement-triggered";
+      reinforcementId: string;
+      reinforcementDefinitionId: string;
+      brouhahaRequestId: string;
+      previousLevel: number;
+      level: number;
+      threshold: number;
+      activation: number;
+      spawnRequestId: string;
+    }
+  | {
+      type: "reinforcement-resolved";
+      reinforcementId: string;
+      reinforcementDefinitionId: string;
+      brouhahaRequestId: string;
+      threshold: number;
+      activation: number;
+      spawnRequestId: string;
+      result: BrouhahaReinforcementResult;
+      createdInstanceIds: string[];
+      details: string[];
     }
   | {
       type: "spawn-requested";

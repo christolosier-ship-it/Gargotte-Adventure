@@ -61,6 +61,11 @@ for (const scripted of room.scriptedSpawns)
     throw new Error(
       `Spawn ${scripted.id}: créature absente ${scripted.creatureId}.`,
     );
+for (const reinforcement of room.brouhahaReinforcements)
+  if (!creatureIds.has(reinforcement.creatureId))
+    throw new Error(
+      `Renfort ${reinforcement.id}: créature absente ${reinforcement.creatureId}.`,
+    );
 
 const interactablesById = new Map(
   interactableCatalog.interactables.map((definition) => [
@@ -171,5 +176,5 @@ if (total > assetBudgets.pilotTotalBytes)
     `Lot pilote 2B.1: poids total ${total} > ${assetBudgets.pilotTotalBytes}.`,
   );
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · ${interactableCatalog.interactables.length} objets · ${room.chainReactions.length} réactions · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · ${interactableCatalog.interactables.length} objets · ${room.chainReactions.length} réactions · ${room.brouhahaReinforcements.length} renforts · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
 );

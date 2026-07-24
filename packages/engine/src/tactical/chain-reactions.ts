@@ -1,6 +1,8 @@
 import { resolveChainReactionAction } from "./chain-reaction-actions";
+import type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcement-types";
 import type { TacticalEvent } from "./events";
 import { samePosition } from "./grid";
+import { withTerminalPhase } from "./room-state";
 import type {
   ChainReactionDefinition,
   ChainReactionHistoryEntry,
@@ -10,6 +12,7 @@ import type {
 } from "./chain-reaction-types";
 import type {
   BrouhahaEffectDefinition,
+  CreatureDefinition,
   InteractableDefinition,
   RoomState,
 } from "./types";
@@ -19,6 +22,8 @@ export const MAX_CHAIN_REACTION_STEPS = 32;
 export interface ChainReactionContext {
   dungeonId: string;
   rootRequestId: string;
+  creatureDefinitions?: readonly CreatureDefinition[];
+  reinforcementDefinitions?: readonly BrouhahaReinforcementDefinition[];
 }
 
 export function resolveChainReactions(
@@ -72,7 +77,12 @@ export function resolveChainReactions(
         state = recorded.state;
         events.push(recorded.event);
         guarded = true;
-        return { state, events, history, guarded };
+        return {
+          state: withTerminalPhase(state),
+          events,
+          history,
+          guarded,
+        };
       }
 
       executed.add(definition.id);
@@ -92,6 +102,8 @@ export function resolveChainReactions(
           state,
           interactableDefinitions,
           brouhahaEffects,
+          context.creatureDefinitions ?? [],
+          context.reinforcementDefinitions ?? [],
           action,
           reactionId,
           context.dungeonId,
@@ -130,7 +142,7 @@ export function resolveChainReactions(
     }
   }
 
-  return { state, events, history, guarded };
+  return { state: withTerminalPhase(state), events, history, guarded };
 }
 
 function triggerMatches(

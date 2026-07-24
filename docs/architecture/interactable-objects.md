@@ -3,45 +3,30 @@
 ## Statut
 
 - Cible initiale : Sprint 3.3, livré
-- Extension Sprint 3.4 : livrée
+- Extension Sprint 3.4 : réactions en chaîne, livrée
+- Extension Sprint 3.5 : renforts de Brouhaha, livrée
 - Issue initiale : #42, clôturée
 - Pull Request initiale : #43, fusionnée
-- Réactions en chaîne : [architecture dédiée](chain-reactions.md)
-- Prochaine intégration : [renforts de Brouhaha](brouhaha-reinforcements.md)
+- Réactions : [architecture dédiée](chain-reactions.md)
+- Renforts : [architecture dédiée](brouhaha-reinforcements.md)
 
 ## Responsabilité
 
-Le moteur d'objets transforme une demande explicite d'un héros actif en une transition d'état du décor, une consommation d'action, des événements explicatifs et, lorsque l'interaction est bruyante, une demande de Brouhaha.
+Le moteur d'objets transforme une demande explicite d'un héros actif en transition de décor, consommation d'action, événements et, lorsque l'interaction est bruyante, demande de Brouhaha.
 
-Le Sprint 3.4 étend cette frontière avec la poussée d'objets et l'émission de déclencheurs vers un moteur de propagation séparé. Les dégâts de zone, transitions secondaires et demandes de Brouhaha propagées restent résolus hors de l'interface et du renderer.
+La poussée et la propagation restent dans les systèmes tactiques dédiés. Les renforts ne sont jamais référencés par un objet : ils observent les changements de niveau du Brouhaha.
 
-Le loot et les renforts automatiques restent exclus de cette responsabilité. Les renforts appartiennent au Sprint 3.5 et consomment les changements de Brouhaha, jamais les objets directement.
+Le loot reste exclu de cette responsabilité.
 
 ## Séparation définition et instance
 
-`InteractableDefinition` décrit un archétype éditorial stable :
+`InteractableDefinition` décrit un archétype stable : identité, famille, états, blocages, transitions, coût de Brouhaha et mouvement direct optionnel.
 
-- identité, nom et famille ;
-- états autorisés ;
-- propriétés de blocage par état ;
-- transitions disponibles ;
-- coût de Brouhaha et raison explicative ;
-- mouvement direct optionnel de type poussée.
+`InteractableInstance` représente un objet présent : identifiant runtime, référence, position, état courant et propriétés de blocage calculées.
 
-`InteractableInstance` représente un objet réellement présent dans une salle :
-
-- identifiant runtime ;
-- référence vers la définition ;
-- position logique ;
-- état courant ;
-- blocage du déplacement ;
-- blocage de la ligne de vue.
-
-Le contenu de Bastognac place les instances et le moteur calcule leurs conséquences. Le renderer ne décide jamais si une transition est légale.
+Le contenu place les instances et le moteur calcule leurs conséquences. Le renderer ne décide jamais si une transition est légale.
 
 ## Catalogue pilote Bastognac
-
-Les Sprints 3.3 et 3.4 livrent cinq familles :
 
 | Objet              | États pilotes     | Interaction          | Brouhaha |
 | ------------------ | ----------------- | -------------------- | -------- |
@@ -55,85 +40,73 @@ Ces objets n'accordent aucun loot direct.
 
 ## Demande d'interaction
 
-Une `InteractableInteractionRequest` contient :
+Une `InteractableInteractionRequest` contient un identifiant idempotent, le héros, l'instance et l'interaction demandée.
 
-- un identifiant idempotent ;
-- le héros demandeur ;
-- l'instance ciblée ;
-- l'interaction demandée.
+La résolution vérifie :
 
-La résolution vérifie dans cet ordre :
-
-1. demande non déjà traitée ;
-2. salle non terminée ;
+1. demande non traitée ;
+2. salle non terminale ;
 3. tour des héros ;
-4. héros vivant et actif ;
-5. action disponible ;
-6. objet et définition présents ;
-7. transition valide depuis l'état courant ;
-8. distance orthogonale égale à une case ;
-9. destination de poussée dans le plateau et libre ;
-10. absence de combattant lorsqu'une transition rend la case bloquante.
+4. héros vivant, actif et disposant d'une action ;
+5. objet, définition et transition présents ;
+6. distance orthogonale d'une case ;
+7. destination valide pour une poussée ;
+8. absence de combattant lorsqu'une transition rend la case bloquante.
 
-Un refus retourne exactement le même `RoomState` et ne consomme aucune action.
+Un refus retourne le même `RoomState` et ne consomme aucune action.
 
-## Intégration au Brouhaha
+## Intégration au Brouhaha et aux renforts
 
-Une transition dont `brouhahaDelta` est non nul produit une demande stable portant l'identifiant `<requestId>-brouhaha`.
+Une transition dont `brouhahaDelta` est non nul produit une demande `<requestId>-brouhaha`.
 
-Le moteur d'objets ne choisit aucun effet de Brouhaha. Il délègue au moteur dédié, puis concatène les événements dans l'ordre causal :
+Le moteur d'objets ne choisit aucun effet, seuil, créature ou point. Il délègue au Brouhaha, qui résout ensuite les règles de seuil franchies.
+
+L'ordre causal est :
 
 1. demande d'interaction ;
-2. déplacement éventuel de l'objet ;
-3. changement d'état de l'objet ;
-4. succès de l'interaction ;
-5. demande de Brouhaha directe ;
-6. propagation des réactions secondaires.
+2. déplacement éventuel ;
+3. changement d'état ;
+4. succès et consommation d'action ;
+5. Brouhaha direct éventuel et renforts associés ;
+6. propagation des réactions secondaires ;
+7. Brouhaha et renforts secondaires ;
+8. phase terminale.
 
-Chaque demande de Brouhaha secondaire est soumise au même moteur et conserve son propre identifiant séquentiel.
-
-Au Sprint 3.5, les franchissements de seuil seront observés après chaque demande acceptée. L'objet ne référencera aucune règle de renfort.
+Le tonneau démontre un renfort au seuil 1. La chaîne table → pilier → grille démontre plusieurs seuils dans une même résolution.
 
 ## Déplacement, spawn et ligne de vue
 
-Les propriétés calculées de l'instance sont utilisées par les règles communes :
-
-- un objet bloquant interdit le déplacement et l'apparition sur sa case ;
+- un objet bloquant interdit déplacement et apparition ;
 - un objet opaque bloque la ligne de vue ;
 - un état ouvert ou brisé peut libérer la case ;
 - fermer une grille sur un combattant est refusé ;
-- pousser un objet sur un obstacle, un combattant ou un autre objet est refusé.
+- pousser un objet sur obstacle, combattant ou objet est refusé.
 
-Les coordonnées restent logiques et indépendantes de la rotation de caméra.
+Les coordonnées restent logiques et indépendantes de la caméra.
 
 ## Interface et renderer
 
-L'application expose les interactions disponibles sous forme de boutons accessibles. Le même contrat est utilisé lorsqu'un joueur sélectionne directement l'objet sur le canvas.
+L'application expose les interactions disponibles sous forme de boutons accessibles. Le même contrat est utilisé lors d'une sélection directe sur le canvas.
 
-Le renderer :
-
-- dessine une forme de repli distincte pour chaque famille ;
-- rend visuellement l'état courant et la position calculée ;
-- utilise un asset WebP lorsqu'une variante existe ;
-- remonte uniquement l'identifiant de l'instance sélectionnée ;
-- expose les diagnostics nécessaires aux tests navigateur.
+Le renderer dessine l'état, utilise les assets disponibles, remonte l'identifiant sélectionné et expose des diagnostics de test. Il ne connaît ni transitions autorisées, ni seuils de renfort.
 
 ## Sauvegarde
 
-Le Sprint 3.3 a introduit la salle tactique version 4. Le Sprint 3.4 passe l'état à la version 5 pour conserver en plus :
+Le Sprint 3.3 a introduit la version 4, le Sprint 3.4 la version 5 et le Sprint 3.5 la version 6.
 
-- la prochaine séquence de réaction ;
-- l'historique causal complet ;
-- les résultats appliqués, ignorés ou interrompus par un garde-fou.
+La version 6 conserve sans modifier la structure des objets :
 
-Les versions 1 à 4 sont migrées avec un historique vide et une séquence initiale à 1. Une ancienne sauvegarde reste donc lisible sans inventer rétroactivement des réactions.
+- prochaine séquence de réaction et historique causal ;
+- prochaine séquence de renfort et historique des activations ;
+- résultats appliqués, ignorés, interrompus, réussis, partiels ou refusés.
 
-Le Sprint 3.5 ajoutera l'historique des renforts dans une version 6, sans modifier la structure des instances d'objets.
+Les versions 1 à 5 migrent avec des structures absentes initialisées sans inventer de réactions ni déclencher de renforts.
 
 ## Frontière avec les phases suivantes
 
-- Sprint 3.4 : poussée, propagation et réactions en chaîne ordonnées, livré ;
-- Sprint 3.5 : renforts déclenchés par les seuils du Brouhaha, cadré ;
-- Sprint 3.6 : retours visuels, audio utile et finition de reprise.
+- Sprint 3.4 : poussée et réactions, livré ;
+- Sprint 3.5 : renforts de seuil, livré ;
+- Sprint 3.6 : retours visuels, audio utile et finition ;
+- Sprint 4 : équilibrage définitif.
 
 Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.

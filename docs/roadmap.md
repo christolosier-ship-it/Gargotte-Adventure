@@ -4,14 +4,14 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d'avancement
 
-| Sprint                                     | Statut      | Résultat principal                                                          |
-| ------------------------------------------ | ----------- | --------------------------------------------------------------------------- |
-| Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac      |
-| Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise                |
-| Sprint 2 : Plateau isométrique             | ✅ Terminé  | Salle jouable en 2D isométrique avec pipeline graphique réutilisable        |
-| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn, Brouhaha, objets et réactions livrés ; renforts automatiques à venir |
-| Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs                  |
-| Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition           |
+| Sprint                                     | Statut      | Résultat principal                                                       |
+| ------------------------------------------ | ----------- | ------------------------------------------------------------------------ |
+| Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac   |
+| Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise             |
+| Sprint 2 : Plateau isométrique             | ✅ Terminé  | Salle jouable en 2D isométrique avec pipeline graphique réutilisable     |
+| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn, Brouhaha, objets, réactions et renforts livrés ; finition à venir |
+| Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs               |
+| Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition        |
 
 ## Sprint 0 : Fondations ✅
 
@@ -88,22 +88,21 @@ Livré par la PR #45, commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` :
 - sauvegarde version 5 et migrations depuis les versions 1 à 4 ;
 - scénario pilote validé sur bureau et mobile paysage.
 
-### Sprint 3.5 : renforts de Brouhaha, prochaine phase
+### Sprint 3.5 : renforts de Brouhaha ✅
 
-Objectif : transformer les franchissements de seuil du Brouhaha en `SpawnRequest` déterministes sans déplacer les règles vers l'UI.
-
-Périmètre cadré :
+Livré par la PR #49 :
 
 - règles de renfort déclarées par salle ;
 - déclenchement uniquement lors d'un franchissement montant ;
 - plusieurs seuils traités par seuil croissant puis identifiant ;
-- limite `maxActivations` persistée par règle ;
+- identifiants déterministes pour les activations et demandes de spawn ;
+- limite `maxActivations` persistante par règle ;
 - sélection ordonnée des points laissée au moteur de spawn ;
-- succès total, partiel ou refus expliqué ;
+- succès total, partiel ou refus expliqué et historisé ;
 - aucune apparition rétroactive lors d'une migration ;
 - victoire calculée après les renforts de la résolution courante ;
-- ennemis créés pendant `enemy-turn` actifs seulement au prochain tour ennemi ;
-- sauvegarde tactique version 6 prévue ;
+- roster ennemi figé au début de la phase ;
+- sauvegarde tactique version 6 et migrations depuis les versions 1 à 5 ;
 - tests unitaires et Playwright bureau/mobile paysage.
 
 Référence : [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md).
@@ -130,7 +129,7 @@ Référence : [Renforts déclenchés par le Brouhaha](architecture/brouhaha-rein
 - intégration progressive des sprites définitifs ;
 - équilibrage du vertical slice.
 
-Les archétypes restent instanciables par le moteur de spawn sans modifier sa frontière. Les valeurs pilotes des renforts du Sprint 3.5 pourront être rééquilibrées ici sans réécrire leur mécanisme.
+Les archétypes restent instanciables par le moteur de spawn sans modifier sa frontière. Les valeurs pilotes des renforts pourront être rééquilibrées ici sans réécrire leur mécanisme.
 
 ## Sprint 5 : donjon complet généré et finition
 

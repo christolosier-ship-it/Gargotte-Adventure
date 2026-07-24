@@ -1,6 +1,5 @@
 import type { ChainReactionActionResolution } from "./chain-reaction-types";
 import { manhattanDistance } from "./grid";
-import { withTerminalPhase } from "./room-state";
 import type { Combatant, RoomState } from "./types";
 
 export function resolveChainReactionDamage(
@@ -57,11 +56,11 @@ export function resolveChainReactionDamage(
       blocksMovement: hp > 0 ? combatant.blocksMovement : false,
     };
   };
-  const nextState = withTerminalPhase({
+  const nextState = {
     ...state,
     heroes: state.heroes.map(updateCombatant),
     enemies: state.enemies.map(updateCombatant),
-  });
+  };
   const events = targets.flatMap((target) => {
     const hp = hpById.get(target.id)!;
     return [

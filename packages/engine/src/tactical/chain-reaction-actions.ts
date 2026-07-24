@@ -1,4 +1,5 @@
 import { changeBrouhaha } from "./brouhaha";
+import type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcement-types";
 import { resolveChainReactionDamage } from "./chain-reaction-damage";
 import type {
   ChainReactionActionDefinition,
@@ -7,6 +8,7 @@ import type {
 import { isObstacle, isWithinBounds, occupantAt, samePosition } from "./grid";
 import type {
   BrouhahaEffectDefinition,
+  CreatureDefinition,
   InteractableDefinition,
   InteractableInstance,
   RoomState,
@@ -16,6 +18,8 @@ export function resolveChainReactionAction(
   state: RoomState,
   definitions: readonly InteractableDefinition[],
   brouhahaEffects: readonly BrouhahaEffectDefinition[],
+  creatureDefinitions: readonly CreatureDefinition[],
+  reinforcementDefinitions: readonly BrouhahaReinforcementDefinition[],
   action: ChainReactionActionDefinition,
   reactionId: string,
   dungeonId: string,
@@ -25,6 +29,8 @@ export function resolveChainReactionAction(
       state,
       definitions,
       brouhahaEffects,
+      creatureDefinitions,
+      reinforcementDefinitions,
       action,
       reactionId,
       dungeonId,
@@ -32,13 +38,23 @@ export function resolveChainReactionAction(
   if (action.type === "move") return resolveMove(state, action, reactionId);
   if (action.type === "damage")
     return resolveChainReactionDamage(state, action, reactionId);
-  return resolveBrouhaha(state, brouhahaEffects, action, reactionId, dungeonId);
+  return resolveBrouhaha(
+    state,
+    brouhahaEffects,
+    creatureDefinitions,
+    reinforcementDefinitions,
+    action,
+    reactionId,
+    dungeonId,
+  );
 }
 
 function resolveTransition(
   state: RoomState,
   definitions: readonly InteractableDefinition[],
   brouhahaEffects: readonly BrouhahaEffectDefinition[],
+  creatureDefinitions: readonly CreatureDefinition[],
+  reinforcementDefinitions: readonly BrouhahaReinforcementDefinition[],
   action: Extract<ChainReactionActionDefinition, { type: "transition" }>,
   reactionId: string,
   dungeonId: string,
@@ -106,7 +122,7 @@ function resolveTransition(
         source: { type: "object", id: instance.id },
         reason: interaction.reason,
       },
-      { dungeonId },
+      { dungeonId, creatureDefinitions, reinforcementDefinitions },
     );
     nextState = brouhaha.state;
     events.push(...brouhaha.events);
@@ -185,6 +201,8 @@ function resolveMove(
 function resolveBrouhaha(
   state: RoomState,
   effects: readonly BrouhahaEffectDefinition[],
+  creatureDefinitions: readonly CreatureDefinition[],
+  reinforcementDefinitions: readonly BrouhahaReinforcementDefinition[],
   action: Extract<ChainReactionActionDefinition, { type: "brouhaha" }>,
   reactionId: string,
   dungeonId: string,
@@ -198,7 +216,7 @@ function resolveBrouhaha(
       source: { type: "object", id: reactionId },
       reason: action.reason,
     },
-    { dungeonId },
+    { dungeonId, creatureDefinitions, reinforcementDefinitions },
   );
   return {
     state: result.state,

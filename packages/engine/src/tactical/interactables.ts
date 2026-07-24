@@ -1,4 +1,5 @@
 import type { BrouhahaResult } from "./brouhaha";
+import type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcement-types";
 import { resolveChainReactions } from "./chain-reactions";
 import type {
   ChainReactionDefinition,
@@ -11,6 +12,7 @@ import { applyDirectInteractableBrouhaha } from "./interactable-brouhaha";
 import { resolveHeroObjectMovement } from "./interactable-movement";
 import type {
   BrouhahaEffectDefinition,
+  CreatureDefinition,
   GridPosition,
   InteractableDefinition,
   InteractableInteractionDefinition,
@@ -22,6 +24,8 @@ import type {
 
 export interface InteractableContext {
   dungeonId: string;
+  creatureDefinitions?: readonly CreatureDefinition[];
+  reinforcementDefinitions?: readonly BrouhahaReinforcementDefinition[];
 }
 
 export interface AvailableInteractableInteraction {
@@ -238,9 +242,13 @@ export function interactWithObject(
     },
   );
 
+  const creatureDefinitions = context.creatureDefinitions ?? [];
+  const reinforcementDefinitions = context.reinforcementDefinitions ?? [];
   const direct = applyDirectInteractableBrouhaha(
     intermediateState,
     brouhahaEffects,
+    creatureDefinitions,
+    reinforcementDefinitions,
     interaction,
     instance.id,
     brouhahaRequestId,
@@ -271,7 +279,12 @@ export function interactWithObject(
     brouhahaEffects,
     reactionDefinitions,
     triggers,
-    { dungeonId: context.dungeonId, rootRequestId: request.id },
+    {
+      dungeonId: context.dungeonId,
+      rootRequestId: request.id,
+      creatureDefinitions,
+      reinforcementDefinitions,
+    },
   );
   return {
     state: chainReactions.state,

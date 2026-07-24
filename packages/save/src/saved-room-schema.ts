@@ -5,6 +5,7 @@ import {
   legacyRoomStateV2Schema,
   legacyRoomStateV3Schema,
   legacyRoomStateV4Schema,
+  legacyRoomStateV5Schema,
   roomStateSchema,
 } from "./room-state-schema";
 
@@ -13,8 +14,18 @@ const idSchema = z.string().min(1);
 export const savedRoomPayloadSchema = z
   .object({
     kind: z.literal("tactical-room"),
-    version: z.literal(5),
+    version: z.literal(6),
     room: roomStateSchema,
+    selectedHeroIds: z.array(idSchema).min(1).max(4),
+  })
+  .strict()
+  .superRefine(validateSelectedHeroes);
+
+const legacySavedRoomPayloadV5Schema = z
+  .object({
+    kind: z.literal("tactical-room"),
+    version: z.literal(5),
+    room: legacyRoomStateV5Schema,
     selectedHeroIds: z.array(idSchema).min(1).max(4),
   })
   .strict()
@@ -84,74 +95,84 @@ function validateSelectedHeroes(
       });
 }
 
-export function parseSavedRoomPayload(value: unknown): {
-  kind: "tactical-room";
-  version: 5;
-  room: RoomState;
-  selectedHeroIds: string[];
-} | null {
+export function parseSavedRoomPayload(
+  value: unknown,
+): ReturnTypePayload | null {
   const current = savedRoomPayloadSchema.safeParse(value);
   if (current.success) return current.data as ReturnTypePayload;
+
+  const legacyV5 = legacySavedRoomPayloadV5Schema.safeParse(value);
+  if (legacyV5.success)
+    return payload(
+      migrateV5(legacyV5.data.room),
+      legacyV5.data.selectedHeroIds,
+    );
 
   const legacyV4 = legacySavedRoomPayloadV4Schema.safeParse(value);
   if (legacyV4.success)
     return payload(
-      migrateV4(legacyV4.data.room),
+      migrateV5(migrateV4(legacyV4.data.room)),
       legacyV4.data.selectedHeroIds,
     );
 
   const legacyV3 = legacySavedRoomPayloadV3Schema.safeParse(value);
   if (legacyV3.success)
     return payload(
-      migrateV4({
-        ...legacyV3.data.room,
-        version: 4,
-        interactables: [],
-        processedInteractableRequestIds: [],
-        nextInteractableInteractionSequence: 1,
-      }),
+      migrateV5(
+        migrateV4({
+          ...legacyV3.data.room,
+          version: 4,
+          interactables: [],
+          processedInteractableRequestIds: [],
+          nextInteractableInteractionSequence: 1,
+        }),
+      ),
       legacyV3.data.selectedHeroIds,
     );
 
   const legacyV2 = legacySavedRoomPayloadV2Schema.safeParse(value);
   if (legacyV2.success)
     return payload(
-      migrateV4({
-        ...legacyV2.data.room,
-        version: 4,
-        brouhaha: createInitialBrouhahaState(),
-        interactables: [],
-        processedInteractableRequestIds: [],
-        nextInteractableInteractionSequence: 1,
-      }),
+      migrateV5(
+        migrateV4({
+          ...legacyV2.data.room,
+          version: 4,
+          brouhaha: createInitialBrouhahaState(),
+          interactables: [],
+          processedInteractableRequestIds: [],
+          nextInteractableInteractionSequence: 1,
+        }),
+      ),
       legacyV2.data.selectedHeroIds,
     );
 
   const legacyV1 = legacySavedRoomPayloadV1Schema.safeParse(value);
   if (!legacyV1.success) return null;
   return payload(
-    migrateV4({
-      ...legacyV1.data.room,
-      version: 4,
-      spawnPoints: [],
-      processedSpawnRequestIds: [],
-      nextEnemyInstanceSequence: 1,
-      brouhaha: createInitialBrouhahaState(),
-      interactables: [],
-      processedInteractableRequestIds: [],
-      nextInteractableInteractionSequence: 1,
-      enemies: legacyV1.data.room.enemies.map((enemy) => ({
-        ...enemy,
-        creatureId: enemy.id,
-      })),
-    }),
+    migrateV5(
+      migrateV4({
+        ...legacyV1.data.room,
+        version: 4,
+        spawnPoints: [],
+        processedSpawnRequestIds: [],
+        nextEnemyInstanceSequence: 1,
+        brouhaha: createInitialBrouhahaState(),
+        interactables: [],
+        processedInteractableRequestIds: [],
+        nextInteractableInteractionSequence: 1,
+        enemies: legacyV1.data.room.enemies.map((enemy) => ({
+          ...enemy,
+          creatureId: enemy.id,
+        })),
+      }),
+    ),
     legacyV1.data.selectedHeroIds,
   );
 }
 
 type ReturnTypePayload = {
   kind: "tactical-room";
-  version: 5;
+  version: 6;
   room: RoomState;
   selectedHeroIds: string[];
 };
@@ -162,17 +183,28 @@ function payload(
 ): ReturnTypePayload {
   return {
     kind: "tactical-room",
-    version: 5,
+    version: 6,
     room,
     selectedHeroIds,
   };
 }
 
-function migrateV4(room: z.infer<typeof legacyRoomStateV4Schema>): RoomState {
+function migrateV4(
+  room: z.infer<typeof legacyRoomStateV4Schema>,
+): z.infer<typeof legacyRoomStateV5Schema> {
   return {
     ...room,
     version: 5,
     nextChainReactionSequence: 1,
     chainReactionHistory: [],
+  };
+}
+
+function migrateV5(room: z.infer<typeof legacyRoomStateV5Schema>): RoomState {
+  return {
+    ...room,
+    version: 6,
+    nextBrouhahaReinforcementSequence: 1,
+    brouhahaReinforcementHistory: [],
   };
 }

@@ -15,7 +15,8 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 - **Sprint 3.2** : Brouhaha 0 à 12 livré par la PR #37 ;
 - **Sprint 3.3** : objets interactifs livrés par la PR #43 ;
 - **Sprint 3.4** : réactions en chaîne livrées par la PR #45 ;
-- **Sprint 3.5** : prochaine étape, renforts déclenchés par le Brouhaha.
+- **Sprint 3.5** : renforts déclenchés par le Brouhaha livrés par la PR #49 ;
+- **Sprint 3.6** : prochaine étape, présentation et finition du Sprint 3.
 
 La version stable permet de :
 
@@ -23,49 +24,53 @@ La version stable permet de :
 - jouer une salle tactique 8 × 4 ;
 - déplacer, attaquer et résoudre une IA déterministe ;
 - gagner ou perdre la salle ;
-- instancier des renforts scriptés avec des identifiants reproductibles ;
+- instancier des créatures avec des identifiants reproductibles ;
 - faire évoluer une jauge de Brouhaha de 0 à 12 ;
 - interagir avec tables, tonneaux, grilles, torches et piliers ;
 - pousser certains objets et propager des réactions déclarées par la salle ;
 - appliquer des transitions, déplacements, dégâts et demandes de Brouhaha en cascade ;
-- conserver une causalité persistante et interrompre les cycles explicitement ;
+- déclencher des renforts lors de franchissements montants de seuil ;
+- expliquer les apparitions totales, partielles ou refusées ;
+- respecter des limites d'activation persistantes ;
+- calculer la victoire seulement après les renforts de la résolution courante ;
+- conserver une causalité complète et interrompre les cycles explicitement ;
 - prendre en compte le décor dans le déplacement, le spawn et la ligne de vue ;
 - sauvegarder et reprendre exactement la salle dans IndexedDB ;
 - jouer au clavier, à la souris ou sur écran tactile en paysage ;
 - rester jouable grâce aux formes de repli lorsqu'un asset manque.
 
-Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, statistiques, compétences et une partie du bestiaire restent provisoires.
+Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, statistiques, compétences, seuils et une partie du bestiaire restent provisoires.
 
-## Livraison Sprint 3.4
+## Livraison Sprint 3.5
 
-La PR #45, fusionnée par squash au commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`, livre :
+La PR #49 livre :
 
-- la poussée déterministe d'objets selon la position logique du héros ;
-- un graphe de réactions déclaré par salle ;
-- une propagation FIFO stable des transitions, déplacements, dégâts et demandes de Brouhaha ;
-- une causalité explicite depuis l'interaction racine jusqu'à chaque conséquence ;
-- un historique persistant avec identifiants monotones ;
-- des garde-fous contre les cycles et les propagations excessives ;
-- la sauvegarde tactique version 5 et les migrations depuis les versions 1 à 4 ;
-- un scénario pilote Bastognac validé sur bureau et mobile paysage.
+- des règles `brouhahaReinforcements` déclarées par salle ;
+- un déclenchement uniquement lorsque `previousLevel < threshold <= level` ;
+- un ordre stable par seuil puis identifiant ;
+- des identifiants d'activation et de `SpawnRequest` déterministes ;
+- une délégation exclusive au moteur de spawn existant ;
+- des résultats réussis, partiels ou refusés historisés ;
+- des limites `maxActivations`, y compris lorsqu'un spawn est refusé ;
+- un roster ennemi figé au début de la phase ;
+- une phase terminale calculée après la résolution complète ;
+- une sauvegarde tactique version 6 avec migrations depuis les versions 1 à 5 ;
+- un scénario pilote Bastognac validant deux seuils sans bouton de spawn manuel.
 
-Aucun renfort n'est encore déclenché automatiquement. Le Sprint 3.5 reliera les franchissements de seuil du Brouhaha au moteur de spawn existant.
-
-Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
-
-## Prochaine étape : Sprint 3.5
-
-Le cadrage prévoit :
-
-- des règles de seuil déclarées par salle ;
-- un déclenchement uniquement lors d'un franchissement montant ;
-- des `SpawnRequest` déterministes ;
-- des limites d'activation persistées ;
-- des succès totaux, partiels ou refus expliqués ;
-- une victoire calculée après les renforts de la résolution courante ;
-- une sauvegarde sans déclenchement rétroactif après migration.
+Le budget de menace n'est ni lu ni dépensé par cette mécanique. Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
 
 Voir [Renforts déclenchés par le Brouhaha](docs/architecture/brouhaha-reinforcements.md).
+
+## Prochaine étape : Sprint 3.6
+
+Le dernier lot du Sprint 3 portera sur :
+
+- les retours visuels et overlays utiles ;
+- les premiers effets sonores ;
+- l'enrichissement du journal ;
+- la reprise de tous les états ;
+- les mesures de fluidité ;
+- les tests desktop et mobile paysage.
 
 ## Génération future du donjon
 
@@ -73,7 +78,7 @@ Le Sprint 5 générera la topologie des cinq étages et la géométrie complète
 
 Chaque salle reçoit son propre budget de menace. **Le budget est calculé et validé par salle, jamais comme un portefeuille global d'étage.**
 
-Le générateur compose une rencontre, puis le moteur de spawn crée les instances.
+Le générateur compose une rencontre, puis le moteur de spawn crée les instances. Les renforts restent une augmentation runtime distincte de la rencontre initiale.
 
 ## Héros disponibles
 
@@ -99,7 +104,7 @@ Le générateur compose une rencontre, puis le moteur de spawn crée les instanc
 
 ```text
 apps/game                    composition de la PWA et orchestration
-packages/engine              moteur tactique, spawn, Brouhaha, objets et réactions
+packages/engine              tactique, spawn, Brouhaha, objets, réactions et renforts
 packages/content-schema      validation Zod du contenu
 packages/renderer            projection, assets, picking et profondeur PixiJS
 packages/ui                  menus, HUD et commandes accessibles
@@ -156,9 +161,9 @@ npm run test:e2e
 - [Moteur de Brouhaha](docs/architecture/brouhaha.md)
 - [Objets interactifs](docs/architecture/interactable-objects.md)
 - [Réactions en chaîne](docs/architecture/chain-reactions.md)
-- [Renforts de Brouhaha, cadrage Sprint 3.5](docs/architecture/brouhaha-reinforcements.md)
+- [Renforts de Brouhaha](docs/architecture/brouhaha-reinforcements.md)
 - [Suivi du Sprint 3](docs/sprints/sprint-3.md)
-- [Audit Sprint 3.4](docs/audits/sprint-3-4-chain-reactions.md)
+- [Audit Sprint 3.5](docs/audits/sprint-3-5-brouhaha-reinforcements.md)
 - [Décisions d'architecture](docs/adr/README.md)
 - [Contribution](CONTRIBUTING.md)
 
