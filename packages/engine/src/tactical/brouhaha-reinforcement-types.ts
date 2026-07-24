@@ -10,10 +10,7 @@ export interface BrouhahaReinforcementDefinition {
   maxActivations: number;
 }
 
-export type BrouhahaReinforcementResult =
-  | "succeeded"
-  | "partial"
-  | "rejected";
+export type BrouhahaReinforcementResult = "succeeded" | "partial" | "rejected";
 
 export interface BrouhahaReinforcementHistoryEntry {
   id: string;
