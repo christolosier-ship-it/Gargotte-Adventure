@@ -108,6 +108,7 @@ const room = (level = 0): RoomState => ({
       blocksMovement: true,
     },
   ],
+  enemyTurnRoster: [],
   activeHeroId: null,
   phase: "heroes-turn",
   turn: 1,
