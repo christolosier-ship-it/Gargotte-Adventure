@@ -75,15 +75,17 @@ interface BrouhahaReinforcementDefinition {
 }
 ```
 
-Contraintes de validation :
+Contraintes de validation du contenu :
 
 - identifiant unique dans la salle ;
 - seuil entier compris entre 1 et 12 ;
 - quantité et `maxActivations` strictement positives ;
 - créature présente dans le catalogue ;
-- points candidats existants, activés par leur état runtime et sans doublon dans la règle ;
+- points candidats référencés par la salle et sans doublon dans la règle ;
 - ordre des points conservé tel qu'il est déclaré ;
 - aucune règle implicite issue du nom, d'un tag ou de la position.
+
+L'activation, l'occupation et la disponibilité courante des points sont contrôlées au runtime par le moteur de spawn.
 
 Les valeurs pilotes servent à valider le moteur. L'équilibrage final des seuils, quantités et archétypes appartient au Sprint 4.
 
