@@ -1,5 +1,5 @@
 {
-  "schemaVersion": 4,
+  "schemaVersion": 5,
   "id": "bastognac-sprint-1-room",
   "name": "Salle d'essai de Bastognac",
   "grid": { "width": 8, "height": 4 },
@@ -103,6 +103,26 @@
       "failureMode": "all-or-nothing"
     }
   ],
+  "brouhahaReinforcements": [
+    {
+      "id": "seuil-1-bricoleur",
+      "threshold": 1,
+      "creatureId": "gobelin-bricoleur",
+      "quantity": 1,
+      "candidateSpawnPointIds": ["renfort-est-haut", "renfort-est-bas"],
+      "failureMode": "all-or-nothing",
+      "maxActivations": 2
+    },
+    {
+      "id": "seuil-2-lance-tout",
+      "threshold": 2,
+      "creatureId": "gobelin-lance-tout",
+      "quantity": 2,
+      "candidateSpawnPointIds": ["renfort-est-haut", "renfort-est-bas"],
+      "failureMode": "partial",
+      "maxActivations": 1
+    }
+  ],
   "heroes": [
     {
       "id": "brunhilda",
@@ -157,5 +177,5 @@
       "position": { "column": 7, "row": 3 }
     }
   ],
-  "notes": "Statistiques provisoires. Spawn, Brouhaha, objets interactifs et réactions en chaîne déterministes du Sprint 3."
+  "notes": "Statistiques et seuils provisoires. Spawn, Brouhaha, objets interactifs, réactions en chaîne et renforts déterministes du Sprint 3."
 }
