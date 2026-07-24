@@ -283,7 +283,7 @@ describe("objets interactifs déterministes", () => {
       ),
       heroes: room().heroes.map((hero) => ({
         ...hero,
-        position: { column: 2, row: 1 },
+        position: { column: 3, row: 0 },
       })),
       enemies: room().enemies.map((enemy) => ({
         ...enemy,
