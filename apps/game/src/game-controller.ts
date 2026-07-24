@@ -261,6 +261,8 @@ export class GameController {
         this.interactableDefinitions,
         this.brouhahaEffects,
         this.roomDefinition.chainReactions,
+        this.creatureDefinitions,
+        this.roomDefinition.brouhahaReinforcements,
         this.dungeon.id,
         interactableInstanceId,
         interactionId,
@@ -289,6 +291,8 @@ export class GameController {
       executeBrouhahaControl(
         this.room,
         this.brouhahaEffects,
+        this.creatureDefinitions,
+        this.roomDefinition.brouhahaReinforcements,
         this.dungeon.id,
         controlId,
       ),
