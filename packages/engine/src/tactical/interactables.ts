@@ -76,12 +76,12 @@ export function listAvailableInteractableInteractions(
         );
         return Boolean(
           movement &&
-            canTransitionToState(
-              state,
-              movement.position,
-              definition,
-              interaction,
-            ),
+          canTransitionToState(
+            state,
+            movement.position,
+            definition,
+            interaction,
+          ),
         );
       })
       .map((interaction) => ({
