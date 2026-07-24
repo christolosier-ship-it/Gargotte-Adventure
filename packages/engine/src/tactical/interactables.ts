@@ -62,17 +62,24 @@ export function listAvailableInteractableInteractions(
     if (!definition) return [];
     return definition.interactions
       .filter((interaction) => interaction.fromStateId === instance.stateId)
-      .filter((interaction) =>
-        Boolean(
-          resolveHeroObjectMovement(
-            state,
-            hero,
-            instance,
-            "availability-check",
-            interaction.movement,
-          ),
-        ),
-      )
+      .filter((interaction) => {
+        const movement = resolveHeroObjectMovement(
+          state,
+          hero,
+          instance,
+          "availability-check",
+          interaction.movement,
+        );
+        return Boolean(
+          movement &&
+            canTransitionToState(
+              state,
+              movement.position,
+              definition,
+              interaction,
+            ),
+        );
+      })
       .map((interaction) => ({
         interactableInstanceId: instance.id,
         interactableId: definition.id,
