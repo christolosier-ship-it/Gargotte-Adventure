@@ -9,12 +9,8 @@ export type {
   BrouhahaEffectCatalog,
   BrouhahaEffectDefinition,
 } from "./brouhaha";
-export {
-  brouhahaReinforcementDefinitionSchema,
-} from "./brouhaha-reinforcements";
-export type {
-  BrouhahaReinforcementDefinition,
-} from "./brouhaha-reinforcements";
+export { brouhahaReinforcementDefinitionSchema } from "./brouhaha-reinforcements";
+export type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcements";
 export {
   chainReactionActionSchema,
   chainReactionDefinitionSchema,
