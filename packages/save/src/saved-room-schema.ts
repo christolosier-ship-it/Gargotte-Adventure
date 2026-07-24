@@ -95,7 +95,9 @@ function validateSelectedHeroes(
       });
 }
 
-export function parseSavedRoomPayload(value: unknown): ReturnTypePayload | null {
+export function parseSavedRoomPayload(
+  value: unknown,
+): ReturnTypePayload | null {
   const current = savedRoomPayloadSchema.safeParse(value);
   if (current.success) return current.data as ReturnTypePayload;
 
