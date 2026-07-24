@@ -37,7 +37,7 @@ export function endHeroActivation(
   if (state.activeHeroId !== heroId)
     return err("not-active-hero", "Seul le héros actif peut terminer.");
 
-  let next = {
+  let next: RoomState = {
     ...state,
     activeHeroId: null,
     heroes: state.heroes.map((hero) =>
