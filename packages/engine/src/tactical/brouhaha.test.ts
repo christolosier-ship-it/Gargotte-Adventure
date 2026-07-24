@@ -54,7 +54,7 @@ const effects: BrouhahaEffectDefinition[] = [
 ];
 
 const room = (level = 0): RoomState => ({
-  version: 5,
+  version: 6,
   scenarioId: "test",
   width: 4,
   height: 4,
@@ -73,6 +73,8 @@ const room = (level = 0): RoomState => ({
     nextResolutionSequence: 1,
     history: [],
   },
+  nextBrouhahaReinforcementSequence: 1,
+  brouhahaReinforcementHistory: [],
   heroes: [
     {
       id: "hero",
