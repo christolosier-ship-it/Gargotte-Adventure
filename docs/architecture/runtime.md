@@ -6,53 +6,62 @@
 2. `packages/renderer` initialise PixiJS dans le panneau de plateau.
 3. `packages/save` restaure l'autosauvegarde IndexedDB versionnée.
 4. `packages/engine` reçoit des intentions explicites et produit le nouvel état.
-5. Les réactions en chaîne et demandes de Brouhaha sont résolues dans leur ordre causal.
-6. L'interface et le rendu observent l'état final.
-7. Le nouvel état est sauvegardé localement.
+5. Les réactions, demandes de Brouhaha et renforts sont résolus dans leur ordre causal.
+6. La phase terminale est calculée après la résolution complète.
+7. L'interface et le rendu observent l'état final.
+8. Le nouvel état est sauvegardé localement.
 
-L'application ne réimplémente aucune règle métier. Elle assemble les catalogues, transmet les intentions et traduit les événements pour le journal.
+L'application ne réimplémente aucune règle métier. Elle assemble catalogues et règles, transmet les intentions et traduit les événements.
 
-## Chemin actuel d'une interaction et de ses réactions
+## Chemin d'une interaction complète
 
 ```text
 Interaction héros
       │
       ▼
-validation objet et mouvement éventuel
+validation objet et mouvement
       │
       ▼
-transition de l'objet
+transition directe et Brouhaha éventuel
       │
       ▼
-demande de Brouhaha directe éventuelle
-      │
-      ▼
-file FIFO de réactions en chaîne
-      │
+file FIFO de réactions
       ├─ transitions secondaires
       ├─ déplacements
       ├─ dégâts
-      └─ demandes de Brouhaha ordonnées
+      └─ Brouhaha ordonné
       │
       ▼
-état final + événements + historique
+règles de seuil franchies
+      │
+      ▼
+SpawnRequest déterministes
+      │
+      ▼
+moteur de spawn
+      │
+      ▼
+phase terminale
+      │
+      ▼
+état final + événements + historiques
 ```
 
-Une réaction excessive ou cyclique s'arrête explicitement. Le renderer ne connaît ni le graphe ni les règles de propagation.
+Une réaction excessive ou cyclique s'arrête explicitement. Le renderer ne connaît ni le graphe, ni les seuils, ni les règles d'apparition.
 
-## Chemin actuel d'un spawn
+## Chemin d'un spawn
 
-1. Une règle de scénario produit une `SpawnRequest`.
-2. Le moteur valide la phase, les points candidats, les limites et l'occupation.
+1. Un scénario, une règle de renfort ou un futur générateur produit une `SpawnRequest`.
+2. Le moteur valide phase, définition, points, limites et occupation.
 3. Il crée des `CreatureInstance` avec des identifiants reproductibles.
-4. Il retourne un `SpawnResult` comprenant nouvel état, instances et événements explicatifs.
+4. Il retourne état, instances et événements explicatifs.
 5. Le renderer affiche l'état sans connaître la logique d'apparition.
-6. Le journal explique le succès ou le refus.
-7. La sauvegarde persiste les instances et la séquence d'identifiants.
+6. Le journal explique succès ou refus.
+7. La sauvegarde persiste instances, demandes et séquence.
 
 Une apparition n'est jamais créée directement depuis l'UI ou PixiJS.
 
-## Chemin cible des renforts au Sprint 3.5
+## Chemin des renforts de Brouhaha
 
 ```text
 BrouhahaRequest acceptée
@@ -61,68 +70,74 @@ BrouhahaRequest acceptée
 previousLevel → level
         │
         ▼
-règles dont le seuil est franchi vers le haut
+règles franchies vers le haut
         │
         ▼
 ordre par seuil puis identifiant
         │
         ▼
-SpawnRequest avec source brouhaha
+activation déterministe
+        │
+        ▼
+SpawnRequest source brouhaha
         │
         ▼
 moteur de spawn existant
         │
-        ▼
-succès, apparition partielle ou refus historisé
+        ├─ succès total
+        ├─ succès partiel
+        └─ refus
         │
         ▼
-calcul de victoire ou défaite
+historique de renfort
 ```
 
 La politique de seuil décide pourquoi une demande est créée. Le moteur de spawn décide si elle est réalisable.
 
-Une baisse de niveau ne déclenche rien. Une reprise ou migration ne rejoue aucun seuil ancien. La victoire est calculée après tous les renforts de la résolution courante.
+Une baisse ne déclenche rien. Une reprise ou migration ne rejoue aucun seuil ancien. Une activation refusée est tout de même consommée et historisée.
+
+## Tour ennemi
+
+Le roster est capturé au début de `enemy-turn`. `runEnemyTurn` exécute uniquement ces identifiants.
+
+Un ennemi créé après l'ouverture de ce roster ne joue pas pendant la phase en cours. Il sera inclus au prochain tour ennemi.
 
 ## Chemin cible d'une expédition générée au Sprint 5
 
-1. Une requête de génération fournit donjon, seed et contraintes.
+1. Une requête fournit donjon, seed et contraintes.
 2. Le générateur produit la topologie des cinq étages.
-3. Chaque étage reçoit un graphe de salles connectées.
-4. Chaque salle reçoit une géométrie complète : forme, grille, murs, portes, zones, obstacles structurels et points de spawn.
-5. Chaque salle reçoit son propre budget de menace.
-6. Le générateur de rencontre compose la population initiale de cette salle.
-7. Le moteur de spawn transforme le plan de rencontre en instances runtime.
-8. Le moteur tactique reçoit un `RoomState` valide.
-9. Le renderer projette uniquement cet état validé.
+3. Chaque salle reçoit une géométrie complète et ses points de spawn.
+4. Chaque salle reçoit son propre budget de menace.
+5. Le générateur de rencontre compose sa population initiale.
+6. Le moteur de spawn transforme le plan en instances runtime.
+7. Le moteur tactique reçoit un `RoomState` valide.
+8. Le renderer projette uniquement cet état.
 
-Le budget de menace n'est pas partagé comme un portefeuille global d'étage. Les renforts de Brouhaha constituent une augmentation runtime distincte de la rencontre initiale.
+Le budget de menace n'est pas un portefeuille global d'étage. Les renforts sont une augmentation runtime distincte de la rencontre initiale.
 
-## Persistance actuelle et cible
+## Persistance actuelle
 
-La salle tactique actuelle utilise la sauvegarde version 5. Elle conserve notamment :
+La sauvegarde tactique version 6 conserve notamment :
 
 - Brouhaha, historique et séquence ;
-- objets, interactions traitées et séquence ;
-- réactions en chaîne, historique et séquence ;
-- points de spawn, demandes traitées et séquence d'instances ;
+- objets, interactions et réactions ;
+- points, demandes et séquence de spawn ;
+- historique, résultats et séquence des renforts ;
 - combattants, phase, tour et actions.
 
-Le Sprint 3.5 prévoit une version 6 ajoutant l'historique et la séquence des renforts. Une migration crée des structures vides sans déclencher de règle runtime.
+Les versions 1 à 5 migrent vers la version 6 avec un historique de renfort vide. La migration n'appelle aucune règle runtime.
 
 ## Frontières
 
 - Le moteur n'importe ni DOM, ni PixiJS, ni IndexedDB.
-- Le contenu est validé avant le build et au chargement applicatif.
-- La sauvegarde porte une version de schéma indépendante du contenu.
-- Spawn, Brouhaha, objets et réactions sont déterministes et ne dépendent pas de l'heure.
+- Le contenu est validé avant le build et au chargement.
+- La sauvegarde porte une version indépendante du contenu.
+- Spawn, Brouhaha, objets, réactions et renforts sont déterministes.
 - Le générateur produit des plans, pas des objets PixiJS.
 - Le renderer n'instancie aucune créature métier.
 - La PWA ne contient aucun secret et n'appelle pas OpenAI directement.
-- WebAssembly ne sera ajouté que si un profilage révèle un calcul réellement coûteux.
 - Gargottex reste une source éditoriale consultée en lecture seule.
 
 ## Hors ligne
 
-`vite-plugin-pwa` génère le service worker et précharge les ressources de production. IndexedDB conserve la progression. Le premier chargement nécessite une connexion, les suivants peuvent fonctionner hors ligne.
-
-Les futures règles de renfort, seeds, plans générés, instances et historiques devront être entièrement restaurables sans accès réseau.
+`vite-plugin-pwa` génère le service worker et précharge les ressources de production. IndexedDB conserve la progression. Après un premier chargement connecté, les sessions peuvent fonctionner hors ligne.
