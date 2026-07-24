@@ -13,7 +13,8 @@ export function validateEnemyTurnRoster(
     context.addIssue({
       code: "custom",
       path: ["enemyTurnRoster"],
-      message: "le roster du tour ennemi doit contenir des identifiants uniques",
+      message:
+        "le roster du tour ennemi doit contenir des identifiants uniques",
     });
 
   const enemyIds = new Set(room.enemies.map((enemy) => enemy.id));
