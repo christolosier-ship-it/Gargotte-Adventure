@@ -152,5 +152,7 @@ function reinforcementDetails(
   rejectionDetails: string[],
 ): string[] {
   const summary = `${created}/${requested} créature(s) créée(s).`;
-  return rejectionDetails.length > 0 ? [summary, ...rejectionDetails] : [summary];
+  return rejectionDetails.length > 0
+    ? [summary, ...rejectionDetails]
+    : [summary];
 }
