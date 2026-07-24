@@ -93,6 +93,7 @@ describe("tours et ia", () => {
       ended.value.state.heroes.find((hero) => hero.id === "b")
         ?.activationCompleted,
     ).toBe(true);
+    expect(ended.value.state.enemyTurnRoster).toEqual([]);
     expect(selectHero(ended.value.state, "b").ok).toBe(false);
   });
 
@@ -107,11 +108,13 @@ describe("tours et ia", () => {
     expect(ended.ok).toBe(true);
     if (!ended.ok) throw new Error("fin du tour attendue");
     expect(ended.value.state.phase).toBe("enemy-turn");
+    expect(ended.value.state.enemyTurnRoster).toEqual(["e1", "e2"]);
     const resolved = finishEnemyTurn(ended.value.state);
     expect(resolved.ok).toBe(true);
     if (!resolved.ok) throw new Error("résolution attendue");
     expect(resolved.value.state.phase).toBe("heroes-turn");
     expect(resolved.value.state.turn).toBe(2);
+    expect(resolved.value.state.enemyTurnRoster).toEqual([]);
     expect(
       resolved.value.state.heroes.every(
         (hero) => hero.actionsRemaining === 3 && !hero.activationCompleted,
@@ -195,6 +198,7 @@ describe("tours et ia", () => {
     expect(victory.ok).toBe(true);
     if (!victory.ok) throw new Error("victoire attendue");
     expect(victory.value.state.phase).toBe("victory");
+    expect(victory.value.state.enemyTurnRoster).toEqual([]);
 
     const defeatInput = {
       ...room(),
@@ -202,11 +206,13 @@ describe("tours et ia", () => {
       enemies: [
         { ...room().enemies[0]!, position: { column: 1, row: 0 }, atk: 9 },
       ],
+      enemyTurnRoster: ["e1"],
       phase: "enemy-turn" as const,
     };
     const defeat = finishEnemyTurn(defeatInput);
     expect(defeat.ok).toBe(true);
     if (!defeat.ok) throw new Error("défaite attendue");
     expect(defeat.value.state.phase).toBe("defeat");
+    expect(defeat.value.state.enemyTurnRoster).toEqual([]);
   });
 });
