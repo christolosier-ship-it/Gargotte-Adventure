@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { HERO_ACTIONS } from "@gargotte/engine";
 import { brouhahaStateSchema } from "./brouhaha-schema";
+import { brouhahaReinforcementHistoryEntrySchema } from "./brouhaha-reinforcement-schema";
+import { chainReactionHistoryEntrySchema } from "./chain-reaction-schema";
+import { validateSequencedHistory } from "./history-validation";
 import { interactableInstanceSchema } from "./interactable-schema";
 
 const idSchema = z.string().min(1);
@@ -60,23 +63,6 @@ const spawnPointSchema = z
   })
   .strict();
 
-const chainReactionHistoryEntrySchema = z
-  .object({
-    id: idSchema,
-    rootRequestId: idSchema,
-    sequence: z.number().int().positive(),
-    reactionDefinitionId: idSchema,
-    triggerType: z.enum(["state-entered", "moved"]),
-    sourceInstanceId: idSchema,
-    parentReactionId: idSchema.nullable(),
-    actionIndex: z.number().int().nonnegative(),
-    actionType: z.enum(["transition", "move", "damage", "brouhaha", "guard"]),
-    targetId: idSchema.nullable(),
-    outcome: z.enum(["applied", "skipped", "guarded"]),
-    details: z.array(z.string()),
-  })
-  .strict();
-
 function validateCombatant(
   combatant: {
     hp: number;
@@ -129,21 +115,31 @@ const roomV4Shape = {
   enemies: z.array(enemySchema).min(1),
 };
 
+const roomV5Shape = {
+  ...roomV4Shape,
+  nextChainReactionSequence: z.number().int().positive(),
+  chainReactionHistory: z.array(chainReactionHistoryEntrySchema),
+};
+
 export const roomStateSchema = z
   .object({
-    version: z.literal(5),
-    ...roomV4Shape,
-    nextChainReactionSequence: z.number().int().positive(),
-    chainReactionHistory: z.array(chainReactionHistoryEntrySchema),
+    version: z.literal(6),
+    ...roomV5Shape,
+    nextBrouhahaReinforcementSequence: z.number().int().positive(),
+    brouhahaReinforcementHistory: z.array(
+      brouhahaReinforcementHistoryEntrySchema,
+    ),
   })
   .strict()
   .superRefine(validateRoomState);
 
+export const legacyRoomStateV5Schema = z
+  .object({ version: z.literal(5), ...roomV5Shape })
+  .strict()
+  .superRefine(validateRoomState);
+
 export const legacyRoomStateV4Schema = z
-  .object({
-    version: z.literal(4),
-    ...roomV4Shape,
-  })
+  .object({ version: z.literal(4), ...roomV4Shape })
   .strict()
   .superRefine(validateRoomState);
 
@@ -195,6 +191,10 @@ function validateRoomState(
     processedInteractableRequestIds?: string[];
     nextChainReactionSequence?: number;
     chainReactionHistory?: z.infer<typeof chainReactionHistoryEntrySchema>[];
+    nextBrouhahaReinforcementSequence?: number;
+    brouhahaReinforcementHistory?: z.infer<
+      typeof brouhahaReinforcementHistoryEntrySchema
+    >[];
   },
   context: z.RefinementCtx,
 ): void {
@@ -262,7 +262,15 @@ function validateRoomState(
     "les requêtes d'interaction traitées doivent être uniques",
     context,
   );
-  validateChainHistory(room, context);
+  validateSequencedHistory(
+    room.chainReactionHistory ?? [],
+    room.nextChainReactionSequence,
+    "chainReactionHistory",
+    "nextChainReactionSequence",
+    "l'historique des réactions",
+    context,
+  );
+  validateReinforcementHistory(room, context);
 
   if (
     room.activeHeroId &&
@@ -275,32 +283,35 @@ function validateRoomState(
     });
 }
 
-function validateChainHistory(
+function validateReinforcementHistory(
   room: {
-    nextChainReactionSequence?: number;
-    chainReactionHistory?: z.infer<typeof chainReactionHistoryEntrySchema>[];
+    nextBrouhahaReinforcementSequence?: number;
+    brouhahaReinforcementHistory?: z.infer<
+      typeof brouhahaReinforcementHistoryEntrySchema
+    >[];
   },
   context: z.RefinementCtx,
 ): void {
-  const history = room.chainReactionHistory ?? [];
-  const ids = new Set(history.map((entry) => entry.id));
-  const sequences = new Set(history.map((entry) => entry.sequence));
-  if (ids.size !== history.length || sequences.size !== history.length)
+  const history = room.brouhahaReinforcementHistory ?? [];
+  validateSequencedHistory(
+    history,
+    room.nextBrouhahaReinforcementSequence,
+    "brouhahaReinforcementHistory",
+    "nextBrouhahaReinforcementSequence",
+    "l'historique des renforts",
+    context,
+  );
+  const activations = new Set(
+    history.map(
+      (entry) => `${entry.reinforcementDefinitionId}:${entry.activation}`,
+    ),
+  );
+  const requests = new Set(history.map((entry) => entry.spawnRequestId));
+  if (activations.size !== history.length || requests.size !== history.length)
     context.addIssue({
       code: "custom",
-      path: ["chainReactionHistory"],
-      message:
-        "l'historique des réactions doit avoir des identifiants et séquences uniques",
-    });
-  const maximum = Math.max(0, ...history.map((entry) => entry.sequence));
-  if (
-    room.nextChainReactionSequence !== undefined &&
-    room.nextChainReactionSequence <= maximum
-  )
-    context.addIssue({
-      code: "custom",
-      path: ["nextChainReactionSequence"],
-      message: "la prochaine séquence doit suivre l'historique",
+      path: ["brouhahaReinforcementHistory"],
+      message: "les activations et demandes de renfort doivent être uniques",
     });
 }
 
