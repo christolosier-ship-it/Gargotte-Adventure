@@ -5,7 +5,7 @@
 - Cible : Sprint 3.6
 - État : cadré, non implémenté
 - Prérequis fusionnés : Sprints 3.1 à 3.5
-- Base stable : `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`
+- Base stable : `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
 - Issue documentaire : #50
 
 ## Objectif
