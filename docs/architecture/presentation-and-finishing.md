@@ -20,7 +20,7 @@ intention joueur
       ▼
 moteur tactique
       │
-      ├─ nouvel RoomState
+      ├─ nouvel état RoomState
       └─ événements ordonnés
               │
               ▼
