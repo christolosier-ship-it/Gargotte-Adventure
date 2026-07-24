@@ -1,18 +1,21 @@
 # Audit de livraison du Sprint 3.5
 
 - Date de contrôle : 24 juillet 2026
-- Statut final : fusionné dans `main`
+- Statut final : fusionné et stabilisé dans `main`
 - Issue : #48, clôturée comme terminée
-- Pull Request : #49, fusionnée par squash
-- Branche : `sprint-3/brouhaha-reinforcements`
+- Pull Request fonctionnelle : #49, fusionnée par squash
+- Branche fonctionnelle : `sprint-3/brouhaha-reinforcements`
 - Base de départ : `66f2d30543c77327c86c460d8be874254719ecd0`
-- HEAD final validé avant fusion : `709ada30b224cf1923b149256b29511330bc441d`
-- Commit de fusion : `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`
+- HEAD final validé avant la fusion initiale : `709ada30b224cf1923b149256b29511330bc441d`
+- Commit de fusion initial : `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`
+- Correctif P2 roster persistant : PR #53, commit `568670a3cb0d61ef478653403cb31f9065e3a2df`
+- Correctif P2 appel direct : PR #54, commit `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
+- Base stable finale : `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
 - Prochaine étape : Sprint 3.6
 
 ## Conclusion
 
-Le Sprint 3.5 respecte entièrement le périmètre de l'issue #48 et est fusionné dans `main`.
+Le Sprint 3.5 respecte entièrement le périmètre de l'issue #48 et est stabilisé dans `main` après deux correctifs P2 post-fusion consacrés au roster du tour ennemi.
 
 Une variation acceptée du Brouhaha peut désormais déclencher une ou plusieurs règles de renfort lors d'un franchissement montant. Chaque activation produit une demande reproductible, déléguée au moteur de spawn existant, puis historisée comme réussite totale, réussite partielle ou refus expliqué.
 
@@ -118,25 +121,36 @@ Un test dédié vérifie que la destruction du dernier ennemi initial n'accorde 
 
 Une salle déjà terminale continue de refuser Brouhaha et spawn.
 
-### Tour ennemi
+### Tour ennemi et correctifs P2
 
-`createEnemyTurnRoster` capture les ennemis vivants au début de la phase. `runEnemyTurn` exécute seulement cette liste.
+`createEnemyTurnRoster` capture les ennemis vivants au début de la phase. `finishEnemyTurn` transmet explicitement cette liste figée à `runEnemyTurn`.
 
 Un ennemi ajouté après l'ouverture du roster ne joue pas pendant le tour courant et devient éligible au tour ennemi suivant.
 
+La revue post-fusion a identifié deux écarts P2 successifs :
+
+1. la PR #53 a persisté `enemyTurnRoster` dans `RoomState`, l'a capturé au passage en `enemy-turn`, l'a restauré après sauvegarde et l'a vidé en quittant la phase ;
+2. la PR #54 a restauré le contrat public des appels directs à `runEnemyTurn` : lorsque aucun roster explicite n'est fourni, la fonction reconstruit la liste des ennemis vivants.
+
+Cette séparation préserve les deux comportements attendus : roster figé pour la machine de tour, fallback vivant pour les tests, helpers et consommateurs directs du moteur.
+
 ### Sauvegarde version 6
 
-`RoomState` et le payload tactique passent en version 6 avec :
+`RoomState` et le payload tactique restent en version 6 avec :
 
 - `nextBrouhahaReinforcementSequence` ;
-- `brouhahaReinforcementHistory`.
+- `brouhahaReinforcementHistory` ;
+- `enemyTurnRoster` lorsque la phase ennemie est ouverte.
 
 Les sauvegardes versions 1 à 5 sont migrées avec :
 
 - historique de renfort vide ;
 - prochaine séquence égale à 1 ;
+- roster vide hors phase ennemie ;
 - aucun déclenchement rétroactif ;
 - conservation des objets, réactions, spawns et du Brouhaha déjà présents.
+
+Les anciennes sauvegardes version 6 créées avant la PR #53 sont acceptées et reçoivent défensivement un roster cohérent avec leur phase.
 
 La validation rejette notamment :
 
@@ -145,7 +159,8 @@ La validation rejette notamment :
 - demandes de spawn dupliquées ;
 - prochaine séquence située avant l'historique ;
 - résultat refusé contenant des instances ;
-- succès total ou partiel sans instance créée.
+- succès total ou partiel sans instance créée ;
+- roster dupliqué, non trié, contenant un ennemi absent ou présent hors phase ennemie.
 
 ## Scénario pilote Bastognac
 
@@ -182,19 +197,17 @@ Ce scénario ne dépend pas du bouton de spawn manuel.
 
 ## Validation automatisée finale
 
-### Repository quality
+### Correctif PR #53
 
-Exécution GitHub Actions `30080935529` : succès complet.
+- Repository quality : exécution `30094773684`, succès complet ;
+- Validate application : exécution `30094773656`, succès complet.
 
-- structure du dépôt ;
-- limites de taille ;
-- frontières de packages ;
-- secrets et fichiers interdits ;
-- documentation et assets attendus.
+### Correctif PR #54
 
-### Validate application
+- Repository quality : exécution `30096591289`, succès complet ;
+- Validate application : exécution `30096591282`, succès complet.
 
-Exécution GitHub Actions `30080935520` : succès complet.
+La dernière validation couvre :
 
 - formatage Prettier ;
 - validation du contenu ;
@@ -220,10 +233,13 @@ Les tests automatisés vérifient notamment :
 - réactivation après baisse ;
 - déterminisme à entrées identiques ;
 - phase terminale calculée après les renforts ;
-- roster ennemi figé ;
+- roster ennemi capturé au début de la phase ;
+- renfort tardif reporté au tour ennemi suivant ;
+- appel direct à `runEnemyTurn` avec un état `enemy-turn` et un roster vide ;
 - sauvegarde exacte version 6 ;
+- migration des anciennes versions 6 sans roster ;
 - migrations versions 1 à 5 ;
-- corruption des historiques et séquences ;
+- corruption des historiques, séquences et rosters ;
 - tonneau, domino et restauration sur desktop/mobile paysage.
 
 ## Documentation contrôlée
@@ -232,23 +248,18 @@ Les pages actives ont été alignées :
 
 - README racine ;
 - index documentaire ;
+- vision produit et avancement du vertical slice ;
 - roadmap ;
 - suivi du Sprint 3 ;
-- structure du dépôt ;
-- architecture générale et runtime ;
-- salle tactique ;
-- spawn ;
-- Brouhaha ;
-- objets interactifs ;
-- réactions en chaîne ;
-- renforts de Brouhaha ;
+- architecture de présentation du Sprint 3.6 ;
+- audit Sprint 3.5 ;
 - relais Google Drive.
 
 Les audits historiques des Sprints 0 à 3.4 sont restés inchangés.
 
 ## Écarts et arbitrages
 
-Aucun écart fonctionnel non autorisé n'a été introduit.
+Aucun écart fonctionnel non autorisé ne subsiste.
 
 Le journal visible conserve volontairement les six événements les plus récents. Les tests navigateur contrôlent donc les messages terminaux utiles, tandis que l'ordre causal complet est vérifié dans les événements, historiques persistants et tests unitaires.
 
@@ -256,6 +267,6 @@ Les valeurs des seuils et quantités pilotes restent provisoires et seront équi
 
 ## Décision de sortie
 
-Le Sprint 3.5 a été fusionné par squash le 24 juillet 2026 après validation complète. L'issue #48 est clôturée comme terminée et `main` pointe sur le commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`.
+Le Sprint 3.5 a été fusionné initialement par squash le 24 juillet 2026, puis stabilisé par les PR #53 et #54. L'issue #48 reste clôturée comme terminée et `main` repose désormais sur la base fonctionnelle `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`.
 
 Le projet peut démarrer le Sprint 3.6 consacré à la présentation et à la finition. Son cadrage se trouve dans [Présentation et finition du Sprint 3.6](../architecture/presentation-and-finishing.md).
