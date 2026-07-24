@@ -20,6 +20,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Moteur de Brouhaha](architecture/brouhaha.md)
 - [Objets interactifs](architecture/interactable-objects.md)
 - [Réactions en chaîne déterministes](architecture/chain-reactions.md)
+- [Renforts déclenchés par le Brouhaha, cadrage Sprint 3.5](architecture/brouhaha-reinforcements.md)
 - [Décisions d'architecture](adr/README.md)
 - [ADR-0006 : plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 - [ADR-0007 : définitions, instances et spawn déterministe](adr/0007-creature-instances-and-deterministic-spawn.md)
@@ -49,7 +50,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Environnement Bastognac du Sprint 2B.3](design/sprint-2b3-bastognac-environment.md)
 - [Rapport Sprint 1 dans Google Drive](external/sprint-1-drive-content.md)
 - [Relais Sprint 2 dans Google Drive](external/sprint-2-drive-content.md)
-- [Cadrage Sprint 3 dans Google Drive](external/sprint-3-drive-content.md)
+- [Relais Sprint 3 dans Google Drive](external/sprint-3-drive-content.md)
 - [Diagramme FigJam](https://www.figma.com/board/wscHfycwhhvJRWQqelY4f9)
 
 ## Sécurité
@@ -70,7 +71,7 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 
 ## Règles de maintenance
 
-1. La documentation GitHub décrit l'état technique réel de `main` ou identifie explicitement une PR en cours.
+1. La documentation GitHub décrit l'état technique réel de `main` ou identifie explicitement une cible non implémentée.
 2. Une cible future est étiquetée comme telle.
 3. Une fonctionnalité n'est marquée comme livrée qu'après fusion et CI verte.
 4. Les rapports de sprint sont historiques et ne servent pas d'instructions actives.
@@ -81,19 +82,22 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 9. Toute modification des budgets de menace précise leur niveau d'application.
 10. Les documents distinguent définition éditoriale, instance runtime et génération.
 11. Toute étude de code Gargottex mentionne son caractère strictement non modifiant.
+12. Une migration de sauvegarde ne doit jamais déclencher rétroactivement une règle runtime.
 
 ## État documentaire
 
-Après fusion de la PR #45 :
+Après fusion de la PR #45 et préparation du Sprint 3.5 :
 
 - les Sprints 3.1, 3.2, 3.3 et 3.4 sont fusionnés dans `main` ;
+- le commit stable du Sprint 3.4 est `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` ;
 - les réactions en chaîne sont déclarées par salle et résolues par le moteur ;
 - la poussée, les transitions secondaires, les dégâts et le Brouhaha causal sont documentés ;
 - les cycles et propagations excessives possèdent des garde-fous explicites ;
 - la salle tactique utilise la sauvegarde version 5 ;
 - les migrations depuis les versions 1 à 4 sont documentées ;
+- les renforts automatiques restent non implémentés ;
+- leur cadrage prévoit franchissement montant, idempotence, limites, phase terminale et sauvegarde version 6 ;
 - le renderer reste sans règle métier ;
-- les renforts automatiques restent réservés au Sprint 3.5 ;
 - l'audit de livraison Sprint 3.4 est indexé ;
-- le compte rendu Google Drive est aligné sur la clôture du Sprint 3.4 ;
+- le compte rendu Google Drive est aligné sur la clôture du Sprint 3.4 et la préparation du Sprint 3.5 ;
 - Gargottex reste strictement en lecture seule.
