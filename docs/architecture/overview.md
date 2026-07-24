@@ -1,17 +1,17 @@
 # Architecture générale
 
-## Vue d’ensemble
+## Vue d'ensemble
 
 Gargotte Adventure est organisé en quatre couches :
 
-1. **contenu** : définitions versionnées de héros, créatures, salles, obstacles, points de spawn et références d’assets ;
-2. **moteur** : règles déterministes, déplacements, combat, tours, IA, instances, spawn et événements ;
+1. **contenu** : définitions versionnées de héros, créatures, salles, objets, réactions, points de spawn et références d'assets ;
+2. **moteur** : règles déterministes, déplacements, combat, tours, IA, Brouhaha, objets, réactions et spawn ;
 3. **présentation** : plateau isométrique PixiJS, HUD et commandes DOM accessibles ;
 4. **plateforme** : PWA, sauvegarde IndexedDB, validation, tests, build et déploiement.
 
-Le moteur ne dépend ni du DOM, ni de PixiJS, ni d’IndexedDB, ni d’un donjon particulier. Il reçoit un état et une intention, puis retourne un nouvel état, des événements de domaine ou une erreur métier typée.
+Le moteur ne dépend ni du DOM, ni de PixiJS, ni d'IndexedDB, ni d'un donjon particulier. Il reçoit un état et une intention, puis retourne un nouvel état, des événements de domaine ou une erreur métier typée.
 
-## Flux principal
+## Flux principal actuel
 
 ```text
 Interaction joueur
@@ -25,22 +25,31 @@ Interaction joueur
               ▼
       validation dans le moteur
               │
+              ▼
+      action directe et objet éventuel
+              │
+              ▼
+      réactions en chaîne FIFO
+              │
+              ▼
+      demandes de Brouhaha causales
+              │
       ┌───────┴────────┐
       ▼                ▼
  nouvel état      événements / erreur
       │
       ├─► projection et rendu isométrique PixiJS
       ├─► mise à jour du HUD
-      ├─► journal d’événements
+      ├─► journal d'événements
       └─► file de sauvegarde IndexedDB
 ```
 
-Les interactions PixiJS et les commandes DOM utilisent les mêmes handlers. L’interface n’implémente donc pas une seconde version des règles.
+Les interactions PixiJS et les commandes DOM utilisent les mêmes handlers. L'interface n'implémente donc pas une seconde version des règles.
 
 ## Flux des apparitions
 
 ```text
-Scénario, Brouhaha, objet, boss ou générateur
+Scénario, futur seuil de Brouhaha, boss ou générateur
                      │
                      ▼
                 SpawnRequest
@@ -57,9 +66,40 @@ Scénario, Brouhaha, objet, boss ou générateur
          └─► sauvegarde
 ```
 
-Le système déclencheur décide pourquoi une apparition est demandée. Le moteur de spawn décide seulement si la demande est valide, quels points candidats sont utilisables dans l’ordre déclaré et quelles instances sont créées.
+Le système déclencheur décide pourquoi une apparition est demandée. Le moteur de spawn décide seulement si la demande est valide, quels points candidats sont utilisables dans l'ordre déclaré et quelles instances sont créées.
 
 Le moteur de spawn ne compose pas une rencontre et ne dépense aucun budget de menace.
+
+## Flux cible des renforts du Sprint 3.5
+
+```text
+BrouhahaRequest acceptée
+        │
+        ▼
+previousLevel → level
+        │
+        ▼
+franchissements montants
+        │
+        ▼
+politique de renfort de la salle
+        │
+        ▼
+SpawnRequest avec source brouhaha
+        │
+        ▼
+moteur de spawn existant
+        │
+        ▼
+historique de renfort
+        │
+        ▼
+calcul de la phase terminale
+```
+
+La politique de renfort sera une frontière séparée du moteur de Brouhaha et du moteur de spawn. Elle appliquera les limites de scénario, construira des identifiants déterministes et n'interprétera aucun budget de menace.
+
+La spécification se trouve dans [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
 
 ## Flux de génération prévu au Sprint 5
 
@@ -91,9 +131,9 @@ DungeonGenerationRequest + seed
  moteur de spawn
 ```
 
-Le budget de menace est attaché à chaque salle. La progression d’un étage peut influencer les valeurs attribuées, mais un étage ne dispose pas d’un portefeuille global partagé entre toutes ses salles.
+Le budget de menace est attaché à chaque salle. La progression d'un étage peut influencer les valeurs attribuées, mais un étage ne dispose pas d'un portefeuille global partagé entre toutes ses salles.
 
-## État du Sprint 3.1
+## État actuel après le Sprint 3.4
 
 ### Contenu
 
@@ -101,109 +141,112 @@ Le budget de menace est attaché à chaque salle. La progression d’un étage p
 
 - `content/bastognac/dungeon.json` ;
 - `content/bastognac/creatures.json` ;
+- `content/bastognac/brouhaha-effects.json` ;
+- `content/bastognac/interactables.json` ;
 - `content/bastognac/sprint-1-room.json` ;
 - le catalogue visuel propre à Bastognac.
 
-Le catalogue pilote contient Gobelin Bricoleur et Gobelin Lance-Tout. La salle de schéma version 2 décrit :
+La salle tactique de schéma version 4 décrit :
 
 - une grille 8 × 4 ;
 - les obstacles ;
 - les quatre héros officiels ;
-- deux placements d’instances ennemies initiales ;
-- deux points de spawn ;
-- un renfort scripté de contrôle.
+- les placements ennemis initiaux ;
+- les instances d'objets ;
+- les réactions en chaîne ;
+- les points et scripts de spawn.
 
-Les statistiques ennemies ne sont plus recopiées dans la salle. Chaque placement référence une `CreatureDefinition` par `creatureId`.
+Les statistiques ennemies ne sont pas recopiées dans la salle. Chaque placement référence une `CreatureDefinition` par `creatureId`. Les objets suivent la même séparation entre définition et instance.
 
 ### Moteur
 
 `packages/engine/src/tactical` contient :
 
-- types d’état et positions ;
 - limites, voisins et occupation de grille ;
 - cheminement déterministe ;
 - ligne de vue supercover ;
 - combat et cibles attaquables ;
-- machine de tour ;
-- IA ennemie ;
-- contrats définition, instance, point et requête de spawn ;
-- moteur de spawn pur ;
+- machine de tour et IA ennemie ;
+- contrats et moteur de spawn ;
+- état et résolution du Brouhaha ;
+- interactions d'objets et poussées ;
+- réactions en chaîne, causalité et garde-fous ;
 - événements et erreurs métier.
 
-Le moteur conserve exclusivement des coordonnées `GridPosition { column, row }`. Il ne connaît ni l’isométrie, ni les dimensions des tuiles, ni les assets.
+Le moteur conserve exclusivement des coordonnées logiques. Il ne connaît ni l'isométrie, ni les dimensions des tuiles, ni les assets.
 
-Le spawn utilise une séquence monotone persistée. Il ne dépend ni de l’heure, ni d’un UUID, ni de `Math.random()`.
+Les séquences de spawn, Brouhaha, interaction et réaction sont monotones et persistées. Elles ne dépendent ni de l'heure, ni d'un UUID, ni de `Math.random()`.
 
 ### Composition applicative
 
-`apps/game/src/main.ts` reste un point d’entrée minimal. Les responsabilités sont distribuées :
+`apps/game/src/main.ts` reste un point d'entrée minimal. Les responsabilités sont distribuées :
 
 - `bootstrap.ts` assemble contenu, UI, renderer, sauvegarde et contrôleur ;
 - `game-controller.ts` traite les intentions et le cycle de jeu ;
-- `scripted-spawn-controller.ts` adapte les spawns de scénario aux contrats du moteur et produit les messages lisibles ;
-- `tactical-actions.ts` génère les commandes DOM dynamiques ;
+- `brouhaha-controller.ts` adapte les commandes de Brouhaha ;
+- `interactable-controller.ts` adapte les interactions d'objets ;
+- `scripted-spawn-controller.ts` adapte les spawns de scénario ;
+- `event-messages.ts` traduit les événements sans décider des règles ;
+- `game-view.ts` prépare les données de présentation ;
 - `persistence-controller.ts` restaure la session et sérialise les écritures ;
-- `pwa-install.ts` gère l’installation ;
 - `bastognac.ts` constitue la frontière entre le donjon et les composants génériques.
-
-Le bouton de renfort de contrôle ne contient aucune règle de placement. Il transmet seulement l’identifiant du spawn scripté au contrôleur.
 
 ### Renderer isométrique
 
 `packages/renderer` projette `RoomState` sur un plateau PixiJS 2D isométrique :
 
 - projection grille vers écran et conversion inverse ;
-- caméra responsive et rotation 0°, 90°, 180° et 270° ;
+- caméra responsive et rotation à quatre orientations ;
 - picking par clic et toucher ;
 - tri de profondeur déterministe ;
 - murs arrière uniquement ;
-- obstacles et combattants ancrés au sol ;
-- overlays tactiques ;
+- environnement, objets et combattants ancrés au sol ;
+- overlays tactiques et diagnostics ;
 - destruction des objets graphiques lors des reconstructions.
 
-Le renderer reçoit un `TabletopAssetCatalog` fourni par l’application et ne décide jamais d’une apparition.
-
-Pour un héros, l’asset est résolu par son `id`. Pour une créature, l’asset est résolu par `creatureId`, ce qui permet à plusieurs instances de partager la même texture mise en cache tout en conservant des identifiants runtime distincts.
-
-Les diagnostics canvas exposent les points de spawn, les requêtes traitées, la prochaine séquence et le `creatureId` de chaque ennemi pour les tests navigateur.
+Le renderer reçoit un catalogue d'assets fourni par l'application et ne décide jamais d'une interaction, d'une réaction ou d'une apparition.
 
 ### Sauvegardes
 
 `packages/save` utilise une connexion IndexedDB réutilisée et des schémas Zod profonds.
 
-La sauvegarde tactique version 2 conserve :
+La sauvegarde tactique version 5 conserve :
 
-- l’état complet de la salle ;
-- les instances et leurs `creatureId` ;
-- les points de spawn ;
-- les identifiants de requêtes déjà traitées ;
-- la prochaine séquence d’instance ;
+- l'état complet de la salle ;
+- les instances et leurs références éditoriales ;
+- les points et demandes de spawn ;
+- le niveau et l'historique du Brouhaha ;
+- les objets et demandes d'interaction ;
+- l'historique causal des réactions ;
+- toutes les séquences nécessaires à une reprise exacte ;
 - les héros sélectionnés.
 
-Une sauvegarde tactique version 1 valide est migrée défensivement vers la version 2. Les données incompatibles ou corrompues sont rejetées avant d’atteindre le moteur ou le renderer.
+Les sauvegardes versions 1 à 4 sont migrées défensivement. Les données incompatibles ou corrompues sont rejetées avant d'atteindre le moteur ou le renderer.
+
+Le Sprint 3.5 prévoit une version 6 ajoutant l'historique et la séquence des renforts sans rejouer les anciens seuils.
 
 ### Tests et plateforme
 
 - Vitest pour moteur, contenu, renderer et sauvegarde ;
 - Playwright sur build de production, desktop et mobile paysage ;
-- scénario navigateur de renfort et restauration ;
+- scénarios de spawn, Brouhaha, objets, réactions et restauration ;
 - GitHub Actions pour qualité et validation ;
 - garde-fous de frontières, tailles de modules, documentation, secrets et assets ;
-- GitHub Pages pour la publication.
+- GitHub Pages pour la publication et le contrôle HTTP.
 
 ## Définitions, instances et plans
 
 ### Définition
 
-Une définition éditoriale décrit ce qu’est une créature, un objet ou un type de salle. Elle est stable, versionnée et issue du contenu.
+Une définition éditoriale décrit ce qu'est une créature, un objet, un effet, une réaction ou une règle de salle. Elle est stable, versionnée et issue du contenu.
 
 ### Instance
 
-Une instance décrit l’état mutable d’un élément présent dans une partie : identifiant runtime, référence à la définition, position, PV, état et effets.
+Une instance décrit l'état mutable d'un élément présent dans une partie : identifiant runtime, référence à la définition, position, PV, état et effets.
 
 ### Plan généré
 
-Un plan généré décrit une structure à instancier : topologie d’étage, géométrie de salle, connexions, points de spawn, obstacles et plan de rencontre.
+Un plan généré décrit une structure à instancier : topologie d'étage, géométrie de salle, connexions, points de spawn, obstacles et plan de rencontre.
 
 Ces trois niveaux ne partagent pas le même objet mutable.
 
@@ -211,11 +254,9 @@ Ces trois niveaux ne partagent pas le même objet mutable.
 
 ### Gargottex
 
-Gargottex demeure la source de vérité éditoriale. Le dépôt `christolosier-ship-it/Gargotte-V5` a été consulté en lecture seule pour étudier son générateur de rencontres.
+Gargottex demeure la source de vérité éditoriale. Le dépôt `christolosier-ship-it/Gargotte-V5` peut être consulté en lecture seule.
 
-Aucun fichier de Gargottex n’est modifié, aucune dépendance runtime n’est créée et aucun code aléatoire n’est importé dans le moteur.
-
-L’idée de combinaison exacte pourra être réévaluée au Sprint 5 pour le générateur de rencontre, avec un PRNG explicitement seedé et un budget propre à chaque salle.
+Aucun fichier de Gargottex n'est modifié, aucune dépendance runtime n'est créée et aucun code aléatoire n'est importé dans le moteur.
 
 ### Google Drive
 
@@ -227,13 +268,13 @@ Figma accueille les fondations visuelles. Le handoff versionné dans `design/iso
 
 ### OpenAI API
 
-L’API OpenAI peut assister des outils privés de préparation ou de QA. Elle ne fait pas partie de la boucle de jeu et ne doit jamais être appelée directement depuis la PWA publique.
+L'API OpenAI peut assister des outils privés de préparation ou de QA. Elle ne fait pas partie de la boucle de jeu et ne doit jamais être appelée directement depuis la PWA publique.
 
 ## Structure actuelle du dépôt
 
 ```text
 apps/game                 composition de la PWA et catalogue Bastognac
-packages/engine           règles pures, état tactique et spawn
+packages/engine           règles pures, état tactique et systèmes du Sprint 3
 packages/content-schema   schémas du contenu
 packages/renderer         projection, scène PixiJS et assets génériques
 packages/ui               interface DOM accessible
@@ -241,7 +282,7 @@ packages/save             persistance, validation et migrations
 packages/common           utilitaires partagés minimaux
 packages/audio            fondation inactive
 design/isometric          tokens, gabarits et handoff graphique
-content/bastognac         donjon, catalogue de créatures et salle pilote
+content/bastognac         donjon, catalogues et salle pilote
 tools/validators          validation TypeScript du contenu
 tools/validate_repository.py garde-fous du dépôt
 tests/e2e                 parcours Playwright et helpers canvas
@@ -250,13 +291,11 @@ docs                      produit, architecture, audits, ADR et sprints
 
 ## Éléments non encore intégrés
 
-- jauge de Brouhaha ;
-- déclenchement automatique des renforts ;
-- décor interactif et réactions en chaîne ;
+- renforts automatiques de Brouhaha ;
 - intégration audio réelle ;
 - importeur complet Gargottex ;
 - catalogue complet Bastognac ;
-- compétences définitives ;
+- compétences et équilibrage définitifs ;
 - générateurs de topologie, géométrie et rencontre ;
 - campagne, loot et progression.
 
