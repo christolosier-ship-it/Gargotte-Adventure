@@ -19,12 +19,16 @@ export const brouhahaReinforcementHistoryEntrySchema = z
   })
   .strict()
   .superRefine((entry, context) => {
-    if (!(entry.previousLevel < entry.threshold && entry.threshold <= entry.level))
+    if (!(
+      entry.previousLevel < entry.threshold && entry.threshold <= entry.level
+    ))
       context.addIssue({
         code: "custom",
         message: "le seuil doit avoir été franchi à la hausse",
       });
-    if (new Set(entry.createdInstanceIds).size !== entry.createdInstanceIds.length)
+    if (
+      new Set(entry.createdInstanceIds).size !== entry.createdInstanceIds.length
+    )
       context.addIssue({
         code: "custom",
         path: ["createdInstanceIds"],
