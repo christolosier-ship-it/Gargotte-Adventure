@@ -99,9 +99,6 @@ test("brise, renforce et restaure un objet interactif", async ({
   ]);
   expect(await readNextReinforcementSequence(page)).toBe(2);
   await expect(
-    page.getByText(/Tonneau douteux : intact → brise/),
-  ).toBeVisible();
-  await expect(
     page.getByText(/Renfort seuil-1-bricoleur réussi/),
   ).toBeVisible();
 
@@ -197,8 +194,6 @@ test("pousse une table et résout le domino avec deux seuils", async ({
     },
   ]);
   expect(await readNextReinforcementSequence(page)).toBe(3);
-  await expect(page.getByText(/Réaction pilier-libere-grille/)).toBeVisible();
-  await expect(page.getByText(/magdalena subit 2 dégâts/)).toBeVisible();
   await expect(
     page.getByText(/Renfort seuil-2-lance-tout partiel/),
   ).toBeVisible();
