@@ -89,3 +89,69 @@ test("brise, explique et restaure un objet interactif", async ({
   ]);
   expect(await readNextInteractableSequence(page)).toBe(2);
 });
+
+test("pousse une table et résout le domino causal", async ({ page }) => {
+  await page.goto("./");
+  await page.getByRole("checkbox", { name: "Magdalena Coquinelle" }).check();
+  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Activer Magdalena Coquinelle" })
+    .click();
+  await page
+    .getByRole("button", {
+      name: "Se déplacer en colonne 3, ligne 3",
+    })
+    .click();
+  await expect
+    .poll(async () => {
+      const hero = (await readCanvasState(page)).heroes.find(
+        (candidate) => candidate.id === "magdalena",
+      );
+      return { position: hero?.position, actions: hero?.actionsRemaining };
+    })
+    .toEqual({ position: { column: 2, row: 2 }, actions: 1 });
+
+  await page
+    .getByRole("button", {
+      name: /Pousser et renverser Table bancale/,
+    })
+    .click();
+
+  await expect
+    .poll(async () => {
+      const objects = await readInteractables(page);
+      return {
+        table: objects.find((object) => object.id === "table-bancale-1"),
+        pillar: objects.find((object) => object.id === "pilier-susceptible-1"),
+        gate: objects.find((object) => object.id === "grille-grincante-1"),
+      };
+    })
+    .toMatchObject({
+      table: {
+        position: { column: 4, row: 2 },
+        stateId: "renversee",
+      },
+      pillar: { stateId: "fissure" },
+      gate: { stateId: "ouverte", blocksMovement: false },
+    });
+
+  const chained = await readCanvasState(page);
+  expect(chained.brouhahaLevel).toBe(2);
+  expect(chained.heroes.find((hero) => hero.id === "magdalena")).toMatchObject({
+    hp: 7,
+    actionsRemaining: 0,
+  });
+  expect(await readProcessedInteractableRequests(page)).toEqual([
+    "interaction-objet-1",
+  ]);
+  await expect(page.getByText(/Réaction pilier-libere-grille/)).toBeVisible();
+  await expect(page.getByText(/magdalena subit 2 dégâts/)).toBeVisible();
+
+  const savedObjects = await readInteractables(page);
+  const savedBrouhaha = chained.brouhahaHistory;
+  await page.reload();
+  await expect
+    .poll(async () => await readInteractables(page))
+    .toEqual(savedObjects);
+  expect((await readCanvasState(page)).brouhahaHistory).toEqual(savedBrouhaha);
+});

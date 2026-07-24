@@ -11,6 +11,13 @@ export const interactableStateDefinitionSchema = z
   })
   .strict();
 
+export const interactableMovementDefinitionSchema = z
+  .object({
+    type: z.literal("push"),
+    distance: z.literal(1),
+  })
+  .strict();
+
 export const interactableInteractionDefinitionSchema = z
   .object({
     id: slugSchema,
@@ -19,6 +26,7 @@ export const interactableInteractionDefinitionSchema = z
     toStateId: slugSchema,
     brouhahaDelta: z.number().int().min(-12).max(12),
     reason: z.string().min(1),
+    movement: interactableMovementDefinitionSchema.optional(),
   })
   .strict();
 
@@ -94,6 +102,9 @@ export const interactableCatalogSchema = z
 
 export type InteractableStateDefinition = z.infer<
   typeof interactableStateDefinitionSchema
+>;
+export type InteractableMovementDefinition = z.infer<
+  typeof interactableMovementDefinitionSchema
 >;
 export type InteractableInteractionDefinition = z.infer<
   typeof interactableInteractionDefinitionSchema

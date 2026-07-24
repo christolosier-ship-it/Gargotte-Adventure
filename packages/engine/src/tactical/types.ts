@@ -1,3 +1,5 @@
+import type { ChainReactionHistoryEntry } from "./chain-reaction-types";
+
 export interface GridPosition {
   column: number;
   row: number;
@@ -57,6 +59,11 @@ export interface InteractableStateDefinition {
   blocksLineOfSight: boolean;
 }
 
+export interface InteractableMovementDefinition {
+  type: "push";
+  distance: 1;
+}
+
 export interface InteractableInteractionDefinition {
   id: string;
   label: string;
@@ -64,6 +71,7 @@ export interface InteractableInteractionDefinition {
   toStateId: string;
   brouhahaDelta: number;
   reason: string;
+  movement?: InteractableMovementDefinition;
 }
 
 export interface InteractableDefinition {
@@ -112,7 +120,8 @@ export type InteractableRejectionReason =
   | "interaction-not-found"
   | "invalid-state"
   | "out-of-range"
-  | "destination-occupied";
+  | "destination-occupied"
+  | "movement-blocked";
 
 export interface InteractableInteractionRejection {
   requestId: string;
@@ -232,7 +241,7 @@ export interface BrouhahaRejection {
 }
 
 export interface RoomState {
-  version: 4;
+  version: 5;
   scenarioId: string;
   width: number;
   height: number;
@@ -240,6 +249,8 @@ export interface RoomState {
   interactables: InteractableInstance[];
   processedInteractableRequestIds: string[];
   nextInteractableInteractionSequence: number;
+  nextChainReactionSequence: number;
+  chainReactionHistory: ChainReactionHistoryEntry[];
   spawnPoints: SpawnPoint[];
   processedSpawnRequestIds: string[];
   nextEnemyInstanceSequence: number;

@@ -19,6 +19,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Moteur de spawn déterministe](architecture/spawn-engine.md)
 - [Moteur de Brouhaha](architecture/brouhaha.md)
 - [Objets interactifs](architecture/interactable-objects.md)
+- [Réactions en chaîne déterministes](architecture/chain-reactions.md)
 - [Décisions d'architecture](adr/README.md)
 - [ADR-0006 : plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
 - [ADR-0007 : définitions, instances et spawn déterministe](adr/0007-creature-instances-and-deterministic-spawn.md)
@@ -39,6 +40,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 3.1 : fondation de spawn déterministe](audits/sprint-3-1-spawn-foundation.md)
 - [Sprint 3.2 : état et effets du Brouhaha](audits/sprint-3-2-brouhaha-state.md)
 - [Sprint 3.3 : objets interactifs](audits/sprint-3-3-interactable-objects.md)
+- [Sprint 3.4 : réactions en chaîne déterministes](audits/sprint-3-4-chain-reactions.md)
 
 ## Design et sources externes
 
@@ -82,17 +84,16 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 
 ## État documentaire
 
-Après la livraison du Sprint 3.3 :
+Après fusion de la PR #45 :
 
-- les Sprints 3.1, 3.2 et 3.3 sont fusionnés dans `main` ;
-- la PR #43 est fusionnée et l'issue #42 est clôturée ;
-- le commit de fusion du Sprint 3.3 est `83d1aa48eeb8411f01584d8321ea52357c2e6e07` ;
-- les définitions éditoriales sont séparées des instances d'objets ;
-- les transitions, refus, événements et liens avec le Brouhaha sont documentés ;
-- la salle tactique utilise la sauvegarde version 4 ;
-- les migrations depuis les versions 1 à 3 sont documentées ;
+- les Sprints 3.1, 3.2, 3.3 et 3.4 sont fusionnés dans `main` ;
+- les réactions en chaîne sont déclarées par salle et résolues par le moteur ;
+- la poussée, les transitions secondaires, les dégâts et le Brouhaha causal sont documentés ;
+- les cycles et propagations excessives possèdent des garde-fous explicites ;
+- la salle tactique utilise la sauvegarde version 5 ;
+- les migrations depuis les versions 1 à 4 sont documentées ;
 - le renderer reste sans règle métier ;
-- les réactions en chaîne restent réservées au Sprint 3.4 ;
-- l'audit de livraison Sprint 3.3 est indexé ;
-- le compte rendu Google Drive est aligné sur la clôture du Sprint 3.3 ;
+- les renforts automatiques restent réservés au Sprint 3.5 ;
+- l'audit de livraison Sprint 3.4 est indexé ;
+- le compte rendu Google Drive est aligné sur la clôture du Sprint 3.4 ;
 - Gargottex reste strictement en lecture seule.

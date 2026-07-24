@@ -23,11 +23,12 @@
       "interactions": [
         {
           "id": "renverser",
-          "label": "Renverser",
+          "label": "Pousser et renverser",
           "fromStateId": "debout",
           "toStateId": "renversee",
           "brouhahaDelta": 0,
-          "reason": "La table se couche dans un grincement peu glorieux."
+          "reason": "La table se couche dans un grincement peu glorieux.",
+          "movement": { "type": "push", "distance": 1 }
         }
       ]
     },

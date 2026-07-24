@@ -1,8 +1,17 @@
-import { changeBrouhaha, type BrouhahaResult } from "./brouhaha";
+import type { BrouhahaResult } from "./brouhaha";
+import { resolveChainReactions } from "./chain-reactions";
+import type {
+  ChainReactionDefinition,
+  ChainReactionResult,
+  ChainReactionRuntimeTrigger,
+} from "./chain-reaction-types";
 import type { TacticalEvent } from "./events";
 import { manhattanDistance, occupantAt } from "./grid";
+import { applyDirectInteractableBrouhaha } from "./interactable-brouhaha";
+import { resolveHeroObjectMovement } from "./interactable-movement";
 import type {
   BrouhahaEffectDefinition,
+  GridPosition,
   InteractableDefinition,
   InteractableInteractionDefinition,
   InteractableInteractionRejection,
@@ -29,6 +38,7 @@ export interface InteractableInteractionResult {
   interactable: InteractableInstance | null;
   interaction: InteractableInteractionDefinition | null;
   brouhaha: BrouhahaResult | null;
+  chainReactions: ChainReactionResult | null;
   rejection: InteractableInteractionRejection | null;
 }
 
@@ -52,9 +62,24 @@ export function listAvailableInteractableInteractions(
     if (!definition) return [];
     return definition.interactions
       .filter((interaction) => interaction.fromStateId === instance.stateId)
-      .filter((interaction) =>
-        canTransitionToState(state, instance, definition, interaction),
-      )
+      .filter((interaction) => {
+        const movement = resolveHeroObjectMovement(
+          state,
+          hero,
+          instance,
+          "availability-check",
+          interaction.movement,
+        );
+        return Boolean(
+          movement &&
+          canTransitionToState(
+            state,
+            movement.position,
+            definition,
+            interaction,
+          ),
+        );
+      })
       .map((interaction) => ({
         interactableInstanceId: instance.id,
         interactableId: definition.id,
@@ -71,6 +96,7 @@ export function interactWithObject(
   brouhahaEffects: readonly BrouhahaEffectDefinition[],
   request: InteractableInteractionRequest,
   context: InteractableContext,
+  reactionDefinitions: readonly ChainReactionDefinition[] = [],
 ): InteractableInteractionResult {
   const requestedEvent: TacticalEvent = {
     type: "interactable-interaction-requested",
@@ -142,9 +168,21 @@ export function interactWithObject(
     return rejectRequest("out-of-range", [
       "Le héros doit être sur une case orthogonalement adjacente.",
     ]);
-  if (!canTransitionToState(state, instance, definition, interaction))
+
+  const movement = resolveHeroObjectMovement(
+    state,
+    hero,
+    instance,
+    request.id,
+    interaction.movement,
+  );
+  if (!movement)
+    return rejectRequest("movement-blocked", [
+      "La poussée est bloquée par le plateau, un combattant ou un autre objet.",
+    ]);
+  if (!canTransitionToState(state, movement.position, definition, interaction))
     return rejectRequest("destination-occupied", [
-      "La case de l'objet est occupée et ne peut pas redevenir bloquante.",
+      "La destination est occupée et ne peut pas devenir bloquante.",
     ]);
 
   const targetState = definition.states.find(
@@ -152,6 +190,7 @@ export function interactWithObject(
   )!;
   const updatedInteractable: InteractableInstance = {
     ...instance,
+    position: movement.position,
     stateId: targetState.id,
     blocksMovement: targetState.blocksMovement,
     blocksLineOfSight: targetState.blocksLineOfSight,
@@ -175,8 +214,9 @@ export function interactWithObject(
   };
   const brouhahaRequestId =
     interaction.brouhahaDelta === 0 ? null : `${request.id}-brouhaha`;
-  const objectEvents: TacticalEvent[] = [
-    requestedEvent,
+  const objectEvents: TacticalEvent[] = [requestedEvent];
+  if (movement.event) objectEvents.push(movement.event);
+  objectEvents.push(
     {
       type: "interactable-state-changed",
       requestId: request.id,
@@ -185,6 +225,7 @@ export function interactWithObject(
       kind: instance.kind,
       previousStateId: instance.stateId,
       stateId: targetState.id,
+      cause: { type: "hero-interaction", id: request.id },
     },
     {
       type: "interactable-interaction-succeeded",
@@ -195,42 +236,57 @@ export function interactWithObject(
       actionCost: 1,
       brouhahaRequestId,
     },
-  ];
+  );
 
-  if (!brouhahaRequestId)
-    return {
-      state: intermediateState,
-      events: objectEvents,
-      interactable: updatedInteractable,
-      interaction,
-      brouhaha: null,
-      rejection: null,
-    };
-
-  const brouhaha = changeBrouhaha(
+  const direct = applyDirectInteractableBrouhaha(
     intermediateState,
     brouhahaEffects,
+    interaction,
+    instance.id,
+    brouhahaRequestId,
+    context.dungeonId,
+  );
+  const triggers: ChainReactionRuntimeTrigger[] = [
     {
-      id: brouhahaRequestId,
-      delta: interaction.brouhahaDelta,
-      source: { type: "object", id: instance.id },
-      reason: interaction.reason,
+      trigger: {
+        type: "state-entered",
+        interactableInstanceId: instance.id,
+        stateId: targetState.id,
+      },
+      parentReactionId: null,
     },
-    context,
+  ];
+  if (movement.event)
+    triggers.push({
+      trigger: {
+        type: "moved",
+        interactableInstanceId: instance.id,
+        position: movement.position,
+      },
+      parentReactionId: null,
+    });
+  const chainReactions = resolveChainReactions(
+    direct.state,
+    definitions,
+    brouhahaEffects,
+    reactionDefinitions,
+    triggers,
+    { dungeonId: context.dungeonId, rootRequestId: request.id },
   );
   return {
-    state: brouhaha.state,
-    events: [...objectEvents, ...brouhaha.events],
+    state: chainReactions.state,
+    events: [...objectEvents, ...direct.events, ...chainReactions.events],
     interactable: updatedInteractable,
     interaction,
-    brouhaha,
+    brouhaha: direct.result,
+    chainReactions,
     rejection: null,
   };
 }
 
 function canTransitionToState(
   state: RoomState,
-  instance: InteractableInstance,
+  position: GridPosition,
   definition: InteractableDefinition,
   interaction: InteractableInteractionDefinition,
 ): boolean {
@@ -238,7 +294,7 @@ function canTransitionToState(
     (candidate) => candidate.id === interaction.toStateId,
   );
   if (!targetState) return false;
-  return !targetState.blocksMovement || !occupantAt(state, instance.position);
+  return !targetState.blocksMovement || !occupantAt(state, position);
 }
 
 function reject(
@@ -258,6 +314,7 @@ function reject(
     interactable: null,
     interaction: null,
     brouhaha: null,
+    chainReactions: null,
     rejection,
     events: [
       requestedEvent,

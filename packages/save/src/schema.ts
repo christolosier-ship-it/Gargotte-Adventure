@@ -7,6 +7,7 @@ export {
   legacyRoomStateV1Schema,
   legacyRoomStateV2Schema,
   legacyRoomStateV3Schema,
+  legacyRoomStateV4Schema,
   roomStateSchema,
 } from "./room-state-schema";
 export {

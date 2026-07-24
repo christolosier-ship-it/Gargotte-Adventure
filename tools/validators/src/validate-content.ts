@@ -68,6 +68,9 @@ const interactablesById = new Map(
     definition,
   ]),
 );
+const placementsById = new Map(
+  room.interactables.map((placement) => [placement.id, placement]),
+);
 for (const placement of room.interactables) {
   const definition = interactablesById.get(placement.interactableId);
   if (!definition)
@@ -78,6 +81,36 @@ for (const placement of room.interactables) {
     throw new Error(
       `Objet ${placement.id}: état absent ${placement.stateId} dans ${definition.id}.`,
     );
+}
+
+for (const reaction of room.chainReactions) {
+  if (!placementsById.has(reaction.trigger.interactableInstanceId))
+    throw new Error(
+      `Réaction ${reaction.id}: déclencheur absent ${reaction.trigger.interactableInstanceId}.`,
+    );
+  for (const action of reaction.actions) {
+    if (action.type === "brouhaha") continue;
+    const targetId =
+      action.type === "damage"
+        ? action.centerInstanceId
+        : action.targetInstanceId;
+    const placement = placementsById.get(targetId);
+    if (!placement)
+      throw new Error(`Réaction ${reaction.id}: cible absente ${targetId}.`);
+    if (action.type !== "transition") continue;
+    const definition = interactablesById.get(placement.interactableId);
+    const interaction = definition?.interactions.find(
+      (candidate) => candidate.id === action.interactionId,
+    );
+    if (!interaction)
+      throw new Error(
+        `Réaction ${reaction.id}: interaction absente ${targetId}/${action.interactionId}.`,
+      );
+    if (interaction.movement)
+      throw new Error(
+        `Réaction ${reaction.id}: une transition propagée ne peut pas pousser ${targetId}.`,
+      );
+  }
 }
 
 const dungeonScopedEffects = brouhahaCatalog.effects.filter(
@@ -138,5 +171,5 @@ if (total > assetBudgets.pilotTotalBytes)
     `Lot pilote 2B.1: poids total ${total} > ${assetBudgets.pilotTotalBytes}.`,
   );
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · ${interactableCatalog.interactables.length} objets · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · ${interactableCatalog.interactables.length} objets · ${room.chainReactions.length} réactions · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
 );

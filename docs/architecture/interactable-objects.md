@@ -2,16 +2,19 @@
 
 ## Statut
 
-- Cible : Sprint 3.3
-- Issue : #42
-- Pull Request : #43
-- Branche : `sprint-3/interactable-objects`
+- Cible initiale : Sprint 3.3
+- Extension : Sprint 3.4
+- Issue initiale : #42
+- Pull Request initiale : #43
+- Réactions en chaîne : [architecture dédiée](chain-reactions.md)
 
 ## Responsabilité
 
 Le moteur d'objets transforme une demande explicite d'un héros actif en une transition d'état du décor, une consommation d'action, des événements explicatifs et, lorsque l'interaction est bruyante, une demande de Brouhaha.
 
-Il ne résout pas les réactions en chaîne, les dégâts de zone, les déplacements d'objets, le loot ou les renforts automatiques. Ces extensions appartiennent aux phases suivantes.
+Le Sprint 3.4 étend cette frontière avec la poussée d'objets et l'émission de déclencheurs vers un moteur de propagation séparé. Les dégâts de zone, transitions secondaires et demandes de Brouhaha propagées restent résolus hors de l'interface et du renderer.
+
+Le loot et les renforts automatiques restent exclus. Les renforts appartiennent au Sprint 3.5.
 
 ## Séparation définition et instance
 
@@ -21,7 +24,8 @@ Il ne résout pas les réactions en chaîne, les dégâts de zone, les déplacem
 - états autorisés ;
 - propriétés de blocage par état ;
 - transitions disponibles ;
-- coût de Brouhaha et raison explicative.
+- coût de Brouhaha et raison explicative ;
+- mouvement direct optionnel de type poussée.
 
 `InteractableInstance` représente un objet réellement présent dans une salle :
 
@@ -36,11 +40,11 @@ Le contenu de Bastognac place les instances et le moteur calcule leurs conséque
 
 ## Catalogue pilote Bastognac
 
-Le Sprint 3.3 livre cinq familles :
+Le Sprint 3.3 livre cinq familles, étendues par le Sprint 3.4 :
 
 | Objet              | États pilotes     | Interaction          | Brouhaha |
 | ------------------ | ----------------- | -------------------- | -------- |
-| Table bancale      | debout, renversée | renverser            | 0        |
+| Table bancale      | debout, renversée | pousser et renverser | 0        |
 | Tonneau douteux    | intact, brisé     | briser               | +1       |
 | Grille grinçante   | fermée, ouverte   | ouvrir ou fermer     | 0        |
 | Torche murale      | allumée, éteinte  | éteindre ou rallumer | 0        |
@@ -67,7 +71,8 @@ La résolution vérifie dans cet ordre :
 6. objet et définition présents ;
 7. transition valide depuis l'état courant ;
 8. distance orthogonale égale à une case ;
-9. absence de combattant lorsqu'une transition rend la case bloquante.
+9. destination de poussée dans le plateau et libre ;
+10. absence de combattant lorsqu'une transition rend la case bloquante.
 
 Un refus retourne exactement le même `RoomState` et ne consomme aucune action.
 
@@ -78,11 +83,13 @@ Une transition dont `brouhahaDelta` est non nul produit une demande stable porta
 Le moteur d'objets ne choisit aucun effet de Brouhaha. Il délègue au moteur livré au Sprint 3.2, puis concatène les événements dans l'ordre causal :
 
 1. demande d'interaction ;
-2. changement d'état de l'objet ;
-3. succès de l'interaction ;
-4. demande de Brouhaha ;
-5. changement de niveau ;
-6. effets résolus.
+2. déplacement éventuel de l'objet ;
+3. changement d'état de l'objet ;
+4. succès de l'interaction ;
+5. demande de Brouhaha directe ;
+6. propagation des réactions secondaires.
+
+Chaque demande de Brouhaha secondaire est soumise au même moteur et conserve son propre identifiant séquentiel.
 
 ## Déplacement, spawn et ligne de vue
 
@@ -91,7 +98,8 @@ Les propriétés calculées de l'instance sont utilisées par les règles commun
 - un objet bloquant interdit le déplacement et l'apparition sur sa case ;
 - un objet opaque bloque la ligne de vue ;
 - un état ouvert ou brisé peut libérer la case ;
-- fermer une grille sur un combattant est refusé.
+- fermer une grille sur un combattant est refusé ;
+- pousser un objet sur un obstacle, un combattant ou un autre objet est refusé.
 
 Les coordonnées restent logiques et indépendantes de la rotation de caméra.
 
@@ -102,21 +110,20 @@ L'application expose les interactions disponibles sous forme de boutons accessib
 Le renderer :
 
 - dessine une forme de repli distincte pour chaque famille ;
-- rend visuellement l'état courant ;
+- rend visuellement l'état courant et la position calculée ;
 - utilise un asset WebP lorsqu'une variante existe ;
 - remonte uniquement l'identifiant de l'instance sélectionnée ;
 - expose les diagnostics nécessaires aux tests navigateur.
 
 ## Sauvegarde
 
-La salle tactique passe en version 4. La sauvegarde conserve :
+Le Sprint 3.3 a introduit la salle tactique version 4. Le Sprint 3.4 passe l'état à la version 5 pour conserver en plus :
 
-- toutes les instances et leurs états ;
-- les demandes d'interaction déjà traitées ;
-- la prochaine séquence d'interaction ;
-- le Brouhaha, les spawns, les héros et les ennemis déjà présents.
+- la prochaine séquence de réaction ;
+- l'historique causal complet ;
+- les résultats appliqués, ignorés ou interrompus par un garde-fou.
 
-Les versions 1, 2 et 3 sont migrées avec un catalogue d'instances vide et une séquence initiale à 1. Une ancienne sauvegarde reste donc lisible sans inventer rétroactivement des objets.
+Les versions 1 à 4 sont migrées avec un historique vide et une séquence initiale à 1. Une ancienne sauvegarde reste donc lisible sans inventer rétroactivement des réactions.
 
 ## Frontière avec les phases suivantes
 

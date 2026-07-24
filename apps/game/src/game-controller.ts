@@ -29,29 +29,16 @@ import {
   type BrouhahaControlId,
 } from "./brouhaha-controller";
 import { appendTacticalEvents, describeDomainEvent } from "./event-messages";
+import type { GameControllerOptions } from "./game-controller-options";
 import { renderGameView } from "./game-view";
 import { readSelectedHeroIds } from "./hero-selection";
 import {
   availableInteractableActions,
   executeInteractableAction,
 } from "./interactable-controller";
-import {
-  PersistenceController,
-  type RestoredSession,
-} from "./persistence-controller";
+import { PersistenceController } from "./persistence-controller";
 import { buildTacticalRoom } from "./room-builder";
 import { executeScriptedSpawn } from "./scripted-spawn-controller";
-
-interface GameControllerOptions {
-  shell: GameShell;
-  renderer: TabletopRenderer;
-  dungeon: DungeonDefinition;
-  roomDefinition: TacticalRoomDefinition;
-  creatureDefinitions: CreatureDefinition[];
-  brouhahaEffects: BrouhahaEffectDefinition[];
-  interactableDefinitions: InteractableDefinition[];
-  restored: RestoredSession;
-}
 
 interface StatefulTacticalResult {
   state: RoomState;
@@ -273,6 +260,7 @@ export class GameController {
         this.room,
         this.interactableDefinitions,
         this.brouhahaEffects,
+        this.roomDefinition.chainReactions,
         this.dungeon.id,
         interactableInstanceId,
         interactionId,
