@@ -58,6 +58,7 @@ const state = (patch: Partial<RoomState> = {}): RoomState => ({
       blocksMovement: true,
     },
   ],
+  enemyTurnRoster: [],
   activeHeroId: "h",
   phase: "heroes-turn",
   turn: 1,
@@ -183,6 +184,7 @@ describe("portée ligne de vue combat", () => {
     expect(result.value.state.enemies[0]!.alive).toBe(false);
     expect(result.value.state.phase).toBe("victory");
     expect(result.value.state.activeHeroId).toBeNull();
+    expect(result.value.state.enemyTurnRoster).toEqual([]);
   });
 
   it("ne consomme aucune action lors d'une attaque invalide", () => {

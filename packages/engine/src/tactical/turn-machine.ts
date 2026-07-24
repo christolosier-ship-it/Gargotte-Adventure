@@ -1,6 +1,6 @@
 import { err, ok, type TacticalResult } from "./errors";
 import type { TacticalEvent } from "./events";
-import { runEnemyTurn } from "./enemy-ai";
+import { createEnemyTurnRoster, runEnemyTurn } from "./enemy-ai";
 import { restoreHeroActions, withTerminalPhase } from "./room-state";
 import type { RoomState } from "./types";
 
@@ -37,7 +37,7 @@ export function endHeroActivation(
   if (state.activeHeroId !== heroId)
     return err("not-active-hero", "Seul le héros actif peut terminer.");
 
-  let next = {
+  let next: RoomState = {
     ...state,
     activeHeroId: null,
     heroes: state.heroes.map((hero) =>
@@ -53,12 +53,13 @@ export function endHeroActivation(
       .filter((hero) => hero.alive)
       .every((hero) => hero.activationCompleted)
   ) {
-    next = { ...next, phase: "enemy-turn" };
-    events.push({
-      type: "phase-changed",
-      phase: "enemy-turn",
-      turn: next.turn,
-    });
+    next = openEnemyTurn(next);
+    if (next.phase === "enemy-turn")
+      events.push({
+        type: "phase-changed",
+        phase: "enemy-turn",
+        turn: next.turn,
+      });
   }
 
   return ok({ state: withTerminalPhase(next), events });
@@ -76,11 +77,10 @@ export function endHeroesTurn(
     events.push({ type: "activation-ended", heroId: hero.id });
     return { ...hero, actionsRemaining: 0, activationCompleted: true };
   });
-  const next = withTerminalPhase({
+  const next = openEnemyTurn({
     ...state,
     heroes,
     activeHeroId: null,
-    phase: "enemy-turn",
   });
   if (next.phase === "enemy-turn")
     events.push({
@@ -101,7 +101,7 @@ export function finishEnemyTurn(
       "Le tour ennemi ne peut être résolu qu'en phase enemy-turn.",
     );
 
-  const ran = runEnemyTurn(state);
+  const ran = runEnemyTurn(state, state.enemyTurnRoster);
   const terminal = withTerminalPhase(ran.state);
   if (terminal.phase !== "enemy-turn")
     return ok({ state: terminal, events: ran.events });
@@ -117,5 +117,13 @@ export function finishEnemyTurn(
       ...ran.events,
       { type: "phase-changed", phase: "heroes-turn", turn: restored.turn },
     ],
+  });
+}
+
+function openEnemyTurn(state: RoomState): RoomState {
+  return withTerminalPhase({
+    ...state,
+    phase: "enemy-turn",
+    enemyTurnRoster: createEnemyTurnRoster(state),
   });
 }

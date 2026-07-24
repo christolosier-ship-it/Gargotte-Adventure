@@ -72,6 +72,7 @@ export function createRoomState(input: {
     enemies: input.enemies.map((placement) =>
       createInitialEnemy(placement, creatureDefinitions),
     ),
+    enemyTurnRoster: [],
     activeHeroId: null,
     phase: "heroes-turn",
     turn: 1,
@@ -135,9 +136,19 @@ function createInitialInteractable(
 
 export function withTerminalPhase(state: RoomState): RoomState {
   if (state.enemies.every((enemy) => !enemy.alive))
-    return { ...state, phase: "victory", activeHeroId: null };
+    return {
+      ...state,
+      phase: "victory",
+      activeHeroId: null,
+      enemyTurnRoster: [],
+    };
   if (state.heroes.every((hero) => !hero.alive))
-    return { ...state, phase: "defeat", activeHeroId: null };
+    return {
+      ...state,
+      phase: "defeat",
+      activeHeroId: null,
+      enemyTurnRoster: [],
+    };
   return state;
 }
 
@@ -153,6 +164,7 @@ export function restoreHeroActions(state: RoomState): RoomState {
           }
         : hero,
     ),
+    enemyTurnRoster: [],
     activeHeroId: null,
   };
 }

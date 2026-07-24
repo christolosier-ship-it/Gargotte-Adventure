@@ -1,8 +1,10 @@
 import { z } from "zod";
 import { HERO_ACTIONS } from "@gargotte/engine";
-import { brouhahaStateSchema } from "./brouhaha-schema";
 import { brouhahaReinforcementHistoryEntrySchema } from "./brouhaha-reinforcement-schema";
+import { validateReinforcementHistory } from "./brouhaha-reinforcement-history-validation";
+import { brouhahaStateSchema } from "./brouhaha-schema";
 import { chainReactionHistoryEntrySchema } from "./chain-reaction-schema";
+import { validateEnemyTurnRoster } from "./enemy-turn-roster-validation";
 import { validateSequencedHistory } from "./history-validation";
 import { interactableInstanceSchema } from "./interactable-schema";
 
@@ -121,15 +123,25 @@ const roomV5Shape = {
   chainReactionHistory: z.array(chainReactionHistoryEntrySchema),
 };
 
+const roomV6Shape = {
+  ...roomV5Shape,
+  nextBrouhahaReinforcementSequence: z.number().int().positive(),
+  brouhahaReinforcementHistory: z.array(
+    brouhahaReinforcementHistoryEntrySchema,
+  ),
+};
+
 export const roomStateSchema = z
   .object({
     version: z.literal(6),
-    ...roomV5Shape,
-    nextBrouhahaReinforcementSequence: z.number().int().positive(),
-    brouhahaReinforcementHistory: z.array(
-      brouhahaReinforcementHistoryEntrySchema,
-    ),
+    ...roomV6Shape,
+    enemyTurnRoster: z.array(idSchema),
   })
+  .strict()
+  .superRefine(validateRoomState);
+
+export const legacyRoomStateV6Schema = z
+  .object({ version: z.literal(6), ...roomV6Shape })
   .strict()
   .superRefine(validateRoomState);
 
@@ -186,6 +198,7 @@ function validateRoomState(
     heroes: z.infer<typeof heroSchema>[];
     enemies: z.infer<typeof legacyEnemySchema>[];
     activeHeroId: string | null;
+    phase: "heroes-turn" | "enemy-turn" | "victory" | "defeat";
     spawnPoints?: z.infer<typeof spawnPointSchema>[];
     processedSpawnRequestIds?: string[];
     processedInteractableRequestIds?: string[];
@@ -195,6 +208,7 @@ function validateRoomState(
     brouhahaReinforcementHistory?: z.infer<
       typeof brouhahaReinforcementHistoryEntrySchema
     >[];
+    enemyTurnRoster?: string[];
   },
   context: z.RefinementCtx,
 ): void {
@@ -271,6 +285,7 @@ function validateRoomState(
     context,
   );
   validateReinforcementHistory(room, context);
+  validateEnemyTurnRoster(room, context);
 
   if (
     room.activeHeroId &&
@@ -280,38 +295,6 @@ function validateRoomState(
       code: "custom",
       path: ["activeHeroId"],
       message: "le héros actif doit exister et être vivant",
-    });
-}
-
-function validateReinforcementHistory(
-  room: {
-    nextBrouhahaReinforcementSequence?: number;
-    brouhahaReinforcementHistory?: z.infer<
-      typeof brouhahaReinforcementHistoryEntrySchema
-    >[];
-  },
-  context: z.RefinementCtx,
-): void {
-  const history = room.brouhahaReinforcementHistory ?? [];
-  validateSequencedHistory(
-    history,
-    room.nextBrouhahaReinforcementSequence,
-    "brouhahaReinforcementHistory",
-    "nextBrouhahaReinforcementSequence",
-    "l'historique des renforts",
-    context,
-  );
-  const activations = new Set(
-    history.map(
-      (entry) => `${entry.reinforcementDefinitionId}:${entry.activation}`,
-    ),
-  );
-  const requests = new Set(history.map((entry) => entry.spawnRequestId));
-  if (activations.size !== history.length || requests.size !== history.length)
-    context.addIssue({
-      code: "custom",
-      path: ["brouhahaReinforcementHistory"],
-      message: "les activations et demandes de renfort doivent être uniques",
     });
 }
 

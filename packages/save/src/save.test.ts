@@ -4,6 +4,7 @@ import {
   changeBrouhaha,
   createInitialGameState,
   createRoomState,
+  endHeroesTurn,
   type BrouhahaEffectDefinition,
   type BrouhahaReinforcementDefinition,
   type CreatureDefinition,
@@ -138,11 +139,24 @@ function currentPayload() {
   };
 }
 
+function legacyV6() {
+  const opened = endHeroesTurn(createTestRoom());
+  if (!opened.ok) throw new Error("ouverture du tour ennemi attendue");
+  const { enemyTurnRoster: _roster, ...room } = opened.value.state;
+  return {
+    kind: "tactical-room",
+    version: 6,
+    room,
+    selectedHeroIds: ["hero"],
+  };
+}
+
 function legacyV5() {
   const current = createTestRoom();
   const {
     nextBrouhahaReinforcementSequence: _next,
     brouhahaReinforcementHistory: _history,
+    enemyTurnRoster: _roster,
     ...room
   } = current;
   return {
@@ -249,6 +263,29 @@ describe("sauvegarde tactique version 6", () => {
     expect(payload.room.nextBrouhahaReinforcementSequence).toBe(2);
   });
 
+  it("persiste exactement le roster d'un tour ennemi ouvert", async () => {
+    const opened = endHeroesTurn(createTestRoom());
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) throw new Error("ouverture du tour ennemi attendue");
+    const payload = {
+      kind: "tactical-room" as const,
+      version: 6 as const,
+      room: opened.value.state,
+      selectedHeroIds: ["hero"],
+    };
+
+    await saveRoomState(payload);
+    await expect(loadRoomState()).resolves.toEqual(payload);
+    expect(payload.room.enemyTurnRoster).toEqual(["ennemi-initial"]);
+  });
+
+  it("migre une ancienne version 6 en reconstruisant le roster ouvert", () => {
+    const migrated = parseSavedRoomPayload(legacyV6());
+    expect(migrated?.version).toBe(6);
+    expect(migrated?.room.phase).toBe("enemy-turn");
+    expect(migrated?.room.enemyTurnRoster).toEqual(["ennemi-initial"]);
+  });
+
   it.each([
     ["5", legacyV5],
     ["4", legacyV4],
@@ -261,6 +298,7 @@ describe("sauvegarde tactique version 6", () => {
     expect(migrated?.room.version).toBe(6);
     expect(migrated?.room.nextBrouhahaReinforcementSequence).toBe(1);
     expect(migrated?.room.brouhahaReinforcementHistory).toEqual([]);
+    expect(migrated?.room.enemyTurnRoster).toEqual([]);
   });
 
   it("préserve les fondations lors de la migration version 5", () => {
@@ -294,6 +332,19 @@ describe("sauvegarde tactique version 6", () => {
         room: {
           ...payload.room,
           nextBrouhahaReinforcementSequence: 1,
+        },
+      }),
+    ).toBeNull();
+  });
+
+  it("rejette un roster présent hors du tour ennemi", () => {
+    const payload = currentPayload();
+    expect(
+      parseSavedRoomPayload({
+        ...payload,
+        room: {
+          ...payload.room,
+          enemyTurnRoster: ["ennemi-initial"],
         },
       }),
     ).toBeNull();

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createEnemyTurnRoster, runEnemyTurn } from "./enemy-ai";
 import { createRoomState } from "./room-state";
+import { endHeroesTurn, finishEnemyTurn } from "./turn-machine";
 import type { CreatureDefinition } from "./types";
 
 const creature: CreatureDefinition = {
@@ -44,30 +44,46 @@ const room = () =>
 
 describe("roster du tour ennemi", () => {
   it("ignore jusqu'au prochain tour un ennemi ajouté après l'ouverture", () => {
-    const current = { ...room(), phase: "enemy-turn" as const };
-    const roster = createEnemyTurnRoster(current);
+    const opened = endHeroesTurn(room());
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) throw new Error("ouverture du tour ennemi attendue");
+    expect(opened.value.state.enemyTurnRoster).toEqual(["ancien"]);
+
     const withLateReinforcement = {
-      ...current,
+      ...opened.value.state,
       enemies: [
-        ...current.enemies,
+        ...opened.value.state.enemies,
         {
-          ...current.enemies[0]!,
+          ...opened.value.state.enemies[0]!,
           id: "renfort-tardif",
           position: { column: 4, row: 2 },
         },
       ],
     };
 
-    const currentTurn = runEnemyTurn(withLateReinforcement, roster);
+    const currentTurn = finishEnemyTurn(withLateReinforcement);
+    expect(currentTurn.ok).toBe(true);
+    if (!currentTurn.ok) throw new Error("résolution du tour ennemi attendue");
     expect(
-      currentTurn.events
+      currentTurn.value.events
         .filter((event) => event.type === "enemy-decision")
         .map((event) => event.enemyId),
     ).toEqual(["ancien"]);
+    expect(currentTurn.value.state.enemyTurnRoster).toEqual([]);
 
-    const nextTurn = runEnemyTurn(withLateReinforcement);
+    const nextOpened = endHeroesTurn(currentTurn.value.state);
+    expect(nextOpened.ok).toBe(true);
+    if (!nextOpened.ok) throw new Error("tour ennemi suivant attendu");
+    expect(nextOpened.value.state.enemyTurnRoster).toEqual([
+      "ancien",
+      "renfort-tardif",
+    ]);
+
+    const nextTurn = finishEnemyTurn(nextOpened.value.state);
+    expect(nextTurn.ok).toBe(true);
+    if (!nextTurn.ok) throw new Error("résolution suivante attendue");
     expect(
-      nextTurn.events
+      nextTurn.value.events
         .filter((event) => event.type === "enemy-decision")
         .map((event) => event.enemyId),
     ).toEqual(["ancien", "renfort-tardif"]);
