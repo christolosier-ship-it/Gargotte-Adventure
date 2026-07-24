@@ -2,15 +2,15 @@
 
 ## Statut
 
-- Cible : Sprint 3.5
-- État : cadré, non implémenté
-- Prérequis fusionnés : Sprint 3.1 à 3.4
-- Base stable : `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`
-- Issue documentaire : #46
+- Sprint : 3.5
+- État : implémenté sur la branche de livraison
+- Issue : #48
+- Pull Request : #49
+- Base documentaire : `66f2d30543c77327c86c460d8be874254719ecd0`
 
-## Objectif
+## Objet
 
-Le Sprint 3.5 relie les changements de niveau du Brouhaha au moteur de spawn livré au Sprint 3.1.
+Le Sprint 3.5 relie les changements de niveau du Brouhaha au moteur de spawn déterministe livré au Sprint 3.1.
 
 Une règle de renfort ne crée jamais directement une créature. Elle observe un franchissement de seuil, produit une `SpawnRequest` explicite, puis laisse le moteur de spawn valider les points, l'occupation, la phase et le mode d'échec.
 
@@ -21,13 +21,13 @@ BrouhahaRequest acceptée
 ancien niveau → nouveau niveau
         │
         ▼
-franchissements montants de seuil
+franchissements montants triés
         │
         ▼
-règles de renfort triées
+activations déterministes
         │
         ▼
-SpawnRequest déterministes
+SpawnRequest explicites
         │
         ▼
 moteur de spawn existant
@@ -41,27 +41,38 @@ moteur de spawn existant
 
 ### Moteur de Brouhaha
 
-Il calcule le niveau, l'effet ou les effets résolus et l'entrée d'historique. Il fournit le niveau précédent, le nouveau niveau et l'identifiant de la demande racine.
+Il calcule le nouveau niveau, résout les effets et conserve son historique. Après une variation acceptée, il transmet le niveau précédent, le nouveau niveau et l'identifiant de la demande racine à la politique de renfort.
 
 ### Politique de renfort
 
-Elle décide si un seuil a été franchi, si la règle peut encore s'activer et quelle `SpawnRequest` doit être produite.
+`resolveBrouhahaReinforcements` :
 
-Elle ne choisit pas une case libre et ne crée pas d'instance.
+- détecte les seuils franchis à la hausse ;
+- trie les règles par seuil puis identifiant ;
+- contrôle `maxActivations` à partir de l'historique persistant ;
+- crée des identifiants d'activation et de demande reproductibles ;
+- délègue chaque apparition au moteur de spawn ;
+- historise succès total, succès partiel ou refus.
+
+Elle ne choisit jamais une case libre et ne construit aucune instance de créature.
 
 ### Moteur de spawn
 
-Il reste l'unique autorité pour les apparitions. Il filtre les points candidats dans l'ordre déclaré, applique le mode `all-or-nothing` ou `partial`, crée les identifiants runtime et produit les événements de succès ou de refus.
+`spawnCreatures` reste l'unique autorité pour :
+
+- filtrer les points candidats dans leur ordre déclaré ;
+- contrôler limites, obstacles, héros, ennemis et objets ;
+- appliquer `all-or-nothing` ou `partial` ;
+- créer les identifiants runtime ;
+- expliquer chaque succès ou refus.
 
 ### Application, UI et renderer
 
-L'application assemble les catalogues et transmet les intentions au moteur. L'UI traduit les événements en messages. Le renderer affiche les nouvelles instances. Aucun de ces composants ne décide qu'un renfort doit apparaître.
+L'application transmet le catalogue de créatures et les règles de salle. L'UI traduit les événements en messages. Le renderer affiche l'état et expose uniquement des diagnostics de test. Aucun de ces composants ne décide qu'un seuil doit produire un renfort.
 
-## Modèle de contenu prévu
+## Modèle de contenu
 
-La salle tactique passera de `schemaVersion: 4` à `schemaVersion: 5` et pourra déclarer `brouhahaReinforcements`.
-
-Une règle pilote contient :
+La salle tactique utilise `schemaVersion: 5` et peut déclarer :
 
 ```ts
 interface BrouhahaReinforcementDefinition {
@@ -75,100 +86,60 @@ interface BrouhahaReinforcementDefinition {
 }
 ```
 
-Contraintes de validation du contenu :
+Le schéma et le validateur contrôlent :
 
-- identifiant unique dans la salle ;
-- seuil entier compris entre 1 et 12 ;
-- quantité et `maxActivations` strictement positives ;
+- identifiants uniques dans la salle ;
+- seuil entier de 1 à 12 ;
+- quantité et limite strictement positives ;
 - créature présente dans le catalogue ;
-- points candidats référencés par la salle et sans doublon dans la règle ;
-- ordre des points conservé tel qu'il est déclaré ;
-- aucune règle implicite issue du nom, d'un tag ou de la position.
+- points candidats présents et non dupliqués ;
+- conservation de l'ordre éditorial des points.
 
-L'activation, l'occupation et la disponibilité courante des points sont contrôlées au runtime par le moteur de spawn.
+L'équilibrage final des seuils, quantités et archétypes reste réservé au Sprint 4.
 
-Les valeurs pilotes servent à valider le moteur. L'équilibrage final des seuils, quantités et archétypes appartient au Sprint 4.
+## Franchissement et ordre
 
-## Règle de franchissement
-
-Une règle devient éligible uniquement lors d'un franchissement montant :
+Une règle est éligible uniquement lorsque :
 
 ```text
 previousLevel < threshold <= level
 ```
 
-Conséquences :
+Une baisse ne déclenche rien. Une remontée peut réactiver une règle tant que sa limite n'est pas atteinte. Charger une sauvegarde déjà au-dessus d'un seuil ne produit aucun effet rétroactif.
 
-- passer de 3 à 4 franchit le seuil 4 ;
-- passer de 4 à 6 ne refranchit pas le seuil 4 ;
-- passer de 7 à 10 peut franchir plusieurs seuils ;
-- une baisse de niveau ne déclenche aucun renfort ;
-- après une baisse, une remontée peut déclencher de nouveau une règle tant que `maxActivations` n'est pas atteint ;
-- charger une sauvegarde déjà au-dessus d'un seuil ne crée aucun renfort rétroactif.
+Les règles franchies par une même demande sont triées par `threshold`, puis par `id`, et résolues séquentiellement sur l'état produit par la règle précédente.
 
-Les règles franchies par une même demande sont triées par `threshold`, puis par `id`. Elles sont résolues séquentiellement sur l'état produit par la règle précédente.
+## Idempotence et limites
 
-## Idempotence et identifiants
+Une activation utilise l'identifiant :
 
-Chaque activation reçoit un identifiant déterministe dérivé de :
-
-- l'identifiant de la demande de Brouhaha ;
-- l'identifiant de la règle ;
-- le numéro d'activation de cette règle.
-
-La `SpawnRequest` utilise elle aussi un identifiant dérivé de cette activation et une source :
-
-```ts
-{
-  type: "brouhaha",
-  id: reinforcementDefinition.id
-}
+```text
+reinforcement-{brouhahaRequestId}-{definitionId}-{activation}
 ```
 
-Une même demande de Brouhaha ne peut donc pas produire deux fois la même activation, y compris après double clic, reprise ou réémission accidentelle.
+La demande de spawn ajoute le suffixe `-spawn`. La source transmise au moteur est `{ type: "brouhaha", id: definition.id }`.
 
-## Limites de scénario
+Le numéro d'activation est déduit de l'historique de la règle. Une activation est consommée dès que la demande de spawn est soumise, y compris lorsque tous les points sont bloqués. Une même demande de Brouhaha est elle-même idempotente et ne peut donc pas créer deux fois le même renfort.
 
-`maxActivations` limite chaque règle sur l'ensemble de la salle.
+## Résolution terminale
 
-Une activation est consommée dès que le seuil est franchi et que la `SpawnRequest` est soumise. Un refus de spawn compte donc comme une activation : bloquer volontairement les points ne permet pas de repousser indéfiniment un renfort prévu.
+Les dégâts de réaction ne calculent plus immédiatement la victoire. La phase terminale est évaluée après toute la file de réactions, les demandes de Brouhaha et les renforts de la résolution racine.
 
-Le moteur de spawn reste libre de :
+```text
+intention → transitions/dégâts → réactions → Brouhaha → renforts → phase terminale
+```
 
-- réussir complètement ;
-- créer seulement les instances possibles en mode `partial` ;
-- refuser sans mutation en mode `all-or-nothing` ;
-- refuser une salle terminale.
+La victoire n'est acquise que si aucun ennemi vivant ne subsiste après les apparitions de cette résolution. Une salle déjà terminale refuse toujours Brouhaha et spawn.
 
-Le budget de menace n'est ni lu ni dépensé par cette mécanique. Les renforts sont une augmentation runtime explicitement autorisée par le scénario.
+## Tour ennemi
 
-## Ordre de résolution d'une action racine
+`createEnemyTurnRoster` capture les identifiants des ennemis vivants au début de la phase. `runEnemyTurn` exécute uniquement cette liste.
 
-Pour éviter une victoire temporaire suivie d'une réapparition, une action racine doit être finalisée dans cet ordre :
+Un ennemi ajouté après l'ouverture du roster ne joue donc pas pendant le tour en cours. Il participe au prochain tour ennemi.
 
-1. valider l'intention initiale ;
-2. appliquer ses transitions, déplacements et dégâts ;
-3. propager les réactions en chaîne ;
-4. résoudre chaque demande de Brouhaha dans son ordre causal ;
-5. produire et exécuter les renforts correspondant aux seuils franchis ;
-6. calculer la phase terminale sur l'état final ;
-7. publier les événements, rendre et sauvegarder.
+## Persistance
 
-La victoire n'est acquise que si aucun ennemi vivant ne subsiste après les renforts de la résolution courante.
-
-Une salle déjà en `victory` ou `defeat` refuse toute nouvelle demande de Brouhaha et toute apparition.
-
-## Articulation avec le tour ennemi
-
-Les ennemis créés pendant le tour des héros participent normalement au prochain tour ennemi.
-
-Si une source future déclenche un renfort pendant `enemy-turn`, les nouveaux ennemis ne jouent pas dans la liste d'activation déjà ouverte. Le roster du tour ennemi est figé au début de la phase. Ils agiront au prochain tour ennemi.
-
-Cette règle évite qu'une apparition tardive modifie l'ordre en cours ou agisse immédiatement sans être visible et comprise par le joueur.
-
-## État persistant prévu
-
-La sauvegarde tactique passera de la version 5 à la version 6 et ajoutera :
+La sauvegarde tactique utilise la version 6 et conserve :
 
 ```ts
 interface BrouhahaReinforcementHistoryEntry {
@@ -178,6 +149,7 @@ interface BrouhahaReinforcementHistoryEntry {
   brouhahaRequestId: string;
   previousLevel: number;
   level: number;
+  threshold: number;
   activation: number;
   spawnRequestId: string;
   result: "succeeded" | "partial" | "rejected";
@@ -186,63 +158,58 @@ interface BrouhahaReinforcementHistoryEntry {
 }
 ```
 
-`RoomState` conservera :
+`RoomState` ajoute `nextBrouhahaReinforcementSequence` et `brouhahaReinforcementHistory`.
 
-- `nextBrouhahaReinforcementSequence` ;
-- `brouhahaReinforcementHistory`.
+Les sauvegardes versions 1 à 5 migrent vers la version 6 avec une séquence égale à 1 et un historique vide. La migration ne rejoue aucun ancien niveau de Brouhaha.
 
-Le nombre d'activations d'une règle est déduit de l'historique validé. Les sauvegardes versions 1 à 5 migrent avec un historique vide et une séquence égale à 1.
+Le validateur rejette notamment :
 
-La migration ne rejoue aucun ancien niveau de Brouhaha et ne produit aucun renfort rétroactif.
+- identifiants ou séquences dupliqués ;
+- couples règle/activation dupliqués ;
+- demandes de spawn dupliquées ;
+- prochaine séquence située avant l'historique ;
+- résultat refusé contenant des instances créées ;
+- succès sans instance créée.
 
-## Événements prévus
+## Événements
 
-La couche de renfort produit au minimum :
+La couche produit :
 
-- `reinforcement-triggered` : seuil franchi et demande créée ;
-- `reinforcement-resolved` : succès total, partiel ou refus ;
-- les événements `spawn-requested`, `creature-instantiated`, `spawn-succeeded` et `spawn-rejected` déjà fournis par le moteur de spawn.
+- `reinforcement-triggered` ;
+- les événements existants du moteur de spawn ;
+- `reinforcement-resolved`.
 
-Chaque événement conserve la demande de Brouhaha racine, la règle, le seuil, le numéro d'activation et l'identifiant de `SpawnRequest`.
+Chaque événement conserve la demande de Brouhaha racine, la règle, le seuil, l'activation et la demande de spawn. Le journal distingue renfort réussi, partiel ou refusé.
 
 ## Scénario pilote Bastognac
 
-Le scénario de validation doit rester petit et lisible :
+La salle de contrôle contient deux règles provisoires :
 
-- au moins deux seuils distincts ;
-- une règle d'une créature en succès total ;
-- une règle de plusieurs créatures en mode `partial` ;
-- un plafond d'activation explicite ;
-- des points candidats réutilisant les points de spawn déjà présents ;
-- des valeurs clairement marquées comme provisoires.
+- `seuil-1-bricoleur` : seuil 1, un Gobelin Bricoleur, mode total, deux activations maximum ;
+- `seuil-2-lance-tout` : seuil 2, deux Gobelins Lance-Tout, mode partiel, une activation maximum.
 
-Le scénario doit pouvoir être déclenché par les commandes de Brouhaha existantes et par la chaîne table → pilier → grille du Sprint 3.4. Aucun bouton de spawn manuel ne doit être nécessaire pour démontrer la fonctionnalité automatique.
+Briser le tonneau démontre le premier seuil. La chaîne table → pilier → grille franchit les deux seuils : le premier renfort occupe le point haut, puis le second ne peut créer qu'une instance sur le point bas et produit un résultat partiel expliqué.
 
-## Critères de sortie du Sprint 3.5
+## Garanties couvertes
 
-- un seuil est déclenché uniquement lors d'un franchissement montant ;
-- plusieurs seuils franchis par une même demande sont traités dans un ordre stable ;
-- `maxActivations` est respecté après sauvegarde et reprise ;
-- une même demande ne peut pas produire deux fois le même renfort ;
-- succès total, partiel et refus sont expliqués ;
-- l'occupation par héros, ennemis, obstacles et objets est respectée par le moteur de spawn ;
-- une victoire n'est calculée qu'après les renforts de la résolution courante ;
-- un ennemi créé pendant `enemy-turn` n'agit pas dans le roster déjà ouvert ;
-- la sauvegarde version 6 restaure exactement l'historique et les compteurs ;
-- les migrations versions 1 à 5 ne déclenchent rien rétroactivement ;
-- aucun hasard implicite, temps système ou UUID n'intervient ;
-- aucune règle métier n'est ajoutée dans l'UI ou le renderer ;
-- les tests unitaires et Playwright passent sur Chrome bureau et mobile paysage ;
-- Gargottex reste strictement en lecture seule.
+Les tests vérifient :
+
+- franchissement montant uniquement ;
+- ordre stable de plusieurs seuils ;
+- idempotence ;
+- réactivation après baisse ;
+- limite persistante et activation refusée consommée ;
+- succès total, partiel et refus ;
+- phase terminale après renforts ;
+- roster ennemi figé ;
+- sauvegarde exacte et migrations versions 1 à 5 ;
+- scénario naturel et reprise sur Chrome bureau et mobile paysage.
 
 ## Hors périmètre
 
 - composition de rencontre par budget ;
-- vagues complexes ou renforts adaptatifs ;
-- sélection pondérée ou aléatoire d'archétypes ;
-- équilibrage définitif des créatures ;
+- vagues adaptatives ou pondérées ;
+- équilibrage définitif ;
 - boss, loot et progression ;
-- audio et animations de finition ;
-- géométrie ou topologie générée.
-
-Ces sujets appartiennent aux Sprints 3.6, 4 ou 5 selon leur nature.
+- animations et audio de finition ;
+- génération de géométrie ou de topologie.
