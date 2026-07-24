@@ -43,7 +43,7 @@ Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres pers
 
 ## Livraison Sprint 3.5
 
-La PR #49 livre :
+La PR #49, fusionnée au commit `18a97f64f97760417f6c1e5e4cdcc139ae1e77ac`, livre :
 
 - des règles `brouhahaReinforcements` déclarées par salle ;
 - un déclenchement uniquement lorsque `previousLevel < threshold <= level` ;
@@ -65,12 +65,17 @@ Voir [Renforts déclenchés par le Brouhaha](docs/architecture/brouhaha-reinforc
 
 Le dernier lot du Sprint 3 portera sur :
 
+- un routeur de cues dérivé des événements existants ;
 - les retours visuels et overlays utiles ;
-- les premiers effets sonores ;
+- les premiers effets sonores locaux ;
 - l'enrichissement du journal ;
-- la reprise de tous les états ;
-- les mesures de fluidité ;
+- la reprise sans replay des effets transitoires ;
+- les mesures de fluidité et de stabilité du renderer ;
 - les tests desktop et mobile paysage.
+
+Les animations et sons resteront strictement sans influence sur `RoomState` et les règles métier.
+
+Voir [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md).
 
 ## Génération future du donjon
 
@@ -162,6 +167,7 @@ npm run test:e2e
 - [Objets interactifs](docs/architecture/interactable-objects.md)
 - [Réactions en chaîne](docs/architecture/chain-reactions.md)
 - [Renforts de Brouhaha](docs/architecture/brouhaha-reinforcements.md)
+- [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md)
 - [Suivi du Sprint 3](docs/sprints/sprint-3.md)
 - [Audit Sprint 3.5](docs/audits/sprint-3-5-brouhaha-reinforcements.md)
 - [Décisions d'architecture](docs/adr/README.md)
