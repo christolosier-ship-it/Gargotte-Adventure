@@ -101,7 +101,9 @@ test("brise, renforce et restaure un objet interactif", async ({
   await expect(
     page.getByText(/Tonneau douteux : intact → brise/),
   ).toBeVisible();
-  await expect(page.getByText(/Renfort seuil-1-bricoleur réussi/)).toBeVisible();
+  await expect(
+    page.getByText(/Renfort seuil-1-bricoleur réussi/),
+  ).toBeVisible();
 
   const savedObjects = await readInteractables(page);
   const savedBrouhaha = interacted.brouhahaHistory;
@@ -119,7 +121,9 @@ test("brise, renforce et restaure un objet interactif", async ({
   expect(await readNextReinforcementSequence(page)).toBe(2);
 });
 
-test("pousse une table et résout le domino avec deux seuils", async ({ page }) => {
+test("pousse une table et résout le domino avec deux seuils", async ({
+  page,
+}) => {
   await page.goto("./");
   await page.getByRole("checkbox", { name: "Magdalena Coquinelle" }).check();
   await page.getByRole("button", { name: "Entrer dans la salle" }).click();
@@ -172,14 +176,10 @@ test("pousse une table et résout le domino avec deux seuils", async ({ page }) 
     actionsRemaining: 0,
   });
   expect(
-    chained.enemies.find(
-      (enemy) => enemy.id === "gobelin-bricoleur-spawn-1",
-    ),
+    chained.enemies.find((enemy) => enemy.id === "gobelin-bricoleur-spawn-1"),
   ).toMatchObject({ hp: 4, position: { column: 6, row: 0 } });
   expect(
-    chained.enemies.find(
-      (enemy) => enemy.id === "gobelin-lance-tout-spawn-2",
-    ),
+    chained.enemies.find((enemy) => enemy.id === "gobelin-lance-tout-spawn-2"),
   ).toMatchObject({ position: { column: 6, row: 3 }, alive: true });
   expect(await readProcessedInteractableRequests(page)).toEqual([
     "interaction-objet-1",
