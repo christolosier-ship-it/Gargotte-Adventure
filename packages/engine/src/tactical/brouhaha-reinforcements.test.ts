@@ -205,7 +205,9 @@ describe("renforts déclenchés par le Brouhaha", () => {
     const raisedAgain = change(lowered, "seconde-montee", 1, definition);
     expect(raisedAgain.state.brouhahaReinforcementHistory).toHaveLength(1);
     expect(
-      raisedAgain.events.some((event) => event.type === "reinforcement-triggered"),
+      raisedAgain.events.some(
+        (event) => event.type === "reinforcement-triggered",
+      ),
     ).toBe(false);
   });
 
