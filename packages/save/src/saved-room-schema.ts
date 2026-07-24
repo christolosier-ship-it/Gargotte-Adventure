@@ -235,9 +235,7 @@ function migrateV5(
   };
 }
 
-function migrateV6(
-  room: z.infer<typeof legacyRoomStateV6Schema>,
-): RoomState {
+function migrateV6(room: z.infer<typeof legacyRoomStateV6Schema>): RoomState {
   return {
     ...room,
     enemyTurnRoster:
