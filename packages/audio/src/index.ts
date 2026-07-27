@@ -1,4 +1,18 @@
-import type { AudioCueKey, AudioPresentationCue } from "@gargotte/presentation";
+export type AudioCueKey =
+  | "interaction"
+  | "impact"
+  | "damage"
+  | "brouhaha"
+  | "reinforcement"
+  | "victory"
+  | "defeat";
+
+export interface AudioPresentationCue {
+  id: string;
+  sequence: number;
+  key: AudioCueKey;
+  priority: number;
+}
 
 export interface AudioSettings {
   masterVolume: number;
