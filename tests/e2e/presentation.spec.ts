@@ -44,18 +44,20 @@ test("route une action vers un journal groupé et des cues bornés", async ({
   await expect(latest).not.toContainText("combatant-moved");
   await expect
     .poll(async () =>
-      Number(await boardHost(page).getAttribute("data-audio-cache-size")),
-    )
-    .toBeGreaterThan(0);
-  await expect
-    .poll(async () =>
       Number(
         await canvasLocator(page).getAttribute("data-presentation-cue-count"),
       ),
     )
     .toBeGreaterThan(0);
 
-  for (let index = 0; index < 8; index += 1)
+  await page.getByRole("button", { name: /Combat engagé/ }).click();
+  await expect
+    .poll(async () =>
+      Number(await boardHost(page).getAttribute("data-audio-cache-size")),
+    )
+    .toBeGreaterThan(0);
+
+  for (let index = 0; index < 7; index += 1)
     await page.getByRole("button", { name: /Combat engagé/ }).click();
   await expect(eventEntries(page)).toHaveCount(6);
 });
@@ -65,7 +67,9 @@ test("respecte le mouvement réduit et détruit les transitoires", async ({
 }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
   await enterRoom(page);
-  await expect(page.locator("[data-reduced-motion]")).toHaveText("Activé");
+  await expect(page.locator("strong[data-reduced-motion]")).toHaveText(
+    "Activé",
+  );
 
   await moveBrunhildaWithButton(page);
   await expect(canvasLocator(page)).toHaveAttribute(
