@@ -1,6 +1,29 @@
 import type { GridPosition, RoomState } from "@gargotte/engine";
-import type { VisualPresentationCue } from "@gargotte/presentation";
 import type { CameraRotation } from "./view";
+
+export type PresentationTone = "info" | "warning" | "success" | "danger";
+
+export type VisualCueKind =
+  | "hero-activation"
+  | "movement"
+  | "impact"
+  | "damage"
+  | "brouhaha"
+  | "threshold"
+  | "reinforcement"
+  | "terminal";
+
+export interface VisualPresentationCue {
+  id: string;
+  sequence: number;
+  kind: VisualCueKind;
+  targetId: string | null;
+  position: GridPosition | null;
+  tone: PresentationTone;
+  priority: number;
+  durationMs: number;
+  label: string;
+}
 
 export interface TacticalHighlights {
   reachable: GridPosition[];
