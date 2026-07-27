@@ -3,9 +3,10 @@
 ## Statut
 
 - Sprint : 3.5
-- État : implémenté sur la branche de livraison
+- État : implémenté et stabilisé dans `main`
 - Issue : #48
-- Pull Request : #49
+- Pull Request initiale : #49
+- Correctifs roster : PR #53, PR #54 et lot final d'alignement
 - Base documentaire : `66f2d30543c77327c86c460d8be874254719ecd0`
 
 ## Objet
@@ -133,9 +134,9 @@ La victoire n'est acquise que si aucun ennemi vivant ne subsiste après les appa
 
 ## Tour ennemi
 
-`createEnemyTurnRoster` capture les identifiants des ennemis vivants au début de la phase. `runEnemyTurn` exécute uniquement cette liste.
+`createEnemyTurnRoster` capture et trie les identifiants des ennemis vivants au passage en `enemy-turn`. `finishEnemyTurn` transmet explicitement ce roster figé à `runEnemyTurn`, afin qu'un renfort apparu après l'ouverture n'agisse qu'au tour ennemi suivant.
 
-Un ennemi ajouté après l'ouverture du roster ne joue donc pas pendant le tour en cours. Il participe au prochain tour ennemi.
+Pour les consommateurs directs du moteur, `runEnemyTurn(state)` préserve un `enemyTurnRoster` non vide déjà capturé. Lorsque ce champ est vide, l'appel direct reconstruit un roster vivant à partir de l'état courant. Ce fallback ne modifie pas le chemin nominal de la machine de tour.
 
 ## Persistance
 
@@ -158,9 +159,11 @@ interface BrouhahaReinforcementHistoryEntry {
 }
 ```
 
-`RoomState` ajoute `nextBrouhahaReinforcementSequence` et `brouhahaReinforcementHistory`.
+`RoomState` ajoute `nextBrouhahaReinforcementSequence`, `brouhahaReinforcementHistory` et `enemyTurnRoster`.
 
-Les sauvegardes versions 1 à 5 migrent vers la version 6 avec une séquence égale à 1 et un historique vide. La migration ne rejoue aucun ancien niveau de Brouhaha.
+`enemyTurnRoster` est toujours présent dans un payload version 6. Il contient la liste capturée pendant une phase `enemy-turn` ouverte et doit être vide pendant `heroes-turn`, `victory` et `defeat`.
+
+Les sauvegardes versions 1 à 5 migrent vers la version 6 avec une séquence égale à 1, un historique vide et un roster compatible avec leur phase. Les anciennes sauvegardes version 6 sans ce champ sont complétées défensivement. La migration ne rejoue aucun ancien niveau de Brouhaha.
 
 Le validateur rejette notamment :
 
@@ -169,7 +172,8 @@ Le validateur rejette notamment :
 - demandes de spawn dupliquées ;
 - prochaine séquence située avant l'historique ;
 - résultat refusé contenant des instances créées ;
-- succès sans instance créée.
+- succès sans instance créée ;
+- roster dupliqué, non trié, contenant un ennemi absent ou non vide hors phase ennemie.
 
 ## Événements
 
@@ -201,7 +205,9 @@ Les tests vérifient :
 - limite persistante et activation refusée consommée ;
 - succès total, partiel et refus ;
 - phase terminale après renforts ;
-- roster ennemi figé ;
+- roster ennemi figé dans le chemin nominal ;
+- fallback vivant lors d'un appel direct avec roster vide ;
+- préservation d'un roster capturé non vide lors d'un appel direct ;
 - sauvegarde exacte et migrations versions 1 à 5 ;
 - scénario naturel et reprise sur Chrome bureau et mobile paysage.
 
