@@ -98,9 +98,6 @@ describe("AudioDirector", () => {
     await expect(
       director.playCues([cue("victory", 20), cue("interaction", 10)]),
     ).resolves.toBe(2);
-    expect(order).toEqual([
-      "assets/audio/interaction.wav",
-      "assets/audio/victory.wav",
-    ]);
+    expect(order).toEqual(["tone:interaction", "tone:victory"]);
   });
 });
