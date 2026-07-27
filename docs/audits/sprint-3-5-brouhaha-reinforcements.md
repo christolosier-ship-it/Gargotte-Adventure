@@ -2,7 +2,7 @@
 
 - Date de contrôle initial : 24 juillet 2026
 - Date du contrôle final P2 : 27 juillet 2026
-- Statut : fusionné dans `main`, correctif final en validation dans la PR #56
+- Statut : fusionné dans `main`, correctif final consolidé dans la PR #56
 - Issue : #48, clôturée comme terminée
 - Pull Request fonctionnelle : #49, fusionnée par squash
 - Branche fonctionnelle : `sprint-3/brouhaha-reinforcements`
@@ -12,6 +12,7 @@
 - Correctif P2 roster persistant : PR #53, commit `568670a3cb0d61ef478653403cb31f9065e3a2df`
 - Correctif P2 fallback direct : PR #54, commit `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
 - Correctif P2 préservation du roster capturé : PR #56
+- HEAD fonctionnel validé de la PR #56 : `b784f988107c04a8cbe733541023e366646be066`
 - Prochaine étape : Sprint 3.6
 
 ## Conclusion
@@ -218,7 +219,12 @@ Ce scénario ne dépend pas du bouton de spawn manuel.
 
 ### Correctif final PR #56
 
-Les références du HEAD final et des deux workflows seront figées dans cet audit après la dernière passe verte.
+Le HEAD fonctionnel `b784f988107c04a8cbe733541023e366646be066` a passé :
+
+- Repository quality : exécution `30294197916`, succès complet ;
+- Validate application : exécution `30294197958`, succès complet.
+
+La PR impose également une relance des deux workflows sur son HEAD documentaire final avant passage en revue.
 
 La validation couvre :
 
