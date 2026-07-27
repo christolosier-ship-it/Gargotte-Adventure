@@ -1,9 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
-import {
-  activateBrunhilda,
-  canvasLocator,
-  enterRoom,
-} from "./helpers/canvas";
+import { activateBrunhilda, canvasLocator, enterRoom } from "./helpers/canvas";
 
 const boardHost = (page: Page) => page.locator("[data-board]");
 const eventEntries = (page: Page) => page.locator("[data-events] > li");
@@ -21,9 +17,9 @@ test("expose des réglages audio persistants et non bloquants", async ({
   await enterRoom(page);
   const mute = page.getByRole("button", { name: "Couper le son" });
   await expect(mute).toHaveAttribute("aria-pressed", "false");
-  await expect(page.getByRole("slider", { name: "Volume général" })).toHaveValue(
-    "0.7",
-  );
+  await expect(
+    page.getByRole("slider", { name: "Volume général" }),
+  ).toHaveValue("0.7");
 
   await mute.click();
   await expect(
@@ -44,16 +40,19 @@ test("route une action vers un journal groupé et des cues bornés", async ({
   await moveBrunhildaWithButton(page);
 
   const latest = page.locator("[data-events] > .event-entry").first();
-  await expect(latest).toHaveAttribute(
-    "data-event-types",
-    /combatant-moved/,
-  );
+  await expect(latest).toHaveAttribute("data-event-types", /combatant-moved/);
   await expect(latest).not.toContainText("combatant-moved");
   await expect
-    .poll(async () => Number(await boardHost(page).getAttribute("data-audio-cache-size")))
+    .poll(async () =>
+      Number(await boardHost(page).getAttribute("data-audio-cache-size")),
+    )
     .toBeGreaterThan(0);
   await expect
-    .poll(async () => Number(await canvasLocator(page).getAttribute("data-presentation-cue-count")))
+    .poll(async () =>
+      Number(
+        await canvasLocator(page).getAttribute("data-presentation-cue-count"),
+      ),
+    )
     .toBeGreaterThan(0);
 
   for (let index = 0; index < 8; index += 1)
@@ -69,9 +68,14 @@ test("respecte le mouvement réduit et détruit les transitoires", async ({
   await expect(page.locator("[data-reduced-motion]")).toHaveText("Activé");
 
   await moveBrunhildaWithButton(page);
-  await expect(canvasLocator(page)).toHaveAttribute("data-reduced-motion", "true");
+  await expect(canvasLocator(page)).toHaveAttribute(
+    "data-reduced-motion",
+    "true",
+  );
   await expect
-    .poll(async () => Number(await boardHost(page).getAttribute("data-transient-objects")))
+    .poll(async () =>
+      Number(await boardHost(page).getAttribute("data-transient-objects")),
+    )
     .toBe(0);
 });
 
@@ -80,9 +84,13 @@ test("reprend sans replay et conserve un renderer stable", async ({ page }) => {
   await moveBrunhildaWithButton(page);
   const canvas = canvasLocator(page);
   const listenersBefore = await canvas.getAttribute("data-listener-counts");
-  const displayBefore = await boardHost(page).getAttribute("data-display-objects");
+  const displayBefore = await boardHost(page).getAttribute(
+    "data-display-objects",
+  );
   await expect
-    .poll(async () => Number(await boardHost(page).getAttribute("data-transient-objects")))
+    .poll(async () =>
+      Number(await boardHost(page).getAttribute("data-transient-objects")),
+    )
     .toBe(0);
 
   await page.reload();
