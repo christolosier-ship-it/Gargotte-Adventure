@@ -69,14 +69,13 @@ export class PresentationLayerController {
   ): void {
     const position = resolveCuePosition(cue, state);
     const screen = this.#project(position);
-    const radius = cue.kind === "terminal" ? 78 : cue.kind === "brouhaha" ? 58 : 36;
-    const ring = new Graphics()
-      .circle(0, -18, radius)
-      .stroke({
-        color: toneColor(cue.tone),
-        width: cue.kind === "terminal" ? 8 : 5,
-        alpha: 0.92,
-      });
+    const radius =
+      cue.kind === "terminal" ? 78 : cue.kind === "brouhaha" ? 58 : 36;
+    const ring = new Graphics().circle(0, -18, radius).stroke({
+      color: toneColor(cue.tone),
+      width: cue.kind === "terminal" ? 8 : 5,
+      alpha: 0.92,
+    });
     ring.eventMode = "none";
     ring.label = `presentation:${cue.kind}:${cue.id}`;
     ring.zIndex = 100_000 + cue.priority;
