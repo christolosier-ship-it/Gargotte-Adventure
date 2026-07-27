@@ -1,144 +1,102 @@
 # Architecture d'exécution
 
-## Chemin nominal actuel
+## Chemin nominal
 
 1. `apps/game` monte la coque DOM accessible.
-2. `packages/renderer` initialise PixiJS dans le panneau de plateau.
-3. `packages/save` restaure l'autosauvegarde IndexedDB versionnée.
-4. `packages/engine` reçoit des intentions explicites et produit le nouvel état.
-5. Les réactions, demandes de Brouhaha et renforts sont résolus dans leur ordre causal.
-6. La phase terminale est calculée après la résolution complète.
-7. L'interface et le rendu observent l'état final.
-8. Le nouvel état est sauvegardé localement.
-
-L'application ne réimplémente aucune règle métier. Elle assemble catalogues et règles, transmet les intentions et traduit les événements.
-
-## Chemin d'une interaction complète
+2. `packages/renderer` initialise PixiJS.
+3. `packages/save` restaure l'autosauvegarde versionnée.
+4. `packages/engine` reçoit une intention et produit `RoomState` final plus des événements ordonnés.
+5. Les réactions, Brouhaha, renforts et phase terminale sont entièrement résolus.
+6. L'état stable est rendu et sauvegardé.
+7. `packages/presentation` transforme les événements en cues visuels, audio et journal.
+8. Les adaptateurs renderer, audio et UI jouent ces cues sans modifier l'état.
 
 ```text
-Interaction héros
-      │
-      ▼
-validation objet et mouvement
-      │
-      ▼
-transition directe et Brouhaha éventuel
-      │
-      ▼
-file FIFO de réactions
-      ├─ transitions secondaires
-      ├─ déplacements
-      ├─ dégâts
-      └─ Brouhaha ordonné
-      │
-      ▼
-règles de seuil franchies
-      │
-      ▼
-SpawnRequest déterministes
-      │
-      ▼
-moteur de spawn
-      │
-      ▼
-phase terminale
-      │
-      ▼
-état final + événements + historiques
+intention → moteur → RoomState final + événements
+                         │
+                         ├─ sauvegarde
+                         ├─ rendu stable
+                         └─ routeur de présentation
+                              ├─ cues PixiJS
+                              ├─ cues Web Audio
+                              └─ journal groupé
 ```
 
-Une réaction excessive ou cyclique s'arrête explicitement. Le renderer ne connaît ni le graphe, ni les seuils, ni les règles d'apparition.
+L'application ne réimplémente aucune règle métier.
 
-## Chemin d'un spawn
+## Résolution tactique
 
-1. Un scénario, une règle de renfort ou un futur générateur produit une `SpawnRequest`.
-2. Le moteur valide phase, définition, points, limites et occupation.
-3. Il crée des `CreatureInstance` avec des identifiants reproductibles.
-4. Il retourne état, instances et événements explicatifs.
-5. Le renderer affiche l'état sans connaître la logique d'apparition.
-6. Le journal explique succès ou refus.
-7. La sauvegarde persiste instances, demandes et séquence.
-
-Une apparition n'est jamais créée directement depuis l'UI ou PixiJS.
-
-## Chemin des renforts de Brouhaha
+Une interaction complète suit l'ordre :
 
 ```text
-BrouhahaRequest acceptée
-        │
-        ▼
-previousLevel → level
-        │
-        ▼
-règles franchies vers le haut
-        │
-        ▼
-ordre par seuil puis identifiant
-        │
-        ▼
-activation déterministe
-        │
-        ▼
-SpawnRequest source brouhaha
-        │
-        ▼
-moteur de spawn existant
-        │
-        ├─ succès total
-        ├─ succès partiel
-        └─ refus
-        │
-        ▼
-historique de renfort
+interaction
+  → transition directe
+  → réactions FIFO
+  → Brouhaha causal
+  → renforts de seuil
+  → phase terminale
+  → état final et événements
 ```
 
-La politique de seuil décide pourquoi une demande est créée. Le moteur de spawn décide si elle est réalisable.
+Le renderer ne connaît ni le graphe, ni les seuils, ni les règles d'apparition.
 
-Une baisse ne déclenche rien. Une reprise ou migration ne rejoue aucun seuil ancien. Une activation refusée est tout de même consommée et historisée.
+## Présentation
+
+`routeTacticalPresentation` reçoit uniquement les événements déjà résolus.
+
+Il :
+
+- conserve leur ordre ;
+- produit des sorties bornées ;
+- ne mute aucune entrée ;
+- ne recalcule aucune cible ou conséquence ;
+- associe les conséquences à une action racine.
+
+Le renderer affiche l'état stable avant les cues. Une nouvelle intention, une rotation, une reprise ou un nouveau rendu annule les transitoires précédents.
+
+## Audio
+
+`AudioDirector` joue des tonalités locales Web Audio après une interaction utilisateur. Volume, mute et cache sont applicatifs. Un échec de lecture ne bloque jamais la partie.
+
+## Reprise
+
+Une reprise reconstruit l'état sauvegardé sans rejouer les événements historiques. Aucun son, overlay, impact ou renfort déjà résolu n'est reproduit.
 
 ## Tour ennemi
 
-Le roster des ennemis vivants est capturé et trié au passage en `enemy-turn`. La machine de tour transmet explicitement cette liste figée à `runEnemyTurn`, de sorte qu'un renfort créé après l'ouverture attend le tour ennemi suivant.
+Le roster vivant est capturé et trié au passage en `enemy-turn`. La machine transmet cette liste figée à `runEnemyTurn`.
 
-Pour préserver le contrat public du moteur, un appel direct à `runEnemyTurn(state)` utilise le `enemyTurnRoster` capturé lorsqu'il est non vide. Si ce roster est vide, la fonction reconstruit un fallback vivant à partir des ennemis présents dans l'état.
+Un appel direct à `runEnemyTurn(state)` utilise le roster capturé s'il est non vide, sinon reconstruit un fallback vivant.
 
-## Chemin cible d'une expédition générée au Sprint 5
+## Persistance
 
-1. Une requête fournit donjon, seed et contraintes.
-2. Le générateur produit la topologie des cinq étages.
-3. Chaque salle reçoit une géométrie complète et ses points de spawn.
-4. Chaque salle reçoit son propre budget de menace.
-5. Le générateur de rencontre compose sa population initiale.
-6. Le moteur de spawn transforme le plan en instances runtime.
-7. Le moteur tactique reçoit un `RoomState` valide.
-8. Le renderer projette uniquement cet état.
+La sauvegarde tactique reste en version 6 et conserve :
 
-Le budget de menace n'est pas un portefeuille global d'étage. Les renforts sont une augmentation runtime distincte de la rencontre initiale.
-
-## Persistance actuelle
-
-La sauvegarde tactique version 6 conserve notamment :
-
-- Brouhaha, historique et séquence ;
-- objets, interactions et réactions ;
-- points, demandes et séquence de spawn ;
-- historique, résultats et séquence des renforts ;
 - combattants, phase, tour et actions ;
-- `enemyTurnRoster`, toujours sérialisé, rempli uniquement pendant une phase `enemy-turn` ouverte et obligatoirement vide pendant `heroes-turn`, `victory` et `defeat`.
+- spawn, Brouhaha, objets, réactions et renforts ;
+- `enemyTurnRoster`, toujours sérialisé et vide hors phase ennemie.
 
-Les versions 1 à 5 migrent vers la version 6 avec un historique de renfort vide. Les anciennes sauvegardes version 6 sans roster sont complétées défensivement. La migration n'appelle aucune règle runtime.
+Les préférences audio et les effets transitoires ne sont pas ajoutés à `RoomState`.
+
+## Diagnostics
+
+Les tests observent :
+
+- un seul canvas ;
+- les listeners ;
+- le nombre d'objets stables ;
+- les objets transitoires ;
+- la génération et la quantité de cues ;
+- le cache et l'état audio ;
+- le mouvement réduit ;
+- le nombre d'entrées du journal.
 
 ## Frontières
 
-- Le moteur n'importe ni DOM, ni PixiJS, ni IndexedDB.
-- Le contenu est validé avant le build et au chargement.
-- La sauvegarde porte une version indépendante du contenu.
-- Spawn, Brouhaha, objets, réactions et renforts sont déterministes.
-- Le générateur produit des plans, pas des objets PixiJS.
-- Le renderer n'instancie aucune créature métier.
-- La PWA ne contient aucun secret et n'appelle pas OpenAI directement.
-- Gargottex reste une source éditoriale consultée en lecture seule.
-
-## Hors ligne
-
-`vite-plugin-pwa` génère le service worker et précharge les ressources de production. IndexedDB conserve la progression. Après un premier chargement connecté, les sessions peuvent fonctionner hors ligne.
+- moteur sans DOM, PixiJS ou IndexedDB ;
+- présentation sans décision métier ;
+- renderer sans instanciation tactique ;
+- audio sans appel réseau tiers ;
+- sauvegarde indépendante des effets ;
+- Gargottex en lecture seule ;
+- PWA jouable hors ligne après le premier chargement.

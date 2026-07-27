@@ -10,75 +10,55 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 
 ## État du projet
 
-- **Sprint 2** : plateau isométrique livré ;
-- **Sprint 3.1** : spawn déterministe livré par la PR #35 ;
-- **Sprint 3.2** : Brouhaha 0 à 12 livré par la PR #37 ;
-- **Sprint 3.3** : objets interactifs livrés par la PR #43 ;
-- **Sprint 3.4** : réactions en chaîne livrées par la PR #45 ;
-- **Sprint 3.5** : renforts déclenchés par le Brouhaha livrés par la PR #49 et stabilisés jusqu'à la PR #56 ;
-- **Sprint 3.6** : phase active, présentation, audio utile et finition, suivie dans l'issue #57.
+- **Sprint 0** : fondations, PWA, CI et gouvernance livrées ;
+- **Sprint 1** : boucle tactique, IA et sauvegarde livrées ;
+- **Sprint 2** : plateau isométrique, caméra et pipeline d'assets livrés ;
+- **Sprint 3.1** : spawn déterministe livré ;
+- **Sprint 3.2** : Brouhaha 0 à 12 livré ;
+- **Sprint 3.3** : objets interactifs livrés ;
+- **Sprint 3.4** : réactions en chaîne livrées ;
+- **Sprint 3.5** : renforts de Brouhaha livrés et stabilisés ;
+- **Sprint 3.6** : présentation, audio utile et finition livrés par la PR #59.
+
+Le **Sprint 3 est terminé**. La prochaine phase est le Sprint 4 consacré aux héros et créatures de Bastognac.
+
+## Version stable
 
 La version stable permet de :
 
 - sélectionner de 1 à 4 héros officiels ;
 - jouer une salle tactique 8 × 4 ;
 - déplacer, attaquer et résoudre une IA déterministe ;
-- gagner ou perdre la salle ;
-- instancier des créatures avec des identifiants reproductibles ;
-- faire évoluer une jauge de Brouhaha de 0 à 12 ;
 - interagir avec tables, tonneaux, grilles, torches et piliers ;
 - pousser certains objets et propager des réactions déclarées par la salle ;
-- appliquer des transitions, déplacements, dégâts et demandes de Brouhaha en cascade ;
-- déclencher des renforts lors de franchissements montants de seuil ;
+- faire évoluer une jauge de Brouhaha de 0 à 12 ;
+- déclencher des renforts lors de franchissements montants ;
 - expliquer les apparitions totales, partielles ou refusées ;
-- respecter des limites d'activation persistantes ;
-- calculer la victoire seulement après les renforts de la résolution courante ;
-- figer le roster de la machine de tour sans casser les appels directs au moteur ennemi ;
-- conserver une causalité complète et interrompre les cycles explicitement ;
-- prendre en compte le décor dans le déplacement, le spawn et la ligne de vue ;
-- sauvegarder et reprendre exactement la salle dans IndexedDB ;
-- jouer au clavier, à la souris ou sur écran tactile en paysage ;
-- rester jouable grâce aux formes de repli lorsqu'un asset manque.
+- figer le roster du tour ennemi et reprendre une sauvegarde version 6 ;
+- afficher des cues visuels dérivés des événements tactiques ;
+- jouer des sons locaux respectant volume, mute et autoplay ;
+- regrouper les conséquences d'une action dans un journal borné ;
+- respecter `prefers-reduced-motion` ;
+- restaurer une partie sans rejouer les effets historiques ;
+- rester jouable au clavier, à la souris et au toucher en paysage.
 
-Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres personnages, statistiques, compétences, seuils et une partie du bestiaire restent provisoires.
+## Livraison Sprint 3.6
 
-## Livraison Sprint 3.5
+La PR #59, fusionnée au commit `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`, livre :
 
-La PR #49, complétée par les correctifs #53, #54 et #56 et stabilisée au commit `d7e7c11a4352f32881299e2135826724d17f3a93`, livre :
+- le package pur `packages/presentation` ;
+- un routeur événements → cues visuels, cues audio et journal ;
+- une couche PixiJS transitoire dédiée et non interactive ;
+- sept sons pilotes synthétisés localement par Web Audio ;
+- les réglages locaux de volume et de mode muet ;
+- un journal groupé limité à six actions racines ;
+- l'annulation des effets lors d'un rendu, d'une rotation ou d'une reprise ;
+- des diagnostics sur canvas, listeners, objets stables, cues actifs et cache audio ;
+- 131 tests unitaires et des parcours Playwright bureau/mobile.
 
-- des règles `brouhahaReinforcements` déclarées par salle ;
-- un déclenchement uniquement lorsque `previousLevel < threshold <= level` ;
-- un ordre stable par seuil puis identifiant ;
-- des identifiants d'activation et de `SpawnRequest` déterministes ;
-- une délégation exclusive au moteur de spawn existant ;
-- des résultats réussis, partiels ou refusés historisés ;
-- des limites `maxActivations`, y compris lorsqu'un spawn est refusé ;
-- un roster ennemi figé au début de la phase ;
-- un fallback vivant pour les appels directs à `runEnemyTurn` lorsque le roster persistant est vide ;
-- une phase terminale calculée après la résolution complète ;
-- une sauvegarde tactique version 6 avec migrations depuis les versions 1 à 5 ;
-- un scénario pilote Bastognac validant deux seuils sans bouton de spawn manuel.
+La présentation ne modifie jamais `RoomState`, ne recalcule aucune règle et ne change pas la version de sauvegarde tactique.
 
-Le budget de menace n'est ni lu ni dépensé par cette mécanique. Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
-
-Voir [Renforts déclenchés par le Brouhaha](docs/architecture/brouhaha-reinforcements.md).
-
-## Phase active : Sprint 3.6
-
-L'issue #57 pilote le dernier lot du Sprint 3 :
-
-- un routeur de cues dérivé des événements existants ;
-- les retours visuels et overlays utiles ;
-- les premiers effets sonores locaux ;
-- l'enrichissement du journal ;
-- la reprise sans replay des effets transitoires ;
-- le support du mouvement réduit et du mode muet ;
-- les mesures de fluidité et de stabilité du renderer ;
-- les tests desktop et mobile paysage.
-
-Les animations et sons restent strictement sans influence sur `RoomState` et les règles métier.
-
-Voir [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md) et l'[issue d'implémentation #57](https://github.com/christolosier-ship-it/Gargotte-Adventure/issues/57).
+Voir [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md) et l'[audit de livraison](docs/audits/sprint-3-6-presentation-finishing.md).
 
 ## Génération future du donjon
 
@@ -103,7 +83,7 @@ Le générateur compose une rencontre, puis le moteur de spawn crée les instanc
 4. **Offline-first.** Parties et réglages restent locaux.
 5. **Aucun secret côté client.** Aucune clé OpenAI dans la PWA.
 6. **Une version démontrable à chaque sprint.**
-7. **Le rendu ne gouverne pas les règles.**
+7. **Le rendu et la présentation ne gouvernent pas les règles.**
 8. **Définitions, instances et génération restent séparées.**
 9. **Le budget de menace appartient à la salle.**
 10. **Gargottex reste une frontière externe en lecture seule.**
@@ -113,16 +93,14 @@ Le générateur compose une rencontre, puis le moteur de spawn crée les instanc
 ```text
 apps/game                    composition de la PWA et orchestration
 packages/engine              tactique, spawn, Brouhaha, objets, réactions et renforts
+packages/presentation        routage pur des événements vers les cues et le journal
 packages/content-schema      validation Zod du contenu
-packages/renderer            projection, assets, picking et profondeur PixiJS
-packages/ui                  menus, HUD et commandes accessibles
+packages/renderer            projection, scène PixiJS, assets et effets transitoires
+packages/ui                  menus, HUD, journal et commandes accessibles
 packages/save                sauvegardes IndexedDB versionnées et migrations
+packages/audio               lecture locale Web Audio, volume, mute et cache
 packages/common              types et utilitaires partagés
-packages/audio               fondation audio à brancher pendant le Sprint 3.6
 content/bastognac            donjon, créatures, effets, objets et salle pilote
-design/isometric             tokens et gabarits graphiques
-apps/game/public/assets      exports runtime SVG et WebP
-tools/validators             validation du dépôt, contenu et assets
 tests/e2e                    parcours Playwright desktop et mobile
 ```
 
@@ -130,33 +108,20 @@ Le moteur ne dépend ni du DOM, ni de PixiJS, ni d'IndexedDB. Il reçoit un éta
 
 ## Démarrage local
 
-### Prérequis
-
-- Node.js **24 ou supérieur** ;
-- npm ;
-- Chromium Playwright pour les tests navigateur.
-
-### Installation
+Prérequis : Node.js 24 ou supérieur, npm et Chromium Playwright.
 
 ```bash
 npm ci
 npm run dev
 ```
 
-### Contrôles
+Contrôle complet :
 
 ```bash
-npm run format:check
-npm run validate:content
-npm run typecheck
-npm run test
-npm run build
-python tools/validate_repository.py
+npm run check
 npx playwright install --with-deps chromium
 npm run test:e2e
 ```
-
-`npm run check` exécute formatage, contenu, types, tests unitaires, build et validation structurelle.
 
 ## Documentation
 
@@ -164,31 +129,14 @@ npm run test:e2e
 - [Vision produit](docs/product/vision.md)
 - [Roadmap](docs/roadmap.md)
 - [Architecture générale](docs/architecture/overview.md)
-- [Salle tactique](docs/architecture/tactical-room.md)
-- [Moteur de spawn](docs/architecture/spawn-engine.md)
-- [Moteur de Brouhaha](docs/architecture/brouhaha.md)
-- [Objets interactifs](docs/architecture/interactable-objects.md)
-- [Réactions en chaîne](docs/architecture/chain-reactions.md)
-- [Renforts de Brouhaha](docs/architecture/brouhaha-reinforcements.md)
 - [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md)
 - [Suivi du Sprint 3](docs/sprints/sprint-3.md)
-- [Audit Sprint 3.5](docs/audits/sprint-3-5-brouhaha-reinforcements.md)
+- [Audit Sprint 3.6](docs/audits/sprint-3-6-presentation-finishing.md)
 - [Décisions d'architecture](docs/adr/README.md)
-- [Contribution](CONTRIBUTING.md)
-
-## Branches et livraison
-
-- `main` : état stable et publiable ;
-- `sprint-N/<sujet>` : travail cohérent d'un sprint ;
-- `feature/<sujet>` : fonctionnalité isolée ;
-- `fix/<sujet>` : correction ciblée ;
-- `docs/<sujet>` : documentation uniquement.
-
-Chaque changement passe par une Pull Request et les contrôles automatisés. La fusion par squash est privilégiée.
 
 ## Sources du projet
 
-- **Gargottex V5** pour les données structurées et l'édition du contenu ;
+- **Gargottex V5** pour les données structurées et l'édition du contenu, en lecture seule depuis ce projet ;
 - **Google Drive** pour les règles, le lore, les médias maîtres et comptes rendus ;
 - **Figma / FigJam** pour les écrans et diagrammes ;
 - ce dépôt pour le moteur, l'interface, les builds et les tests.
