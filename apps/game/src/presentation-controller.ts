@@ -32,9 +32,7 @@ export class PresentationController {
     this.#renderer = options.renderer;
     this.#creatureDefinitions = options.creatureDefinitions;
     this.#interactableDefinitions = options.interactableDefinitions;
-    this.#audio = new AudioDirector({
-      assetBase: `${import.meta.env.BASE_URL}assets/audio`,
-    });
+    this.#audio = new AudioDirector();
     this.#audio.configure(readStoredAudioSettings());
     this.#motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     this.#reducedMotion = this.#motionQuery.matches;
