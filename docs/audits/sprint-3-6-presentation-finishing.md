@@ -1,176 +1,95 @@
 # Audit de livraison du Sprint 3.6
 
-- Date de contrôle fonctionnel : 27 juillet 2026
+- Date de contrôle : 27 juillet 2026
 - Issue : #57
-- Pull Request : #59
+- Pull Request fonctionnelle : #59
 - Branche : `sprint-3/presentation-finishing`
 - Base de départ : `86aeb13d3705cb744dfe525a10e37fa11f38dcaa`
-- HEAD fonctionnel validé : `91d88d28448e354c220a70f4525beaa317f6d54d`
-- Repository quality : exécution `30305294064`, succès complet
-- Validate application : exécution `30305294029`, succès complet
-- Statut : fonctionnalité validée avant fusion
+- HEAD fonctionnel validé : `b36a12bd49e17a9635afd2ee7e76881d2a5cc0d4`
+- Commit de fusion : `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`
+- Repository quality : `30306035478`, succès complet
+- Validate application : `30306035634`, succès complet
+- Statut : fusionné et stabilisé dans `main`
 
 ## Conclusion
 
-Le Sprint 3.6 relie les événements tactiques déjà résolus à une couche de présentation visuelle, sonore et textuelle. Cette couche n'ajoute aucune règle métier et ne modifie jamais `RoomState`.
+Le Sprint 3.6 relie les événements tactiques résolus à une couche de présentation visuelle, sonore et textuelle sans ajouter de règle métier et sans modifier `RoomState`.
 
-Le Sprint 3 peut être clôturé lorsque la PR #59 est fusionnée, que son audit documentaire final est aligné sur le commit publié et que l'issue #57 est fermée comme terminée.
+Le Sprint 3 est terminé. Le passage au Sprint 4 est autorisé après fusion du présent lot documentaire et clôture de l'issue #57.
 
-## Architecture livrée
+## Livraison contrôlée
 
-### Routeur de présentation
+### Routeur
 
-Le nouveau package `packages/presentation` reçoit une liste ordonnée de `TacticalEvent` et produit :
+Le package `packages/presentation` produit des cues visuels, des cues audio et une entrée de journal groupée.
 
-- des cues visuels ;
-- des cues audio ;
-- une entrée de journal groupée par action racine.
-
-Le routeur :
-
-- conserve l'ordre causal ;
-- ne lit ni DOM, ni PixiJS, ni Web Audio ;
-- ne mute ni les événements, ni l'état moteur ;
-- borne le nombre de cues produits ;
-- choisit uniquement une représentation, jamais un résultat tactique.
-
-### Adaptateurs indépendants
-
-Les packages `audio`, `renderer` et `ui` exposent leurs propres ports structurels compatibles avec les sorties du routeur. Ils ne dépendent pas du package `presentation` et conservent un graphe de dépendances unidirectionnel.
+Contrôles : ordre causal, bornage, absence de mutation, aucune décision tactique, regroupement par action racine et conservation des conséquences majeures.
 
 ### Renderer
 
-Une couche PixiJS `presentation` dédiée affiche les effets transitoires après le rendu de l'état stable.
+La couche PixiJS transitoire :
 
-Elle :
-
-- n'accepte aucun événement de pointeur ;
-- annule les timers et détruit ses objets lors d'un nouveau rendu ;
-- est vidée lors d'une rotation, d'une reprise et de la destruction du renderer ;
-- expose des diagnostics de génération, quantité et objets actifs ;
-- revient à zéro après la lecture ou l'annulation des cues.
+- n'intercepte aucun pointeur ;
+- est jouée après l'état stable ;
+- annule timers et objets lors d'un nouveau rendu, d'une rotation ou d'une reprise ;
+- revient à zéro après lecture ;
+- expose ses diagnostics.
 
 ### Audio
 
-`AudioDirector` joue sept tonalités pilotes synthétisées localement par Web Audio :
+Sept tonalités locales Web Audio couvrent interaction, impact, dégâts, Brouhaha, renfort, victoire et défaite.
 
-- interaction ;
-- impact ;
-- dégâts ;
-- Brouhaha ;
-- renfort ;
-- victoire ;
-- défaite.
-
-La lecture :
-
-- attend une interaction utilisateur ;
-- respecte `masterVolume` et `muted` ;
-- met les lecteurs en cache ;
-- tolère Web Audio indisponible ou une lecture refusée ;
-- ne réalise aucun appel réseau ;
-- peut être remplacée plus tard par des fichiers locaux via le même port.
-
-Les préférences audio sont stockées dans les réglages applicatifs locaux et ne changent pas la version de sauvegarde tactique.
+Volume, mute, autoplay, cache et fallback sont pris en charge. Aucun appel réseau n'est effectué.
 
 ### Journal
 
-Le journal conserve au maximum six actions racines visibles.
+Le journal est limité à six actions racines et conserve jusqu'à sept conséquences. Les résultats total et partiel d'une même chaîne restent tous deux visibles.
 
-Chaque entrée :
+### Reprise et accessibilité
 
-- affiche un résumé compréhensible ;
-- conserve les conséquences majeures dans leur ordre causal ;
-- garde visibles plusieurs résultats de renfort d'une même chaîne ;
-- distingue succès, avertissement et danger sans dépendre uniquement de la couleur ;
-- laisse les historiques moteur comme preuve persistante complète.
+La reprise ne rejoue aucun effet historique. `prefers-reduced-motion`, le mode muet, le volume, le clavier et le toucher sont conservés.
 
-## Reprise et accessibilité
+## Validation automatisée
 
-Une reprise :
-
-- restaure immédiatement l'état stable sauvegardé ;
-- n'émet aucun nouvel événement tactique ;
-- ne rejoue ni son, ni overlay, ni apparition historique ;
-- annonce seulement la restauration dans le journal.
-
-`prefers-reduced-motion` réduit les durées des cues à une transition courte. Le mode muet, le volume, le clavier, la souris et le toucher restent accessibles.
-
-## Diagnostics et stabilité
-
-Les tests contrôlent :
-
-- un seul canvas monté ;
-- des compteurs de listeners stables ;
-- `data-display-objects` stable après quatre rotations ;
-- `data-transient-objects` revenu à zéro ;
-- un cache audio borné par les sept clés de sons ;
-- un journal limité à six entrées racines ;
-- l'absence de replay transitoire après rechargement.
-
-Aucune réécriture du renderer en diff incrémental, aucun WebAssembly et aucune véritable 3D n'ont été introduits sans mesure le justifiant.
-
-## Couverture automatisée
-
-### Tests unitaires
-
-Les 131 tests passent et couvrent notamment :
-
-- conversion événement vers cues ;
-- ordre causal et priorités ;
-- regroupement du journal ;
-- conservation des conséquences majeures ;
-- absence de mutation des événements ;
-- mouvement réduit ;
-- volume, mute et déverrouillage audio ;
-- cache, fallback et ordre des sons.
-
-### Playwright
-
-Les parcours Chrome bureau et mobile paysage couvrent :
-
-- réglages audio persistants ;
-- journal groupé et borné ;
-- cues transitoires ;
-- mouvement réduit ;
-- disparition des objets temporaires ;
-- reprise sans replay ;
-- stabilité du canvas, des listeners et du nombre d'objets ;
-- non-régression du scénario table → pilier → grille et de ses deux renforts.
-
-## Contrôles de livraison
-
-Le HEAD fonctionnel `91d88d28448e354c220a70f4525beaa317f6d54d` a validé :
+Le HEAD final de la PR #59 a validé :
 
 - Prettier ;
-- contenu ;
+- validation du contenu ;
 - TypeScript strict ;
 - 131 tests unitaires ;
 - build de production ;
-- validateur structurel du dépôt ;
-- Playwright Chromium bureau ;
+- validateur structurel ;
+- Playwright Chrome bureau ;
 - Playwright mobile paysage ;
 - package lock ;
 - artefact de production.
 
+Les parcours contrôlent également :
+
+- journal groupé et borné ;
+- réglages audio persistants ;
+- mouvement réduit ;
+- objets transitoires détruits ;
+- reprise sans replay ;
+- un seul canvas ;
+- listeners et objets stables après rotations ;
+- scénario table → pilier → grille et ses deux résultats de renfort.
+
 ## Frontières respectées
 
-- aucune modification du schéma tactique version 6 ;
-- aucune règle ajoutée au renderer, à l'UI ou à l'audio ;
-- aucun rééquilibrage de héros, créature ou seuil ;
-- aucun appel réseau tiers ;
-- aucun secret ajouté ;
-- aucun hasard métier ajouté ;
+- sauvegarde tactique maintenue en version 6 ;
+- aucune nouvelle règle tactique ;
+- aucun rééquilibrage ;
+- aucun secret, réseau tiers ou hasard métier ;
+- aucune 3D ou WebAssembly ;
 - Gargottex strictement en lecture seule.
 
-## Hors périmètre confirmé
+## Écarts
 
-Restent réservés aux phases suivantes :
+Aucun écart fonctionnel connu ne subsiste à la fusion de la PR #59.
 
-- animations définitives de tous les personnages ;
-- catalogue complet de bruitages ;
-- musique adaptative et doublages ;
-- équilibrage du bestiaire ;
-- génération du donjon ;
-- loot, progression et campagne ;
-- tests utilisateurs sur appareils réels.
+Les sons pilotes sont volontairement synthétiques. Le catalogue définitif de bruitages et les animations complètes restent réservés aux lots média ultérieurs.
+
+## Décision de sortie
+
+La PR #59 est fusionnée au commit `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`. Le Sprint 3.6 et le Sprint 3 peuvent être clôturés lorsque la documentation et Google Drive sont fusionnés et l'issue #57 marquée comme terminée.
