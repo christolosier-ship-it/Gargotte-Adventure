@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { AudioPresentationCue } from "@gargotte/presentation";
 import {
   AudioDirector,
   type AudioPlayer,
   type AudioPlayerFactory,
+  type AudioPresentationCue,
 } from "./index";
 
 class FakePlayer implements AudioPlayer {
