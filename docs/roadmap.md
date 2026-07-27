@@ -4,14 +4,14 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d'avancement
 
-| Sprint                                     | Statut     | Résultat principal                                                   |
-| ------------------------------------------ | ---------- | -------------------------------------------------------------------- |
+| Sprint                                     | Statut     | Résultat principal                                                     |
+| ------------------------------------------ | ---------- | ---------------------------------------------------------------------- |
 | Sprint 0 : Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac |
-| Sprint 1 : Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise         |
-| Sprint 2 : Plateau isométrique             | ✅ Terminé | Salle jouable en 2D isométrique avec pipeline graphique réutilisable |
-| Sprint 3 : Brouhaha, spawn et décor        | ✅ Terminé | Plateau acteur, renforts déterministes et présentation lisible       |
-| Sprint 4 : Héros et créatures de Bastognac | À venir    | Rôles, compétences, archétypes et comportements définitifs           |
-| Sprint 5 : Donjon généré et finition       | À venir    | Cinq étages générés, rencontres par salle, loot et boss              |
+| Sprint 1 : Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise           |
+| Sprint 2 : Plateau isométrique             | ✅ Terminé | Salle jouable en 2D isométrique avec pipeline graphique réutilisable   |
+| Sprint 3 : Brouhaha, spawn et décor        | ✅ Terminé | Plateau acteur, renforts déterministes et présentation lisible         |
+| Sprint 4 : Héros et créatures de Bastognac | À venir    | Rôles, compétences, archétypes et comportements définitifs             |
+| Sprint 5 : Donjon généré et finition       | À venir    | Cinq étages générés, rencontres par salle, loot et boss                |
 
 ## Sprints terminés
 
