@@ -118,7 +118,10 @@ export class PresentationController {
 
   private storeSettings(): void {
     try {
-      localStorage.setItem(audioSettingsKey, JSON.stringify(this.#audio.settings));
+      localStorage.setItem(
+        audioSettingsKey,
+        JSON.stringify(this.#audio.settings),
+      );
     } catch {
       // Les réglages restent actifs pour la session si le stockage est indisponible.
     }
@@ -146,9 +149,7 @@ export class PresentationController {
     this.#shell.boardHost.dataset.audioCacheSize = String(
       this.#audio.cacheSize,
     );
-    this.#shell.boardHost.dataset.reducedMotion = String(
-      this.#reducedMotion,
-    );
+    this.#shell.boardHost.dataset.reducedMotion = String(this.#reducedMotion);
   }
 }
 
