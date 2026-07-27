@@ -98,9 +98,9 @@ Une baisse ne déclenche rien. Une reprise ou migration ne rejoue aucun seuil an
 
 ## Tour ennemi
 
-Le roster est capturé au début de `enemy-turn`. `runEnemyTurn` exécute uniquement ces identifiants.
+Le roster des ennemis vivants est capturé et trié au passage en `enemy-turn`. La machine de tour transmet explicitement cette liste figée à `runEnemyTurn`, de sorte qu'un renfort créé après l'ouverture attend le tour ennemi suivant.
 
-Un ennemi créé après l'ouverture de ce roster ne joue pas pendant la phase en cours. Il sera inclus au prochain tour ennemi.
+Pour préserver le contrat public du moteur, un appel direct à `runEnemyTurn(state)` utilise le `enemyTurnRoster` capturé lorsqu'il est non vide. Si ce roster est vide, la fonction reconstruit un fallback vivant à partir des ennemis présents dans l'état.
 
 ## Chemin cible d'une expédition générée au Sprint 5
 
@@ -123,9 +123,10 @@ La sauvegarde tactique version 6 conserve notamment :
 - objets, interactions et réactions ;
 - points, demandes et séquence de spawn ;
 - historique, résultats et séquence des renforts ;
-- combattants, phase, tour et actions.
+- combattants, phase, tour et actions ;
+- `enemyTurnRoster`, toujours sérialisé, rempli uniquement pendant une phase `enemy-turn` ouverte et obligatoirement vide pendant `heroes-turn`, `victory` et `defeat`.
 
-Les versions 1 à 5 migrent vers la version 6 avec un historique de renfort vide. La migration n'appelle aucune règle runtime.
+Les versions 1 à 5 migrent vers la version 6 avec un historique de renfort vide. Les anciennes sauvegardes version 6 sans roster sont complétées défensivement. La migration n'appelle aucune règle runtime.
 
 ## Frontières
 
