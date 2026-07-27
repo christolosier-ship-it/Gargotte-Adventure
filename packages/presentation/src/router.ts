@@ -121,13 +121,9 @@ function visualCuesFor(
       return [cue("impact", event.interactableInstanceId, "warning", 55)];
     case "interactable-moved":
       return [
-        cue(
-          "movement",
-          event.interactableInstanceId,
-          "info",
-          40,
-          { ...event.to },
-        ),
+        cue("movement", event.interactableInstanceId, "info", 40, {
+          ...event.to,
+        }),
       ];
     case "chain-reaction-triggered":
       return [cue("impact", event.sourceInstanceId, "warning", 65)];
@@ -135,24 +131,15 @@ function visualCuesFor(
       return [cue("damage", event.combatantId, "danger", 75)];
     case "brouhaha-level-changed":
       return [
-        cue(
-          "brouhaha",
-          null,
-          event.appliedDelta > 0 ? "warning" : "info",
-          50,
-        ),
+        cue("brouhaha", null, event.appliedDelta > 0 ? "warning" : "info", 50),
       ];
     case "reinforcement-triggered":
       return [cue("threshold", null, "warning", 75)];
     case "creature-instantiated":
       return [
-        cue(
-          "reinforcement",
-          event.instanceId,
-          "success",
-          80,
-          { ...event.position },
-        ),
+        cue("reinforcement", event.instanceId, "success", 80, {
+          ...event.position,
+        }),
       ];
     case "reinforcement-resolved":
       return [
@@ -235,8 +222,10 @@ function journalEntry(
   const messages = unique(events.map(describe).filter(Boolean));
   const primary = [...events]
     .map((event, index) => ({ event, index, priority: journalPriority(event) }))
-    .sort((left, right) => right.priority - left.priority || left.index - right.index)[0]
-    ?.event;
+    .sort(
+      (left, right) =>
+        right.priority - left.priority || left.index - right.index,
+    )[0]?.event;
   const summary = primary ? describe(primary) : "Action tactique résolue.";
 
   return {
