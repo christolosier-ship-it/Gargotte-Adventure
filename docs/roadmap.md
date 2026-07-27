@@ -4,14 +4,14 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d'avancement
 
-| Sprint                                     | Statut      | Résultat principal                                                       |
-| ------------------------------------------ | ----------- | ------------------------------------------------------------------------ |
-| Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac   |
-| Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise             |
-| Sprint 2 : Plateau isométrique             | ✅ Terminé  | Salle jouable en 2D isométrique avec pipeline graphique réutilisable     |
-| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Spawn, Brouhaha, objets, réactions et renforts livrés ; finition à venir |
-| Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs               |
-| Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition        |
+| Sprint                                     | Statut      | Résultat principal                                                        |
+| ------------------------------------------ | ----------- | ------------------------------------------------------------------------- |
+| Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac    |
+| Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise              |
+| Sprint 2 : Plateau isométrique             | ✅ Terminé  | Salle jouable en 2D isométrique avec pipeline graphique réutilisable      |
+| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Sprints 3.1 à 3.5 livrés ; Sprint 3.6 actif pour présentation et finition |
+| Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs                |
+| Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition         |
 
 ## Sprint 0 : Fondations ✅
 
@@ -90,7 +90,7 @@ Livré par la PR #45, commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` :
 
 ### Sprint 3.5 : renforts de Brouhaha ✅
 
-Livré par la PR #49 puis stabilisé par les PR #53 et #54, commit final `ecc933cf4c05bf0426d2198c92e748d2052ecdd3` :
+Livré par la PR #49 puis stabilisé jusqu'à la PR #56, commit final `d7e7c11a4352f32881299e2135826724d17f3a93` :
 
 - règles de renfort déclarées par salle ;
 - déclenchement uniquement lors d'un franchissement montant ;
@@ -102,7 +102,7 @@ Livré par la PR #49 puis stabilisé par les PR #53 et #54, commit final `ecc933
 - aucune apparition rétroactive lors d'une migration ;
 - victoire calculée après les renforts de la résolution courante ;
 - roster ennemi figé au début de la phase ;
-- fallback vivant conservé pour les appels directs à `runEnemyTurn` ;
+- fallback vivant conservé pour les appels directs à `runEnemyTurn` lorsque le roster est vide ;
 - sauvegarde tactique version 6 et migrations depuis les versions 1 à 5 ;
 - tests unitaires et Playwright bureau/mobile paysage.
 
@@ -111,11 +111,13 @@ Références :
 - [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md) ;
 - [Audit de livraison du Sprint 3.5](audits/sprint-3-5-brouhaha-reinforcements.md).
 
-### Sprint 3.6 : présentation et finition
+### Sprint 3.6 : présentation et finition 🟡
+
+Phase active, suivie par l'issue #57.
 
 Objectif : rendre les conséquences déjà calculées plus lisibles, audibles et confortables sans ajouter de règle métier dans le renderer, l'UI ou l'audio.
 
-Périmètre cadré :
+Périmètre d'implémentation :
 
 - routeur de cues dérivé des événements tactiques ;
 - overlays pour sélection, impacts, Brouhaha, renforts et phase terminale ;
@@ -136,7 +138,10 @@ Principes verrouillés :
 - aucune optimisation structurelle n'est engagée sans mesure préalable ;
 - aucun appel réseau tiers ou secret n'est ajouté.
 
-Référence : [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md).
+Références :
+
+- [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md) ;
+- [Issue d'implémentation #57](https://github.com/christolosier-ship-it/Gargotte-Adventure/issues/57).
 
 **Sortie attendue du Sprint 3 :** le bruit et le décor créent des décisions tactiques et des catastrophes lisibles, tandis que les renforts utilisent un moteur générique et reproductible.
 
