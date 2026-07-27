@@ -23,8 +23,6 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md)
 - [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md)
 - [Décisions d'architecture](adr/README.md)
-- [ADR-0006 : plateau 2D isométrique](adr/0006-isometric-2d-renderer.md)
-- [ADR-0007 : définitions, instances et spawn déterministe](adr/0007-creature-instances-and-deterministic-spawn.md)
 
 ## Sprints
 
@@ -32,7 +30,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 0 : rapport de clôture](sprints/sprint-0-completion.md)
 - [Sprint 1 : rapport de clôture](sprints/sprint-1.md)
 - [Sprint 2 : rapport de clôture](sprints/sprint-2.md)
-- [Sprint 3 : Brouhaha, spawn et décor interactif](sprints/sprint-3.md)
+- [Sprint 3 : Brouhaha, spawn, décor et finition](sprints/sprint-3.md)
 
 ## Audits
 
@@ -44,6 +42,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 3.3 : objets interactifs](audits/sprint-3-3-interactable-objects.md)
 - [Sprint 3.4 : réactions en chaîne déterministes](audits/sprint-3-4-chain-reactions.md)
 - [Sprint 3.5 : renforts de Brouhaha](audits/sprint-3-5-brouhaha-reinforcements.md)
+- [Sprint 3.6 : présentation et finition](audits/sprint-3-6-presentation-finishing.md)
 
 ## Design et sources externes
 
@@ -55,12 +54,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Relais Sprint 3 dans Google Drive](external/sprint-3-drive-content.md)
 - [Diagramme FigJam](https://www.figma.com/board/wscHfycwhhvJRWQqelY4f9)
 
-## Sécurité
-
-- [Gestion des secrets](security/secrets.md)
-- [ADR-0003 : aucun secret ou appel OpenAI dans le client](adr/0003-no-client-secrets.md)
-
-## Rôle des différentes sources
+## Rôle des sources
 
 | Source         | Rôle                                                                            |
 | -------------- | ------------------------------------------------------------------------------- |
@@ -69,41 +63,18 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 | Google Drive   | Règles humaines, lore, médias maîtres, comptes rendus et archives               |
 | Figma / FigJam | Écrans, composants, gabarits, tokens et diagrammes                              |
 
-Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `christolosier-ship-it/Gargotte-V5` peut être étudié, mais il n'est jamais modifié depuis ce projet.
-
-## Règles de maintenance
-
-1. La documentation GitHub décrit l'état technique réel de `main` ou identifie explicitement une cible non implémentée.
-2. Une cible future est étiquetée comme telle.
-3. Une fonctionnalité n'est marquée comme livrée qu'après fusion et CI verte.
-4. Les rapports de sprint sont historiques et ne servent pas d'instructions actives.
-5. Les ADR consignent les décisions structurantes, pas les détails locaux.
-6. Drive, Gargottex et Figma ne sont pas recopiés intégralement dans le dépôt.
-7. Les liens internes au dépôt sont relatifs.
-8. Toute modification d'architecture, de sauvegarde, de renderer ou de format de contenu met à jour les pages associées.
-9. Toute modification des budgets de menace précise leur niveau d'application.
-10. Les documents distinguent définition éditoriale, instance runtime et génération.
-11. Toute étude de code Gargottex mentionne son caractère strictement non modifiant.
-12. Une migration de sauvegarde ne doit jamais déclencher rétroactivement une règle runtime.
-13. Un effet de présentation ne doit jamais modifier l'état ou l'ordre des règles métier.
+Gargottex n'est pas une dépendance runtime et reste strictement en lecture seule.
 
 ## État documentaire
 
-Après stabilisation finale du Sprint 3.5 et ouverture du Sprint 3.6 :
+Le Sprint 3 est terminé :
 
-- les Sprints 3.1 à 3.5 sont implémentés ;
-- la base stable du Sprint 3.6 est `d7e7c11a4352f32881299e2135826724d17f3a93` ;
-- les correctifs du roster ennemi sont clôturés jusqu'à la PR #56 ;
-- l'audit de livraison 3.5 contient les références finales de fusion, de correction et de CI ;
-- les renforts sont déclarés par salle et déclenchés uniquement lors d'un franchissement montant ;
-- succès total, partiel et refus sont historisés et expliqués ;
-- la salle tactique utilise la sauvegarde version 6 ;
-- les migrations depuis les versions 1 à 5 ne déclenchent aucun renfort rétroactif ;
-- le Sprint 3.6 est la phase active et son implémentation est suivie par l'issue #57 ;
-- les cues de présentation dérivent de l'état moteur final et des événements tactiques ordonnés ;
-- overlays, animations, sons et journal ne modifient jamais `RoomState` ;
-- la reprise ne rejoue aucun effet transitoire historique ;
-- les diagnostics du renderer servent de garde-fous de stabilité ;
-- Gargottex reste strictement en lecture seule.
+- Sprints 3.1 à 3.6 implémentés ;
+- livraison fonctionnelle 3.6 par la PR #59 au commit `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4` ;
+- routeur pur de présentation, cues PixiJS, audio local, journal groupé et reprise sans replay ;
+- sauvegarde tactique toujours en version 6 ;
+- mouvement réduit, mute, volume et diagnostics de stabilité validés ;
+- tests unitaires et Playwright bureau/mobile verts ;
+- prochaine phase : Sprint 4, héros et créatures de Bastognac.
 
-Le relais Google Drive versionné et le document Google Drive sont alignés sur l'ouverture du Sprint 3.6 et l'issue #57.
+Le relais GitHub et le document Google Drive sont alignés sur cette clôture.
