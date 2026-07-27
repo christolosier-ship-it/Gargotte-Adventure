@@ -2,6 +2,7 @@ import { Application, Container } from "pixi.js";
 import type { GridPosition, RoomState } from "@gargotte/engine";
 import { IsometricAssetRegistry } from "./assets";
 import type { TabletopAssetCatalog } from "./catalog";
+import { PresentationLayerController } from "./presentation-layer";
 import {
   buildRoomProjection,
   calculateIsometricGridBounds,
@@ -36,6 +37,7 @@ function createLayers(stage: Container): SceneLayers {
     backWall: new Container(),
     object: new Container(),
     interface: new Container(),
+    presentation: new Container(),
   };
   for (const [name, layer] of Object.entries(layers)) {
     layer.label = `layer:${name}`;
@@ -100,7 +102,39 @@ export async function createTabletopRenderer(
   let currentHighlights: TacticalHighlights = emptyHighlights;
   let renderGeneration = 0;
 
+  const presentation = new PresentationLayerController({
+    layer: layers.presentation,
+    project(position) {
+      const viewed = logicalToView(
+        position,
+        currentRoomDimensions,
+        currentRotation,
+      );
+      return gridToScreen(viewed, currentProjection);
+    },
+    updateDiagnostics(diagnostics) {
+      host.dataset.transientObjects = String(diagnostics.active);
+      app.canvas.dataset.presentationGeneration = String(
+        diagnostics.generation,
+      );
+      app.canvas.dataset.presentationCueCount = String(diagnostics.total);
+      app.canvas.dataset.presentationActive = String(diagnostics.active);
+      app.canvas.dataset.reducedMotion = String(diagnostics.reducedMotion);
+    },
+  });
+
+  function exposeListenerDiagnostics(): void {
+    app.canvas.dataset.listenerCounts = JSON.stringify({
+      cell: listeners.cell.length,
+      hero: listeners.hero.length,
+      enemy: listeners.enemy.length,
+      interactable: listeners.interactable.length,
+    });
+  }
+  exposeListenerDiagnostics();
+
   function clearLayers(): void {
+    presentation.clear();
     for (const layer of Object.values(layers))
       for (const child of layer.removeChildren())
         child.destroy({ children: true });
@@ -194,6 +228,13 @@ export async function createTabletopRenderer(
       app.destroy(true, { children: true });
     },
     renderRoom,
+    playPresentationCues(cues, options) {
+      if (currentState)
+        presentation.play(cues, currentState, options.reducedMotion);
+    },
+    clearPresentationCues() {
+      presentation.clear();
+    },
     rotateCamera() {
       currentRotation = nextCameraRotation(currentRotation);
       if (currentState) renderRoom(currentState, currentHighlights);
@@ -204,15 +245,19 @@ export async function createTabletopRenderer(
     },
     onCellSelected(listener) {
       listeners.cell.push(listener);
+      exposeListenerDiagnostics();
     },
     onHeroSelected(listener) {
       listeners.hero.push(listener);
+      exposeListenerDiagnostics();
     },
     onEnemySelected(listener) {
       listeners.enemy.push(listener);
+      exposeListenerDiagnostics();
     },
     onInteractableSelected(listener) {
       listeners.interactable.push(listener);
+      exposeListenerDiagnostics();
     },
   };
 }
