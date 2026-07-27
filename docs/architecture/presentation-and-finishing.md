@@ -3,10 +3,11 @@
 ## Statut
 
 - Cible : Sprint 3.6
-- État : cadré, non implémenté
+- État : phase active, implémentation à réaliser
 - Prérequis fusionnés : Sprints 3.1 à 3.5
-- Base stable : `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
+- Base stable : `d7e7c11a4352f32881299e2135826724d17f3a93`
 - Issue documentaire : #50
+- Issue d'implémentation : #57
 
 ## Objectif
 
@@ -44,7 +45,8 @@ La base fusionnée possède déjà :
 - un journal DOM limité aux six entrées les plus récentes ;
 - un renderer PixiJS qui reconstruit les couches de scène à chaque rendu ;
 - des diagnostics exposant notamment caméra, cache d'assets et nombre d'objets affichés ;
-- un `AudioDirector` contenant volume général et mode muet, sans lecture sonore connectée à la boucle de jeu.
+- un `AudioDirector` contenant volume général et mode muet, sans lecture sonore connectée à la boucle de jeu ;
+- un contrat final du roster ennemi stabilisé par la PR #56.
 
 Le Sprint 3.6 branche et consolide ces fondations. Il ne crée pas un second moteur de règles.
 
