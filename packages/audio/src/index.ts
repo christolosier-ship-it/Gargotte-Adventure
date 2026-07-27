@@ -37,7 +37,71 @@ const audioAssets: Record<AudioCueKey, string> = {
   defeat: "defeat.wav",
 };
 
+const toneSettings: Record<
+  AudioCueKey,
+  { frequency: number; duration: number; wave: OscillatorType }
+> = {
+  interaction: { frequency: 420, duration: 0.07, wave: "triangle" },
+  impact: { frequency: 180, duration: 0.09, wave: "square" },
+  damage: { frequency: 115, duration: 0.13, wave: "sawtooth" },
+  brouhaha: { frequency: 520, duration: 0.14, wave: "triangle" },
+  reinforcement: { frequency: 660, duration: 0.17, wave: "sine" },
+  victory: { frequency: 784, duration: 0.22, wave: "triangle" },
+  defeat: { frequency: 92, duration: 0.24, wave: "sawtooth" },
+};
+
+let sharedAudioContext: AudioContext | null = null;
+
+class TonePlayer implements AudioPlayer {
+  volume = 1;
+  currentTime = 0;
+  readonly #key: AudioCueKey;
+  readonly #active = new Set<OscillatorNode>();
+
+  constructor(key: AudioCueKey) {
+    this.#key = key;
+  }
+
+  async play(): Promise<void> {
+    if (typeof AudioContext === "undefined")
+      throw new Error("Web Audio indisponible");
+    sharedAudioContext ??= new AudioContext();
+    if (sharedAudioContext.state === "suspended")
+      await sharedAudioContext.resume();
+
+    const settings = toneSettings[this.#key];
+    const oscillator = sharedAudioContext.createOscillator();
+    const gain = sharedAudioContext.createGain();
+    const now = sharedAudioContext.currentTime;
+    oscillator.type = settings.wave;
+    oscillator.frequency.setValueAtTime(settings.frequency, now);
+    gain.gain.setValueAtTime(Math.max(0.0001, this.volume * 0.18), now);
+    gain.gain.exponentialRampToValueAtTime(
+      0.0001,
+      now + settings.duration,
+    );
+    oscillator.connect(gain);
+    gain.connect(sharedAudioContext.destination);
+    oscillator.onended = () => this.#active.delete(oscillator);
+    this.#active.add(oscillator);
+    oscillator.start(now);
+    oscillator.stop(now + settings.duration);
+  }
+
+  pause(): void {
+    for (const oscillator of this.#active)
+      try {
+        oscillator.stop();
+      } catch {
+        // Un oscillateur déjà terminé n'a plus besoin d'être arrêté.
+      }
+    this.#active.clear();
+  }
+}
+
 const browserPlayerFactory: AudioPlayerFactory = (source) => {
+  if (source.startsWith("tone:"))
+    return new TonePlayer(source.slice("tone:".length) as AudioCueKey);
   if (typeof Audio === "undefined") return null;
   return new Audio(source);
 };
@@ -45,12 +109,12 @@ const browserPlayerFactory: AudioPlayerFactory = (source) => {
 export class AudioDirector {
   #settings = { ...defaultAudioSettings };
   #unlocked = false;
-  readonly #assetBase: string;
+  readonly #assetBase: string | null;
   readonly #createPlayer: AudioPlayerFactory;
   readonly #players = new Map<AudioCueKey, AudioPlayer>();
 
   constructor(options: AudioDirectorOptions = {}) {
-    this.#assetBase = (options.assetBase ?? "assets/audio").replace(/\/$/, "");
+    this.#assetBase = options.assetBase?.replace(/\/$/, "") ?? null;
     this.#createPlayer = options.createPlayer ?? browserPlayerFactory;
   }
 
@@ -116,7 +180,10 @@ export class AudioDirector {
   private playerFor(key: AudioCueKey): AudioPlayer | null {
     const cached = this.#players.get(key);
     if (cached) return cached;
-    const player = this.#createPlayer(`${this.#assetBase}/${audioAssets[key]}`);
+    const source = this.#assetBase
+      ? `${this.#assetBase}/${audioAssets[key]}`
+      : `tone:${key}`;
+    const player = this.#createPlayer(source);
     if (player) this.#players.set(key, player);
     return player;
   }
