@@ -1,7 +1,7 @@
 import { Graphics, type Container } from "pixi.js";
 import type { GridPosition, RoomState } from "@gargotte/engine";
-import type { VisualPresentationCue } from "@gargotte/presentation";
 import type { ScreenPosition } from "./projection";
+import type { VisualPresentationCue } from "./types";
 
 export interface PresentationLayerDiagnostics {
   generation: number;
