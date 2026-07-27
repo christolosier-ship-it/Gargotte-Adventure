@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { runEnemyTurn } from "./enemy-ai";
 import { createRoomState } from "./room-state";
 import { endHeroesTurn, finishEnemyTurn } from "./turn-machine";
-import type { CreatureDefinition } from "./types";
+import type { CreatureDefinition, RoomState } from "./types";
 
 const creature: CreatureDefinition = {
   id: "gobelin",
@@ -43,6 +43,20 @@ const room = () =>
     ],
   });
 
+function addLateReinforcement(state: RoomState): RoomState {
+  return {
+    ...state,
+    enemies: [
+      ...state.enemies,
+      {
+        ...state.enemies[0]!,
+        id: "renfort-tardif",
+        position: { column: 4, row: 2 },
+      },
+    ],
+  };
+}
+
 describe("roster du tour ennemi", () => {
   it("conserve un roster vivant pour un appel direct sans roster prérempli", () => {
     const direct = runEnemyTurn({
@@ -58,25 +72,29 @@ describe("roster du tour ennemi", () => {
     ).toEqual(["ancien"]);
   });
 
+  it("préserve le roster figé lors d'un appel direct avec un renfort tardif", () => {
+    const opened = endHeroesTurn(room());
+    expect(opened.ok).toBe(true);
+    if (!opened.ok) throw new Error("ouverture du tour ennemi attendue");
+
+    const direct = runEnemyTurn(addLateReinforcement(opened.value.state));
+
+    expect(
+      direct.events
+        .filter((event) => event.type === "enemy-decision")
+        .map((event) => event.enemyId),
+    ).toEqual(["ancien"]);
+  });
+
   it("ignore jusqu'au prochain tour un ennemi ajouté après l'ouverture", () => {
     const opened = endHeroesTurn(room());
     expect(opened.ok).toBe(true);
     if (!opened.ok) throw new Error("ouverture du tour ennemi attendue");
     expect(opened.value.state.enemyTurnRoster).toEqual(["ancien"]);
 
-    const withLateReinforcement = {
-      ...opened.value.state,
-      enemies: [
-        ...opened.value.state.enemies,
-        {
-          ...opened.value.state.enemies[0]!,
-          id: "renfort-tardif",
-          position: { column: 4, row: 2 },
-        },
-      ],
-    };
-
-    const currentTurn = finishEnemyTurn(withLateReinforcement);
+    const currentTurn = finishEnemyTurn(
+      addLateReinforcement(opened.value.state),
+    );
     expect(currentTurn.ok).toBe(true);
     if (!currentTurn.ok) throw new Error("résolution du tour ennemi attendue");
     expect(
