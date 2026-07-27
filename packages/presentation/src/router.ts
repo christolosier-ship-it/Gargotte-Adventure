@@ -220,19 +220,25 @@ function journalEntry(
   rootId: string,
 ): JournalPresentationEntry {
   const messages = unique(events.map(describe).filter(Boolean));
-  const primary = [...events]
+  const ranked = [...events]
     .map((event, index) => ({ event, index, priority: journalPriority(event) }))
     .sort(
       (left, right) =>
-        right.priority - left.priority || left.index - right.index,
-    )[0]?.event;
+        right.priority - left.priority || right.index - left.index,
+    );
+  const primary = ranked[0]?.event;
   const summary = primary ? describe(primary) : "Action tactique résolue.";
+  const importantMessages = events
+    .filter((event) => journalPriority(event) >= 80)
+    .map(describe);
 
   return {
     id: `journal-${rootId}`,
     rootId,
     summary,
-    details: messages.filter((message) => message !== summary).slice(0, 7),
+    details: unique([...importantMessages, ...messages])
+      .filter((message) => message !== summary)
+      .slice(0, 7),
     tone: primary ? journalTone(primary) : "info",
     eventTypes: unique(events.map((event) => event.type)),
   };
