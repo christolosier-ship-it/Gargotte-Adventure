@@ -19,9 +19,7 @@ export default defineConfig({
       "@gargotte/ui": alias("./packages/ui/src/index.ts"),
       "@gargotte/save": alias("./packages/save/src/index.ts"),
       "@gargotte/audio": alias("./packages/audio/src/index.ts"),
-      "@gargotte/presentation": alias(
-        "./packages/presentation/src/index.ts",
-      ),
+      "@gargotte/presentation": alias("./packages/presentation/src/index.ts"),
     },
   },
   plugins: [
@@ -54,9 +52,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        globPatterns: [
-          "**/*.{js,css,html,svg,json,webp,png,woff2,wav}",
-        ],
+        globPatterns: ["**/*.{js,css,html,svg,json,webp,png,woff2,wav}"],
         cleanupOutdatedCaches: true,
         navigateFallback: "index.html",
       },
