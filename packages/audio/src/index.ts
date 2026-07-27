@@ -1,7 +1,4 @@
-import type {
-  AudioCueKey,
-  AudioPresentationCue,
-} from "@gargotte/presentation";
+import type { AudioCueKey, AudioPresentationCue } from "@gargotte/presentation";
 
 export interface AudioSettings {
   masterVolume: number;
@@ -76,10 +73,7 @@ class TonePlayer implements AudioPlayer {
     oscillator.type = settings.wave;
     oscillator.frequency.setValueAtTime(settings.frequency, now);
     gain.gain.setValueAtTime(Math.max(0.0001, this.volume * 0.18), now);
-    gain.gain.exponentialRampToValueAtTime(
-      0.0001,
-      now + settings.duration,
-    );
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + settings.duration);
     oscillator.connect(gain);
     gain.connect(sharedAudioContext.destination);
     oscillator.onended = () => this.#active.delete(oscillator);
