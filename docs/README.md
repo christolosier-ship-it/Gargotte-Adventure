@@ -100,10 +100,10 @@ Après stabilisation finale du Sprint 3.5 et ouverture du Sprint 3.6 :
 - la salle tactique utilise la sauvegarde version 6 ;
 - les migrations depuis les versions 1 à 5 ne déclenchent aucun renfort rétroactif ;
 - le Sprint 3.6 est la phase active et son implémentation est suivie par l'issue #57 ;
-- les cues de présentation doivent dériver exclusivement des événements tactiques ;
+- les cues de présentation dérivent de l'état moteur final et des événements tactiques ordonnés ;
 - overlays, animations, sons et journal ne modifient jamais `RoomState` ;
 - la reprise ne rejoue aucun effet transitoire historique ;
 - les diagnostics du renderer servent de garde-fous de stabilité ;
 - Gargottex reste strictement en lecture seule.
 
-Le relais Google Drive est aligné sur l'ouverture du Sprint 3.6 et l'issue #57.
+Le relais Google Drive versionné et le document Google Drive sont alignés sur l'ouverture du Sprint 3.6 et l'issue #57.
