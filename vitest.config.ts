@@ -15,9 +15,7 @@ export default defineConfig({
       "@gargotte/ui": alias("./packages/ui/src/index.ts"),
       "@gargotte/save": alias("./packages/save/src/index.ts"),
       "@gargotte/audio": alias("./packages/audio/src/index.ts"),
-      "@gargotte/presentation": alias(
-        "./packages/presentation/src/index.ts",
-      ),
+      "@gargotte/presentation": alias("./packages/presentation/src/index.ts"),
     },
   },
   test: {
