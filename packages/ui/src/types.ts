@@ -1,4 +1,5 @@
 import type { GamePhase, RoomPhase } from "@gargotte/engine";
+import type { JournalPresentationEntry } from "@gargotte/presentation";
 
 export interface HeroOption {
   id: string;
@@ -19,6 +20,9 @@ export interface GameShellUpdate {
   brouhahaLevel?: number;
   brouhahaMax?: number;
   brouhahaEffects?: string[];
+  audioMuted?: boolean;
+  audioVolume?: number;
+  reducedMotion?: boolean;
 }
 
 export interface GameShell {
@@ -37,6 +41,12 @@ export interface GameShell {
   endActivationButton: HTMLButtonElement;
   endHeroesTurnButton: HTMLButtonElement;
   resolveEnemyTurnButton: HTMLButtonElement;
+  muteAudioButton: HTMLButtonElement;
+  volumeInput: HTMLInputElement;
+  reducedMotionStatus: HTMLElement;
   update(state: GameShellUpdate): void;
+  setSaveStatus(message: string): void;
+  setAudioSettings(muted: boolean, volume: number): void;
   appendEvent(message: string): void;
+  appendEventGroup(entry: JournalPresentationEntry): void;
 }
