@@ -1,5 +1,15 @@
 import type { GamePhase, RoomPhase } from "@gargotte/engine";
-import type { JournalPresentationEntry } from "@gargotte/presentation";
+
+export type PresentationTone = "info" | "warning" | "success" | "danger";
+
+export interface JournalPresentationEntry {
+  id: string;
+  rootId: string;
+  summary: string;
+  details: string[];
+  tone: PresentationTone;
+  eventTypes: string[];
+}
 
 export interface HeroOption {
   id: string;
