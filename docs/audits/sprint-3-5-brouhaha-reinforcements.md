@@ -2,7 +2,7 @@
 
 - Date de contrôle initial : 24 juillet 2026
 - Date du contrôle final P2 : 27 juillet 2026
-- Statut : fusionné dans `main`, correctif final consolidé dans la PR #56
+- Statut : fusionné dans `main`, correctif final consolidé par la PR #56
 - Issue : #48, clôturée comme terminée
 - Pull Request fonctionnelle : #49, fusionnée par squash
 - Branche fonctionnelle : `sprint-3/brouhaha-reinforcements`
@@ -12,8 +12,9 @@
 - Correctif P2 roster persistant : PR #53, commit `568670a3cb0d61ef478653403cb31f9065e3a2df`
 - Correctif P2 fallback direct : PR #54, commit `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
 - Correctif P2 préservation du roster capturé : PR #56
-- HEAD fonctionnel validé de la PR #56 : `b784f988107c04a8cbe733541023e366646be066`
-- Prochaine étape : Sprint 3.6
+- HEAD fonctionnel final de la PR #56 : `43607fc6cc9b2c9b6e5171600b4aabc6ca47466c`
+- Commit de fusion final : `d7e7c11a4352f32881299e2135826724d17f3a93`
+- Prochaine étape : Sprint 3.6, issue #57
 
 ## Conclusion
 
@@ -219,12 +220,12 @@ Ce scénario ne dépend pas du bouton de spawn manuel.
 
 ### Correctif final PR #56
 
-Le HEAD fonctionnel `b784f988107c04a8cbe733541023e366646be066` a passé :
+Le HEAD fonctionnel final `43607fc6cc9b2c9b6e5171600b4aabc6ca47466c` a passé :
 
-- Repository quality : exécution `30294197916`, succès complet ;
-- Validate application : exécution `30294197958`, succès complet.
+- Repository quality : exécution `30294692343`, succès complet ;
+- Validate application : exécution `30294692359`, succès complet.
 
-La PR impose également une relance des deux workflows sur son HEAD documentaire final avant passage en revue.
+La PR #56 a ensuite été fusionnée par squash au commit `d7e7c11a4352f32881299e2135826724d17f3a93`.
 
 La validation couvre :
 
@@ -275,14 +276,8 @@ Le document Google Drive a été réellement renommé et actualisé pour l'ouver
 
 ## Écarts et arbitrages
 
-Aucun écart fonctionnel non autorisé ne doit subsister après validation et fusion de la PR #56.
+Aucun écart fonctionnel non autorisé ne subsiste après la fusion de la PR #56.
 
 Le journal visible conserve volontairement les six événements les plus récents. Les tests navigateur contrôlent donc les messages terminaux utiles, tandis que l'ordre causal complet est vérifié dans les événements, historiques persistants et tests unitaires.
 
-Les valeurs des seuils et quantités pilotes restent provisoires et seront équilibrées au Sprint 4. Le mécanisme n'aura pas à être réécrit pour cet équilibrage.
-
-## Décision de sortie
-
-Le Sprint 3.5 a été fusionné initialement par squash le 24 juillet 2026, puis stabilisé par les PR #53 et #54. La PR #56 constitue le dernier lot de correction du contrat public de `runEnemyTurn` et d'alignement documentaire.
-
-Le passage effectif au Sprint 3.6 est autorisé après résolution des quatre fils P2 et validation verte des deux workflows sur le HEAD final de la PR #56.
+Les valeurs des seuils et quantités pilotes restent provisoires et seront équilibrées au Sprint 4. Le mécanisme n'aura pas à être réécrit pour ce rééquilibrage.

@@ -89,20 +89,21 @@ Gargottex n'est pas une dépendance runtime de Gargotte Adventure. Le dépôt `c
 
 ## État documentaire
 
-Après fusion des correctifs post-Sprint 3.5 et préparation du Sprint 3.6 :
+Après stabilisation finale du Sprint 3.5 et ouverture du Sprint 3.6 :
 
 - les Sprints 3.1 à 3.5 sont implémentés ;
-- la base stable du Sprint 3.6 est `ecc933cf4c05bf0426d2198c92e748d2052ecdd3` ;
-- les deux P2 relatives au roster ennemi sont corrigées par les PR #53 et #54 ;
+- la base stable du Sprint 3.6 est `d7e7c11a4352f32881299e2135826724d17f3a93` ;
+- les correctifs du roster ennemi sont clôturés jusqu'à la PR #56 ;
 - l'audit de livraison 3.5 contient les références finales de fusion, de correction et de CI ;
 - les renforts sont déclarés par salle et déclenchés uniquement lors d'un franchissement montant ;
 - succès total, partiel et refus sont historisés et expliqués ;
 - la salle tactique utilise la sauvegarde version 6 ;
 - les migrations depuis les versions 1 à 5 ne déclenchent aucun renfort rétroactif ;
-- le Sprint 3.6 est cadré comme une couche de présentation dérivée des événements ;
+- le Sprint 3.6 est la phase active et son implémentation est suivie par l'issue #57 ;
+- les cues de présentation dérivent de l'état moteur final et des événements tactiques ordonnés ;
 - overlays, animations, sons et journal ne modifient jamais `RoomState` ;
 - la reprise ne rejoue aucun effet transitoire historique ;
 - les diagnostics du renderer servent de garde-fous de stabilité ;
 - Gargottex reste strictement en lecture seule.
 
-Le relais Google Drive est aligné sur l'ouverture du Sprint 3.6.
+Le relais Google Drive versionné et le document Google Drive sont alignés sur l'ouverture du Sprint 3.6 et l'issue #57.
