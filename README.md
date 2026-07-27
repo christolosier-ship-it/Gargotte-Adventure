@@ -15,8 +15,8 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 - **Sprint 3.2** : Brouhaha 0 à 12 livré par la PR #37 ;
 - **Sprint 3.3** : objets interactifs livrés par la PR #43 ;
 - **Sprint 3.4** : réactions en chaîne livrées par la PR #45 ;
-- **Sprint 3.5** : renforts déclenchés par le Brouhaha livrés par la PR #49 et stabilisés par les PR #53 et #54 ;
-- **Sprint 3.6** : prochaine étape, présentation et finition du Sprint 3.
+- **Sprint 3.5** : renforts déclenchés par le Brouhaha livrés par la PR #49 et stabilisés jusqu'à la PR #56 ;
+- **Sprint 3.6** : phase active, présentation, audio utile et finition, suivie dans l'issue #57.
 
 La version stable permet de :
 
@@ -44,7 +44,7 @@ Brünhilda et le Gobelin Bricoleur disposent de sprites pilotes. Les autres pers
 
 ## Livraison Sprint 3.5
 
-La PR #49, complétée par les correctifs #53 et #54 et stabilisée au commit `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`, livre :
+La PR #49, complétée par les correctifs #53, #54 et #56 et stabilisée au commit `d7e7c11a4352f32881299e2135826724d17f3a93`, livre :
 
 - des règles `brouhahaReinforcements` déclarées par salle ;
 - un déclenchement uniquement lorsque `previousLevel < threshold <= level` ;
@@ -54,7 +54,7 @@ La PR #49, complétée par les correctifs #53 et #54 et stabilisée au commit `e
 - des résultats réussis, partiels ou refusés historisés ;
 - des limites `maxActivations`, y compris lorsqu'un spawn est refusé ;
 - un roster ennemi figé au début de la phase ;
-- un fallback vivant pour les appels directs à `runEnemyTurn` ;
+- un fallback vivant pour les appels directs à `runEnemyTurn` lorsque le roster persistant est vide ;
 - une phase terminale calculée après la résolution complète ;
 - une sauvegarde tactique version 6 avec migrations depuis les versions 1 à 5 ;
 - un scénario pilote Bastognac validant deux seuils sans bouton de spawn manuel.
@@ -63,21 +63,22 @@ Le budget de menace n'est ni lu ni dépensé par cette mécanique. Gargottex res
 
 Voir [Renforts déclenchés par le Brouhaha](docs/architecture/brouhaha-reinforcements.md).
 
-## Prochaine étape : Sprint 3.6
+## Phase active : Sprint 3.6
 
-Le dernier lot du Sprint 3 portera sur :
+L'issue #57 pilote le dernier lot du Sprint 3 :
 
 - un routeur de cues dérivé des événements existants ;
 - les retours visuels et overlays utiles ;
 - les premiers effets sonores locaux ;
 - l'enrichissement du journal ;
 - la reprise sans replay des effets transitoires ;
+- le support du mouvement réduit et du mode muet ;
 - les mesures de fluidité et de stabilité du renderer ;
 - les tests desktop et mobile paysage.
 
-Les animations et sons resteront strictement sans influence sur `RoomState` et les règles métier.
+Les animations et sons restent strictement sans influence sur `RoomState` et les règles métier.
 
-Voir [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md).
+Voir [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md) et l'[issue d'implémentation #57](https://github.com/christolosier-ship-it/Gargotte-Adventure/issues/57).
 
 ## Génération future du donjon
 
@@ -117,7 +118,7 @@ packages/renderer            projection, assets, picking et profondeur PixiJS
 packages/ui                  menus, HUD et commandes accessibles
 packages/save                sauvegardes IndexedDB versionnées et migrations
 packages/common              types et utilitaires partagés
-packages/audio               fondation audio non connectée à la boucle
+packages/audio               fondation audio à brancher pendant le Sprint 3.6
 content/bastognac            donjon, créatures, effets, objets et salle pilote
 design/isometric             tokens et gabarits graphiques
 apps/game/public/assets      exports runtime SVG et WebP
