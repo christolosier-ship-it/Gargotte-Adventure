@@ -6,12 +6,7 @@ import type { IsometricProjection, ScreenPosition } from "../projection";
 import type { CameraRotation, GridDimensions } from "../view";
 
 export type SceneLayerName =
-  | "backdrop"
-  | "floor"
-  | "backWall"
-  | "object"
-  | "interface"
-  | "presentation";
+  "backdrop" | "floor" | "backWall" | "object" | "interface" | "presentation";
 
 export type SceneLayers = Record<SceneLayerName, Container>;
 
