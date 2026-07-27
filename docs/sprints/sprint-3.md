@@ -1,14 +1,15 @@
 # Sprint 3 : Brouhaha, spawn et décor interactif
 
-- Statut : en cours
+- Statut : en cours, Sprint 3.6 actif
 - Dernière étape livrée : Sprint 3.5
 - Issue Sprint 3.5 : #48, clôturée
 - Pull Request Sprint 3.5 : #49, fusionnée
-- Correctifs post-fusion : PR #53 et #54, fusionnées
-- Commit stable : `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`
-- Étape suivante : Sprint 3.6
+- Correctifs post-fusion : PR #53, #54 et #56, fusionnées
+- Commit stable : `d7e7c11a4352f32881299e2135826724d17f3a93`
+- Étape active : Sprint 3.6
+- Issue d'implémentation : #57
 - Issue documentaire de préparation : #50
-- Branche documentaire : `docs/sprint-3-6-documentation`
+- Branche documentaire de lancement : `docs/sprint-3-6-launch`
 
 ## Objectif
 
@@ -60,7 +61,7 @@ PR #45, commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` : poussées, graphe d�
 
 ### Sprint 3.5 : renforts déclenchés par le Brouhaha ✅
 
-PR #49, base fonctionnelle finale après correctifs PR #53 et #54 : `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`.
+PR #49, base fonctionnelle finale après correctifs PR #53, #54 et #56 : `d7e7c11a4352f32881299e2135826724d17f3a93`.
 
 #### Contenu
 
@@ -118,7 +119,7 @@ L'ordre de résolution est :
 
 La victoire n'est acquise que si aucun ennemi vivant ne subsiste après les renforts de la résolution courante.
 
-Le roster du tour ennemi est figé au début de la phase. Un ennemi ajouté après son ouverture agit au prochain tour ennemi. Un appel direct à `runEnemyTurn` sans roster explicite reconstruit toutefois la liste des ennemis vivants afin de préserver le contrat public du moteur.
+Le roster du tour ennemi est figé au début de la phase. Un ennemi ajouté après son ouverture agit au prochain tour ennemi. `runEnemyTurn` préserve un roster capturé non vide et reconstruit la liste des ennemis vivants lors d'un appel direct lorsque le roster persistant est vide.
 
 #### Sauvegarde version 6
 
@@ -129,7 +130,8 @@ Le roster du tour ennemi est figé au début de la phase. Un ennemi ajouté apr�
 - la demande de Brouhaha racine ;
 - la règle, le seuil et l'activation ;
 - la `SpawnRequest` ;
-- le résultat et les instances créées.
+- le résultat et les instances créées ;
+- `enemyTurnRoster`, toujours sérialisé et vide hors `enemy-turn`.
 
 Les versions 1 à 5 migrent avec un historique vide et une séquence égale à 1, sans réinterpréter leur niveau de Brouhaha.
 
@@ -142,7 +144,11 @@ Briser le tonneau démontre le premier seuil. La chaîne table → pilier → gr
 
 Le contrôle final se trouve dans [Audit de livraison Sprint 3.5](../audits/sprint-3-5-brouhaha-reinforcements.md).
 
-## Sprint 3.6 : présentation et finition
+## Sprint 3.6 : présentation et finition 🟡
+
+### Statut
+
+Le Sprint 3.6 est la phase active du projet. Son implémentation est suivie par l'issue #57 à partir de la base stable `d7e7c11a4352f32881299e2135826724d17f3a93`.
 
 ### Objectif
 
@@ -155,7 +161,8 @@ Rendre visibles et audibles les conséquences déjà calculées par le moteur, s
 - le journal DOM conserve les six entrées les plus récentes ;
 - `event-messages.ts` traduit déjà les événements tactiques ;
 - `AudioDirector` expose volume et mode muet, sans lecture connectée ;
-- la sauvegarde version 6 restaure tout l'état métier.
+- la sauvegarde version 6 restaure tout l'état métier ;
+- le contrat final du roster ennemi est stabilisé par la PR #56.
 
 ### Architecture cible
 
@@ -250,4 +257,4 @@ Le Sprint 5 générera la géométrie, les points de spawn et la population init
 
 ## État de livraison
 
-Les Sprints 3.1 à 3.5 sont implémentés et stabilisés au commit `ecc933cf4c05bf0426d2198c92e748d2052ecdd3`. Le Sprint 3.6 est cadré mais non implémenté. Son architecture de référence est [Présentation et finition du Sprint 3.6](../architecture/presentation-and-finishing.md).
+Les Sprints 3.1 à 3.5 sont implémentés et stabilisés au commit `d7e7c11a4352f32881299e2135826724d17f3a93`. Le Sprint 3.6 est ouvert dans l'issue #57 et n'est pas encore livré. Son architecture de référence est [Présentation et finition du Sprint 3.6](../architecture/presentation-and-finishing.md).
