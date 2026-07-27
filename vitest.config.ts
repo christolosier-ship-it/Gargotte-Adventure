@@ -11,7 +11,11 @@ export default defineConfig({
       "@gargotte/content-schema": alias(
         "./packages/content-schema/src/index.ts",
       ),
+      "@gargotte/renderer": alias("./packages/renderer/src/index.ts"),
+      "@gargotte/ui": alias("./packages/ui/src/index.ts"),
       "@gargotte/save": alias("./packages/save/src/index.ts"),
+      "@gargotte/audio": alias("./packages/audio/src/index.ts"),
+      "@gargotte/presentation": alias("./packages/presentation/src/index.ts"),
     },
   },
   test: {

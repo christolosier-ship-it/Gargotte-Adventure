@@ -2,18 +2,18 @@
 
 ## Statut
 
-- Cible : Sprint 3.6
-- État : phase active, implémentation à réaliser
-- Prérequis fusionnés : Sprints 3.1 à 3.5
-- Base stable : `d7e7c11a4352f32881299e2135826724d17f3a93`
-- Issue documentaire : #50
+- Sprint : 3.6
+- État : implémenté dans la Pull Request #59, avant fusion
 - Issue d'implémentation : #57
+- Base de départ : `86aeb13d3705cb744dfe525a10e37fa11f38dcaa`
+- HEAD fonctionnel validé : `91d88d28448e354c220a70f4525beaa317f6d54d`
+- Audit : [Audit de livraison du Sprint 3.6](../audits/sprint-3-6-presentation-finishing.md)
 
 ## Objectif
 
-Le Sprint 3.6 clôt le Sprint 3 en rendant les conséquences tactiques plus lisibles, plus audibles et plus confortables sans modifier les règles livrées.
+Le Sprint 3.6 clôt le Sprint 3 en rendant les conséquences tactiques plus lisibles, audibles et confortables sans modifier les règles livrées.
 
-Les événements du moteur restent la source de vérité. Les overlays, animations, sons et formulations du journal ne décident jamais qu'une action réussit, qu'un renfort apparaît ou qu'une phase se termine.
+Les événements du moteur restent la source de vérité. Les overlays, sons et formulations du journal ne décident jamais qu'une action réussit, qu'un renfort apparaît ou qu'une phase se termine.
 
 ```text
 intention joueur
@@ -21,238 +21,199 @@ intention joueur
       ▼
 moteur tactique
       │
-      ├─ nouvel état RoomState
-      └─ événements ordonnés
+      ├─ RoomState final
+      └─ TacticalEvent[] ordonnés
               │
               ▼
-      routeur de présentation
-          ┌───┴───────────┐
-          ▼               ▼
-     cues visuels      cues audio
-          │               │
-          └──────┬────────┘
-                 ▼
-        journal et rendu final
+ packages/presentation
+      ┌───────┼────────┐
+      ▼       ▼        ▼
+ cues visuels audio   journal groupé
+      │       │        │
+      ▼       ▼        ▼
+ renderer   audio      UI
 ```
 
-## État de départ
+## Routeur pur
 
-La base fusionnée possède déjà :
+Le package `packages/presentation` contient un routeur sans DOM, PixiJS, Web Audio ni stockage.
 
-- un `RoomState` version 6 entièrement restaurable ;
-- des événements explicites pour combat, Brouhaha, objets, réactions, spawn et renforts ;
-- des traducteurs de messages dans `apps/game/src/event-messages.ts` ;
-- un journal DOM limité aux six entrées les plus récentes ;
-- un renderer PixiJS qui reconstruit les couches de scène à chaque rendu ;
-- des diagnostics exposant notamment caméra, cache d'assets et nombre d'objets affichés ;
-- un `AudioDirector` contenant volume général et mode muet, sans lecture sonore connectée à la boucle de jeu ;
-- un contrat final du roster ennemi stabilisé par la PR #56.
+`routeTacticalPresentation` reçoit :
 
-Le Sprint 3.6 branche et consolide ces fondations. Il ne crée pas un second moteur de règles.
+- les événements tactiques déjà résolus ;
+- une fonction de traduction textuelle ;
+- les options de mouvement réduit et de bornage.
 
-## Frontières de responsabilité
+Il retourne :
 
-### Moteur tactique
+- une liste ordonnée de cues visuels ;
+- une liste ordonnée de cues audio ;
+- une entrée de journal liée à une action racine.
 
-Le moteur produit l'état final et des événements ordonnés. Il ne connaît ni durée d'animation, ni volume, ni texture d'overlay, ni formulation visible.
+Le routeur :
 
-Un événement peut être enrichi avec une donnée métier manquante uniquement lorsque cette donnée existe déjà dans la résolution. Le moteur ne produit pas d'instruction PixiJS ou Web Audio.
+- conserve l'ordre causal ;
+- ne mute ni `RoomState`, ni les événements ;
+- ne choisit aucune cible ou conséquence métier ;
+- ne recalcule ni dégâts, ni occupation, ni seuil, ni victoire ;
+- borne ses sorties à dix cues visuels et six cues audio par défaut.
 
-### Routeur de présentation
+## Ports structurels
 
-Une couche applicative dédiée transforme les événements en cues de présentation.
+Les packages `renderer`, `audio` et `ui` ne dépendent pas du package `presentation`.
 
-Un cue peut décrire :
+Chacun expose son propre port structurel :
 
-- une catégorie visuelle ;
-- une cible logique éventuelle ;
-- une priorité ;
-- une durée indicative ;
-- une clé sonore éventuelle ;
-- un texte court ou un groupe causal pour le journal.
+- `VisualPresentationCue` côté renderer ;
+- `AudioPresentationCue` côté audio ;
+- `JournalPresentationEntry` côté UI.
 
-Le routeur ne modifie jamais `RoomState`, ne recalcule aucune cible et ne choisit aucun résultat métier.
+Les objets produits par le routeur sont compatibles avec ces ports par typage structurel TypeScript. Le graphe des packages reste unidirectionnel et sans cycle.
 
-### Renderer
+## Cues visuels
 
-Le renderer affiche l'état stable puis joue les cues visuels transitoires : surbrillance, impact, apparition, variation du Brouhaha ou phase terminale.
+Le lot pilote couvre :
 
-Les effets transitoires vivent dans une couche dédiée et sont détruits ou annulés lors d'un nouveau rendu, d'une reprise ou de la destruction du renderer.
-
-### Audio
-
-`packages/audio` devient responsable de la lecture locale des premiers sons utiles.
-
-Il doit :
-
-- respecter `masterVolume` et `muted` ;
-- attendre une interaction utilisateur avant toute lecture imposée par les règles d'autoplay ;
-- tolérer un asset absent sans bloquer la partie ;
-- mettre en cache les ressources déjà chargées ;
-- ne jamais effectuer d'appel réseau vers un service tiers ;
-- pouvoir être désactivé sans modifier le résultat tactique.
-
-### UI et journal
-
-L'UI affiche des formulations compréhensibles et peut regrouper les conséquences d'une même action racine.
-
-Le journal reste une vue de présentation. Les historiques persistants du moteur demeurent la preuve complète pour les tests, la reprise et le diagnostic.
-
-## Cues pilotes
-
-Le premier lot reste petit et démontrable.
-
-### Cues visuels
-
-- sélection et activation du héros ;
-- déplacement ou poussée d'objet ;
+- activation du héros ;
+- déplacement et poussée ;
 - impact et dégâts ;
-- changement de niveau du Brouhaha ;
-- franchissement de seuil et apparition d'un renfort ;
-- refus ou apparition partielle ;
+- variation du Brouhaha ;
+- franchissement de seuil ;
+- renfort réussi, partiel ou refusé ;
 - victoire et défaite.
 
-### Cues audio
+Le renderer affiche d'abord l'état tactique final, puis joue les cues dans une couche PixiJS `presentation` dédiée.
 
-- interaction ou impact ;
+Cette couche :
+
+- n'accepte aucun événement de pointeur ;
+- possède une profondeur supérieure au plateau stable ;
+- annule ses timers lorsqu'une nouvelle lecture commence ;
+- détruit ses objets lors d'un nouveau rendu, d'une rotation, d'une reprise ou de la destruction du renderer ;
+- expose génération, quantité prévue et quantité active dans les diagnostics.
+
+Les cues utilisent des anneaux courts et lisibles. Ils ne masquent pas durablement les cases ou combattants.
+
+## Audio local
+
+`AudioDirector` joue sept sons pilotes synthétisés localement avec Web Audio :
+
+- interaction ;
+- impact ;
 - dégâts ;
-- montée significative du Brouhaha ;
-- apparition d'un renfort ;
-- victoire et défaite.
+- Brouhaha ;
+- renfort ;
+- victoire ;
+- défaite.
 
-Les sons définitifs, doublages, musiques et bibliothèques complètes n'appartiennent pas à ce sprint.
+La lecture :
 
-## Ordre et concurrence
+- attend la première interaction pointeur ou clavier ;
+- respecte le volume général et le mode muet ;
+- met les lecteurs en cache par clé ;
+- redémarre un son court depuis son début ;
+- tolère Web Audio indisponible ou une lecture refusée ;
+- ne réalise aucun appel réseau ;
+- peut utiliser plus tard des fichiers locaux avec le même port.
 
-Les cues sont produits dans l'ordre des événements retournés par le moteur.
+Les préférences audio sont stockées dans `localStorage` sous une clé applicative. Elles ne sont pas ajoutées à `RoomState` et ne modifient pas la sauvegarde tactique version 6.
 
-Principes :
+## Journal groupé
 
-1. l'état final est disponible immédiatement pour les règles et la sauvegarde ;
-2. la présentation peut séquencer les cues sans retarder la validité de l'état ;
-3. deux cues issus de la même action conservent leur ordre causal ;
-4. une nouvelle intention invalide les effets transitoires devenus obsolètes ;
-5. une phase terminale possède la priorité visuelle la plus haute ;
-6. aucune animation ne bloque indéfiniment les commandes.
+Le journal visible conserve six actions racines au maximum.
 
-Le temps d'animation n'est jamais sauvegardé et n'entre pas dans le déterminisme métier.
+Chaque entrée possède :
 
-## Journal enrichi
+- un résumé compréhensible ;
+- une tonalité textuelle ;
+- les types d'événements pour le diagnostic ;
+- jusqu'à sept conséquences complémentaires.
 
-Le journal doit privilégier la compréhension plutôt que la répétition brute des identifiants techniques.
+Les conséquences majeures sont conservées en priorité. Une chaîne produisant un renfort total puis un renfort partiel affiche les deux résultats dans la même entrée.
 
-Le cadrage prévoit :
+Le journal n'est pas une deuxième sauvegarde. Les événements et historiques persistants du moteur restent la preuve complète.
 
-- un résumé de l'action racine ;
-- les conséquences importantes dans leur ordre ;
-- l'identification claire des succès partiels et refus ;
-- un message explicite pour les seuils et renforts ;
-- une formulation terminale stable ;
-- des détails techniques conservés dans les diagnostics et historiques, pas imposés dans chaque phrase visible.
+## Reprise et annulation
 
-La limite visible actuelle de six entrées peut évoluer, mais la liste DOM doit rester bornée afin d'éviter une croissance permanente pendant une longue session.
-
-## Reprise et restauration
-
-Une reprise reconstruit la scène depuis le `RoomState` sauvegardé.
+Une reprise restaure immédiatement l'état stable sauvegardé.
 
 Elle ne rejoue pas :
 
-- les animations déjà terminées ;
+- les overlays historiques ;
 - les sons historiques ;
-- les impacts transitoires ;
+- les impacts déjà terminés ;
 - les apparitions déjà résolues.
 
-Après chargement :
+Le journal ajoute uniquement un message de restauration. La rotation de caméra et le démarrage d'une nouvelle salle annulent aussi les effets transitoires en cours.
 
-- le plateau reflète immédiatement les positions, états, PV, objets, Brouhaha, renforts et phase terminale sauvegardés ;
-- le journal annonce la restauration sans simuler de nouveaux événements métier ;
-- les préférences audio appartiennent aux réglages applicatifs, pas au schéma tactique ;
-- aucun changement de version de `RoomState` n'est prévu pour des données purement visuelles ou sonores.
+## Accessibilité
 
-## Accessibilité et confort
+- `prefers-reduced-motion` réduit les cues à une transition de 70 ms maximum ;
+- le mode muet et le volume sont accessibles dans le panneau de commandes ;
+- le statut du mouvement réduit est visible dans le DOM ;
+- aucune information essentielle n'est transmise uniquement par le son ou la couleur ;
+- les overlays n'interceptent ni le focus, ni le clic, ni le toucher ;
+- les commandes clavier, souris et tactiles restent disponibles.
 
-- `prefers-reduced-motion` remplace les mouvements non indispensables par des transitions courtes ou statiques ;
-- le mode muet reste accessible sans entrer dans une partie ;
-- aucune information essentielle n'est transmise uniquement par la couleur ou le son ;
-- les messages restent disponibles dans le DOM ;
-- le focus clavier et les commandes tactiles ne sont pas capturés par un overlay décoratif ;
-- les effets visuels ne masquent pas durablement une cible ou une case jouable.
+## Diagnostics de stabilité
 
-## Mesures de fluidité
+Le renderer et l'application exposent notamment :
 
-Le Sprint 3.6 commence par établir une base mesurée sur le build de production, sur Chrome bureau et mobile paysage.
+- `data-display-objects` ;
+- `data-transient-objects` ;
+- `data-presentation-generation` ;
+- `data-presentation-cue-count` ;
+- `data-presentation-active` ;
+- `data-listener-counts` ;
+- `data-audio-cache-size` ;
+- `data-audio-muted` ;
+- `data-audio-unlocked` ;
+- `data-reduced-motion`.
 
-Les diagnostics existants servent de garde-fous :
+Les tests contrôlent :
 
-- `data-display-objects` reste stable après des rendus répétés d'un état équivalent ;
-- `data-asset-cache-size` se stabilise après le préchargement et la première utilisation ;
-- un seul canvas reste monté ;
-- les listeners de sélection ne se multiplient pas après rotation, reprise ou rerendu ;
-- les effets transitoires sont détruits après lecture ou annulation ;
-- une séquence répétée d'interactions ne provoque pas de croissance continue des objets PixiJS ou du DOM du journal.
+- un seul canvas ;
+- des listeners stables ;
+- un nombre d'objets stable après quatre rotations ;
+- un retour à zéro des objets transitoires ;
+- un journal borné ;
+- un cache audio limité aux sept clés ;
+- l'absence de replay après rechargement.
 
-Une optimisation structurelle n'est réalisée que si une mesure révèle une régression. Le Sprint 3.6 ne remplace pas automatiquement le rendu complet par un diff incrémental et n'introduit pas WebAssembly par anticipation.
+Le rendu complet n'a pas été remplacé par un diff incrémental. Aucun WebAssembly ni véritable 3D n'a été introduit sans mesure le justifiant.
 
-## Stratégie de tests
+## Validation
 
-### Tests unitaires
+Le HEAD fonctionnel `91d88d28448e354c220a70f4525beaa317f6d54d` a validé :
 
-- conversion événement vers cue ;
-- ordre et priorité des cues ;
-- regroupement causal du journal ;
-- réglages de volume et mode muet ;
-- fallback lorsqu'un son ou un effet manque ;
-- annulation des effets transitoires ;
-- absence de mutation de `RoomState`.
+- Repository quality `30305294064` ;
+- Validate application `30305294029` ;
+- Prettier ;
+- validation du contenu ;
+- TypeScript strict ;
+- 131 tests unitaires ;
+- build de production ;
+- validateur structurel ;
+- Playwright Chrome bureau et mobile paysage ;
+- package lock et artefact de production.
 
-### Tests renderer et UI
+## Frontières confirmées
 
-- overlays présents puis détruits ;
-- focus, clavier et toucher préservés ;
-- journal borné et lisible ;
-- état terminal visible ;
-- mode mouvement réduit ;
-- absence de croissance des objets affichés après répétition.
-
-### Playwright
-
-Les parcours bureau et mobile paysage vérifient au minimum :
-
-- combat avec impact et journal ;
-- interaction bruyante et changement du Brouhaha ;
-- chaîne table → pilier → grille ;
-- apparition totale et partielle de renforts ;
-- victoire ou défaite ;
-- sauvegarde, rechargement et absence de replay transitoire ;
-- mode muet et mouvement réduit ;
-- stabilité des diagnostics après plusieurs cycles.
-
-Les tests audio contrôlent les appels et états de lecture sans dépendre du matériel sonore de la machine CI.
-
-## Critères de sortie du Sprint 3.6
-
-- les cues proviennent exclusivement des événements et de l'état moteur ;
-- aucune règle métier n'est ajoutée dans le renderer, l'UI ou l'audio ;
-- les conséquences principales possèdent un retour visuel lisible ;
-- les premiers sons utiles respectent volume, mute, autoplay et fallback ;
-- le journal explique action racine, causalité, seuils, renforts et résultats partiels ;
-- une reprise restaure l'état stable sans rejouer les effets historiques ;
-- le mode mouvement réduit et l'usage sans son restent fonctionnels ;
-- les objets PixiJS, listeners, cache d'assets et éléments du journal ne croissent pas sans limite ;
-- les tests unitaires et Playwright passent sur Chrome bureau et mobile paysage ;
-- aucun appel réseau tiers, secret, hasard métier ou dépendance à Gargottex n'est ajouté ;
-- la documentation active et l'audit final du Sprint 3 sont alignés avant fusion.
+- aucune nouvelle règle tactique ;
+- aucune mutation de `RoomState` par la présentation ;
+- aucune nouvelle version de sauvegarde ;
+- aucun rééquilibrage du contenu ;
+- aucun appel réseau tiers ;
+- aucun secret ;
+- aucun hasard métier ;
+- Gargottex strictement en lecture seule.
 
 ## Hors périmètre
 
-- nouvelles règles tactiques ;
-- rééquilibrage des héros, créatures ou seuils ;
-- catalogue final d'assets ;
-- animations complètes de tous les personnages ;
+- animations définitives de tous les personnages ;
+- catalogue complet de bruitages ;
 - musique adaptative, doublage ou spatialisation avancée ;
-- génération de donjon et de rencontres ;
+- équilibrage des héros et créatures ;
+- génération du donjon et des rencontres ;
 - loot, progression et campagne ;
 - véritable 3D ou WebAssembly.
-
-Ces sujets appartiennent aux Sprints 4, 5 ou aux lots graphiques et audio ultérieurs.

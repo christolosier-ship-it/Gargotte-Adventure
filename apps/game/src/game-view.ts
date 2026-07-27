@@ -1,3 +1,4 @@
+import type { AudioSettings } from "@gargotte/audio";
 import type { TacticalRoomDefinition } from "@gargotte/content-schema";
 import {
   getAttackableTargets,
@@ -24,6 +25,8 @@ interface GameViewOptions {
   room: RoomState | null;
   selectedHeroIds: readonly string[];
   saveText: string;
+  audioSettings: Readonly<AudioSettings>;
+  reducedMotion: boolean;
   brouhahaEffects: readonly BrouhahaEffectDefinition[];
   interactableDefinitions: readonly InteractableDefinition[];
   roomDefinition: TacticalRoomDefinition;
@@ -57,6 +60,9 @@ export function renderGameView(options: GameViewOptions): void {
     brouhahaLevel: options.room?.brouhaha.level ?? 0,
     brouhahaMax: 12,
     brouhahaEffects: latestEffectNames,
+    audioMuted: options.audioSettings.muted,
+    audioVolume: options.audioSettings.masterVolume,
+    reducedMotion: options.reducedMotion,
   });
 
   renderTacticalActions(

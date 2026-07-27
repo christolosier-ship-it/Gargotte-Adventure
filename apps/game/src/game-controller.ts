@@ -28,7 +28,7 @@ import {
   executeBrouhahaControl,
   type BrouhahaControlId,
 } from "./brouhaha-controller";
-import { appendTacticalEvents, describeDomainEvent } from "./event-messages";
+import { describeDomainEvent } from "./event-messages";
 import type { GameControllerOptions } from "./game-controller-options";
 import { renderGameView } from "./game-view";
 import { readSelectedHeroIds } from "./hero-selection";
@@ -37,6 +37,7 @@ import {
   executeInteractableAction,
 } from "./interactable-controller";
 import { PersistenceController } from "./persistence-controller";
+import { PresentationController } from "./presentation-controller";
 import { buildTacticalRoom } from "./room-builder";
 import { executeScriptedSpawn } from "./scripted-spawn-controller";
 
@@ -55,6 +56,7 @@ export class GameController {
   private readonly interactableDefinitions: InteractableDefinition[];
   private readonly events = new EventBus();
   private readonly persistence = new PersistenceController();
+  private readonly presentation: PresentationController;
   private readonly defaultHeroId: string;
   private readonly validHeroIds: ReadonlySet<string>;
   private state: GameState;
@@ -70,6 +72,12 @@ export class GameController {
     this.creatureDefinitions = options.creatureDefinitions;
     this.brouhahaEffects = options.brouhahaEffects;
     this.interactableDefinitions = options.interactableDefinitions;
+    this.presentation = new PresentationController({
+      shell: this.shell,
+      renderer: this.renderer,
+      creatureDefinitions: this.creatureDefinitions,
+      interactableDefinitions: this.interactableDefinitions,
+    });
     const defaultHeroId = options.roomDefinition.heroes[0]?.id;
     if (!defaultHeroId)
       throw new Error("Aucun héros disponible dans le scénario.");
@@ -93,6 +101,7 @@ export class GameController {
   }
 
   start(): void {
+    this.presentation.start();
     this.events.subscribe((event) => {
       this.state = reduceGameState(this.state, event);
       this.shell.appendEvent(describeDomainEvent(event));
@@ -136,6 +145,8 @@ export class GameController {
       room: this.room,
       selectedHeroIds: this.selectedHeroIds,
       saveText,
+      audioSettings: this.presentation.audioSettings,
+      reducedMotion: this.presentation.reducedMotion,
       brouhahaEffects: this.brouhahaEffects,
       interactableDefinitions: this.interactableDefinitions,
       roomDefinition: this.roomDefinition,
@@ -154,13 +165,14 @@ export class GameController {
     const state = this.state;
     const room = this.room;
     const selectedHeroIds = [...this.selectedHeroIds];
+    this.shell.setSaveStatus("Enregistrement…");
     void this.persistence
       .save(state, room, selectedHeroIds)
-      .then(() => this.render("Enregistrée sur cet appareil"))
+      .then(() => this.shell.setSaveStatus("Enregistrée sur cet appareil"))
       .catch((error: unknown) => {
         console.error("[save] écriture locale échouée", error);
         this.shell.appendEvent("La sauvegarde locale a échoué.");
-        this.render("Échec de sauvegarde");
+        this.shell.setSaveStatus("Échec de sauvegarde");
       });
   }
 
@@ -173,6 +185,7 @@ export class GameController {
   }
 
   private startRoom(): void {
+    this.presentation.clear();
     this.room = buildTacticalRoom(
       this.roomDefinition,
       this.creatureDefinitions,
@@ -186,13 +199,15 @@ export class GameController {
 
   private continueRoom(): void {
     if (!this.room) return;
+    this.presentation.clear();
     this.state = { ...this.state, phase: "expedition" };
-    this.shell.appendEvent("Reprise de la salle sauvegardée.");
+    this.shell.appendEvent("Reprise de la salle sauvegardée, sans replay.");
     this.render("Salle restaurée");
   }
 
   private rotateCamera(): void {
     if (!this.room) return;
+    this.presentation.clear();
     const rotation = this.renderer.rotateCamera();
     this.shell.cameraStatus.textContent = `Vue : ${rotation}°`;
     this.shell.appendEvent(`Caméra pivotée à ${rotation}°.`);
@@ -213,17 +228,13 @@ export class GameController {
 
   private readonly handleHeroSelection = (heroId: string): void => {
     if (!this.room) return;
-    this.applyResult(
-      selectHero(this.room, heroId),
-      `Héros sélectionné: ${heroId}.`,
-    );
+    this.applyResult(selectHero(this.room, heroId));
   };
 
   private readonly handleMove = (position: GridPosition): void => {
     if (!this.room?.activeHeroId) return;
     this.applyResult(
       moveCombatant(this.room, this.room.activeHeroId, position),
-      "Déplacement.",
     );
   };
 
@@ -306,9 +317,9 @@ export class GameController {
   ): void {
     const changed = result.state !== this.room;
     this.room = result.state;
-    this.writeEvents(result.events);
+    this.render(changed ? "Enregistrement…" : unchangedText);
+    this.presentation.present(result.events);
     if (changed) this.persist();
-    else this.render(unchangedText);
   }
 
   private applyResult(
@@ -319,24 +330,14 @@ export class GameController {
       | ReturnType<typeof endHeroActivation>
       | ReturnType<typeof endHeroesTurn>
       | ReturnType<typeof finishEnemyTurn>,
-    successMessage?: string,
   ): void {
     if (!result.ok) {
       this.shell.appendEvent(result.error.message);
       return;
     }
     this.room = result.value.state;
-    if (successMessage) this.shell.appendEvent(successMessage);
-    else this.writeEvents(result.value.events);
+    this.render("Enregistrement…");
+    this.presentation.present(result.value.events);
     this.persist();
-  }
-
-  private writeEvents(events: readonly TacticalEvent[]): void {
-    appendTacticalEvents(
-      (message) => this.shell.appendEvent(message),
-      events,
-      this.creatureDefinitions,
-      this.interactableDefinitions,
-    );
   }
 }
