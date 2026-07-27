@@ -14,15 +14,20 @@ export function createEnemyTurnRoster(state: RoomState): string[] {
 
 export function runEnemyTurn(
   state: RoomState,
-  roster: readonly string[] = createEnemyTurnRoster(state),
+  roster?: readonly string[],
 ): {
   state: RoomState;
   events: TacticalEvent[];
 } {
+  const resolvedRoster =
+    roster ??
+    (state.phase === "enemy-turn" && state.enemyTurnRoster.length > 0
+      ? state.enemyTurnRoster
+      : createEnemyTurnRoster(state));
   let next = state;
   const events: TacticalEvent[] = [];
 
-  for (const enemyId of roster) {
+  for (const enemyId of resolvedRoster) {
     if (next.phase === "victory" || next.phase === "defeat") break;
     const enemy = next.enemies.find(
       (candidate) => candidate.id === enemyId && candidate.alive,
