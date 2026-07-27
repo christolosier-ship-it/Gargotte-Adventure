@@ -4,146 +4,49 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d'avancement
 
-| Sprint                                     | Statut      | Résultat principal                                                        |
-| ------------------------------------------ | ----------- | ------------------------------------------------------------------------- |
-| Sprint 0 : Fondations                      | ✅ Terminé  | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac    |
-| Sprint 1 : Boucle de salle                 | ✅ Terminé  | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise              |
-| Sprint 2 : Plateau isométrique             | ✅ Terminé  | Salle jouable en 2D isométrique avec pipeline graphique réutilisable      |
-| Sprint 3 : Brouhaha, spawn et décor        | 🟡 En cours | Sprints 3.1 à 3.5 livrés ; Sprint 3.6 actif pour présentation et finition |
-| Sprint 4 : Héros et créatures de Bastognac | À venir     | Rôles, compétences, archétypes et comportements définitifs                |
-| Sprint 5 : Donjon généré et finition       | À venir     | Cinq étages générés, rencontres par salle, loot, boss et finition         |
+| Sprint                                     | Statut     | Résultat principal                                                   |
+| ------------------------------------------ | ---------- | -------------------------------------------------------------------- |
+| Sprint 0 : Fondations                      | ✅ Terminé | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac |
+| Sprint 1 : Boucle de salle                 | ✅ Terminé | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise         |
+| Sprint 2 : Plateau isométrique             | ✅ Terminé | Salle jouable en 2D isométrique avec pipeline graphique réutilisable |
+| Sprint 3 : Brouhaha, spawn et décor        | ✅ Terminé | Plateau acteur, renforts déterministes et présentation lisible       |
+| Sprint 4 : Héros et créatures de Bastognac | À venir    | Rôles, compétences, archétypes et comportements définitifs           |
+| Sprint 5 : Donjon généré et finition       | À venir    | Cinq étages générés, rencontres par salle, loot et boss              |
 
-## Sprint 0 : Fondations ✅
+## Sprints terminés
 
-Livré : gouvernance, documentation, sécurité, TypeScript strict, PWA offline-first, séparation des paquets, CI, GitHub Pages et premier contenu Bastognac.
+### Sprint 0 : fondations
 
-**Sortie obtenue :** une base installable, testable et publiable.
+Gouvernance, sécurité, TypeScript strict, PWA offline-first, CI et GitHub Pages.
 
-## Sprint 1 : Boucle de salle ✅
+### Sprint 1 : boucle de salle
 
-Livré : sélection de 1 à 4 héros, trois actions, déplacement orthogonal, combat déterministe, IA explicable, phases terminales, sauvegarde et tests desktop/mobile.
+Sélection des héros, trois actions, déplacement, combat, IA explicable, victoire, défaite et sauvegarde.
 
-**Sortie obtenue :** une salle jouable de bout en bout.
+### Sprint 2 : plateau isométrique
 
-## Sprint 2 : Plateau isométrique ✅
+Projection 128 × 64, picking, caméra à quatre orientations, profondeur, murs, assets et fallbacks.
 
-Livré : projection 128 × 64, picking souris/tactile, caméra à quatre orientations, profondeur stable, murs arrière, pipeline d'assets, fallbacks, sprites pilotes et tests de panne d'assets.
+### Sprint 3 : Brouhaha, spawn, décor et finition
 
-**Sortie obtenue :** la boucle tactique conserve ses règles avec une présentation isométrique réutilisable.
+Le Sprint 3 est entièrement livré :
 
-## Sprint 3 : Brouhaha, spawn et décor
+- **3.1** : définitions/instances séparées, points et demandes de spawn, identifiants reproductibles ;
+- **3.2** : Brouhaha 0–12, effets, historique et sauvegarde ;
+- **3.3** : tables, tonneaux, grilles, torches et piliers interactifs ;
+- **3.4** : poussées et réactions FIFO déterministes ;
+- **3.5** : renforts par franchissement montant, limites persistantes et roster ennemi figé ;
+- **3.6** : routeur de présentation, cues PixiJS, audio local, journal groupé, mouvement réduit et reprise sans replay.
 
-Objectif : faire du plateau un acteur tactique visible sans perdre le déterminisme.
+La PR #59 a livré le Sprint 3.6 au commit `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`.
 
-Le cadrage détaillé se trouve dans [Sprint 3 : Brouhaha, spawn et décor interactif](sprints/sprint-3.md).
-
-### Sprint 3.1 : spawn déterministe ✅
-
-Livré par la PR #35, commit `dd8c749f3afb73104270d87c9e920aab4e926bf3` :
-
-- définitions séparées des instances ;
-- points et demandes de spawn ;
-- identifiants reproductibles ;
-- apparition totale ou partielle ;
-- sauvegarde version 2 ;
-- renfort fixe de contrôle.
-
-### Sprint 3.2 : Brouhaha 0 à 12 ✅
-
-Livré par la PR #37, commit `306cc037a5e64ef948b45d85e92d45e3a9909eb2` :
-
-- demandes idempotentes ;
-- effets universels ou propres au donjon ;
-- historique et séquence persistée ;
-- un effet aux niveaux 0 à 9 ;
-- deux effets aux niveaux 10 à 12 ;
-- sauvegarde version 3 et migrations ;
-- HUD, journal et tests navigateur.
-
-### Sprint 3.3 : objets interactifs ✅
-
-Livré par la PR #43, commit `83d1aa48eeb8411f01584d8321ea52357c2e6e07` :
-
-- tables, tonneaux, grilles, torches et piliers ;
-- définitions et instances séparées ;
-- états et transitions propres à chaque famille ;
-- interaction adjacente coûtant une action ;
-- refus idempotents sans mutation ;
-- Brouhaha automatique pour les interactions bruyantes ;
-- blocage du déplacement, du spawn et de la ligne de vue selon l'état ;
-- rendu isométrique, clic direct et commandes accessibles ;
-- sauvegarde version 4 et migrations depuis les versions 1 à 3 ;
-- tests desktop et mobile paysage.
-
-### Sprint 3.4 : réactions en chaîne ✅
-
-Livré par la PR #45, commit `17ad00c0cb5abb9e66da6e320903f56606a8e8d5` :
-
-- poussée déterministe de certains objets ;
-- graphe de réactions déclaré par salle ;
-- propagation FIFO ordonnée ;
-- transitions, déplacements, dégâts et demandes de Brouhaha secondaires ;
-- causalité explicite et historique persistant ;
-- garde contre les cycles et limite de propagation ;
-- sauvegarde version 5 et migrations depuis les versions 1 à 4 ;
-- scénario pilote validé sur bureau et mobile paysage.
-
-### Sprint 3.5 : renforts de Brouhaha ✅
-
-Livré par la PR #49 puis stabilisé jusqu'à la PR #56, commit final `d7e7c11a4352f32881299e2135826724d17f3a93` :
-
-- règles de renfort déclarées par salle ;
-- déclenchement uniquement lors d'un franchissement montant ;
-- plusieurs seuils traités par seuil croissant puis identifiant ;
-- identifiants déterministes pour les activations et demandes de spawn ;
-- limite `maxActivations` persistante par règle ;
-- sélection ordonnée des points laissée au moteur de spawn ;
-- succès total, partiel ou refus expliqué et historisé ;
-- aucune apparition rétroactive lors d'une migration ;
-- victoire calculée après les renforts de la résolution courante ;
-- roster ennemi figé au début de la phase ;
-- fallback vivant conservé pour les appels directs à `runEnemyTurn` lorsque le roster est vide ;
-- sauvegarde tactique version 6 et migrations depuis les versions 1 à 5 ;
-- tests unitaires et Playwright bureau/mobile paysage.
+Résultat obtenu : le bruit et le décor produisent des décisions tactiques et des catastrophes lisibles, tandis que le moteur reste déterministe et indépendant de la présentation.
 
 Références :
 
-- [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md) ;
-- [Audit de livraison du Sprint 3.5](audits/sprint-3-5-brouhaha-reinforcements.md).
-
-### Sprint 3.6 : présentation et finition 🟡
-
-Phase active, suivie par l'issue #57.
-
-Objectif : rendre les conséquences déjà calculées plus lisibles, audibles et confortables sans ajouter de règle métier dans le renderer, l'UI ou l'audio.
-
-Périmètre d'implémentation :
-
-- routeur de cues dérivé des événements tactiques ;
-- overlays pour sélection, impacts, Brouhaha, renforts et phase terminale ;
-- premiers sons locaux pour interaction, dégâts, seuil, apparition, victoire et défaite ;
-- respect du volume, du mode muet et des règles d'autoplay ;
-- journal enrichi et regroupement des conséquences d'une même action racine ;
-- reprise immédiate de l'état stable sans rejouer les effets transitoires ;
-- prise en charge de `prefers-reduced-motion` ;
-- contrôle de la croissance des objets PixiJS, listeners, cache d'assets et entrées du journal ;
-- tests unitaires, renderer, UI et Playwright sur bureau et mobile paysage.
-
-Principes verrouillés :
-
-- l'état final et les événements restent la source de vérité ;
-- le temps d'animation n'est jamais sauvegardé ;
-- aucun son ou overlay ne peut modifier `RoomState` ;
-- un asset manquant ne bloque jamais la partie ;
-- aucune optimisation structurelle n'est engagée sans mesure préalable ;
-- aucun appel réseau tiers ou secret n'est ajouté.
-
-Références :
-
+- [Suivi du Sprint 3](sprints/sprint-3.md) ;
 - [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md) ;
-- [Issue d'implémentation #57](https://github.com/christolosier-ship-it/Gargotte-Adventure/issues/57).
-
-**Sortie attendue du Sprint 3 :** le bruit et le décor créent des décisions tactiques et des catastrophes lisibles, tandis que les renforts utilisent un moteur générique et reproductible.
+- [Audit de livraison du Sprint 3.6](audits/sprint-3-6-presentation-finishing.md).
 
 ## Sprint 4 : héros et créatures de Bastognac
 
@@ -156,67 +59,39 @@ Références :
 - intégration progressive des sprites définitifs ;
 - équilibrage du vertical slice.
 
-Les archétypes restent instanciables par le moteur de spawn sans modifier sa frontière. Les valeurs pilotes des renforts pourront être rééquilibrées ici sans réécrire leur mécanisme.
+Les archétypes restent instanciables par le moteur de spawn sans modifier sa frontière. Les valeurs pilotes des renforts pourront être rééquilibrées sans réécrire leur mécanisme.
 
-## Sprint 5 : donjon complet généré et finition
+## Sprint 5 : donjon complet généré
 
-### Génération des cinq étages
+### Génération
 
-- graphe et ordre des salles ;
-- entrée, sortie, chemin critique et embranchements ;
-- validation de connectivité ;
-- progression entre salles.
-
-### Géométrie complète des salles
-
-- dimensions et formes ;
-- murs, portes, passages et zones ;
-- obstacles structurels ;
-- points de spawn ;
-- décor initial ;
-- contraintes de jouabilité et de lisibilité.
+- topologie des cinq étages ;
+- graphe, chemin critique et embranchements ;
+- géométrie complète des salles ;
+- murs, portes, passages, obstacles et points de spawn ;
+- validation de connectivité et de jouabilité.
 
 ### Rencontres
 
 Chaque salle reçoit son propre budget de menace. **Le budget est validé par salle, jamais comme un portefeuille global d'étage.**
 
-Le générateur compose une population, puis le moteur de spawn crée les instances. Il reste déterministe à seed identique.
+Le générateur compose une population, puis le moteur de spawn crée les instances. Les renforts de Brouhaha restent une augmentation runtime distincte.
 
-Les renforts de Brouhaha sont des augmentations runtime autorisées par les règles de la salle. Ils ne dépensent pas automatiquement le budget de rencontre initial.
+### Progression
 
-### Progression et finition
-
-- loot et progression entre salles ;
+- loot et progression ;
 - boss Baron Pas-Très-Terrifiant ;
 - reprise de campagne ;
-- médias et audio ;
-- accessibilité ;
-- performances mobile ;
-- installation PWA finalisée ;
-- tests utilisateurs.
-
-## Après Bastognac
-
-- stabilisation des formats ;
-- outillage d'import depuis Gargottex ;
-- ajout de La Forêt en Chantier ;
-- campagne, quêtes et taverne ;
-- coop locale enrichie ;
-- distribution native uniquement si la PWA atteint ses limites.
+- tests utilisateurs et performances mobile.
 
 ## Principes de priorisation
 
 1. expérience joueur avant sophistication technique ;
 2. règles testables avant animations ;
 3. rendu stabilisé avant multiplication du décor ;
-4. spawn déterministe avant renforts ;
-5. Brouhaha persistant avant objets qui le produisent ;
-6. objets isolés avant réactions en chaîne ;
-7. réactions ordonnées avant renforts automatiques ;
-8. événements stables avant effets de présentation ;
-9. définitions de créatures stabilisées avant génération massive ;
-10. budget de menace calculé par salle ;
-11. Bastognac complet avant un second donjon ;
-12. données et assets versionnés avant automatisation massive ;
-13. mesures de performance avant WebAssembly ou véritable 3D ;
-14. aucune dépendance à l'API OpenAI pour jouer une partie.
+4. événements stables avant effets de présentation ;
+5. définitions stabilisées avant génération massive ;
+6. budget de menace calculé par salle ;
+7. Bastognac complet avant un second donjon ;
+8. mesures de performance avant WebAssembly ou véritable 3D ;
+9. aucune dépendance à l'API OpenAI pour jouer une partie.
