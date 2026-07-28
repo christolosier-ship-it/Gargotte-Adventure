@@ -121,10 +121,7 @@ const prepareCurrentRoomForVictory = async (
         "bastognac-salle-2",
         "bastognac-salle-3",
       ];
-      expedition.completedRoomIds = [
-        "bastognac-salle-1",
-        "bastognac-salle-2",
-      ];
+      expedition.completedRoomIds = ["bastognac-salle-1", "bastognac-salle-2"];
       expedition.roomStates = {
         "bastognac-salle-1": completedRoom("bastognac-salle-1"),
         "bastognac-salle-2": completedRoom("bastognac-salle-2"),
@@ -164,9 +161,9 @@ test("sélectionne les héros officiels et lance le micro-donjon", async ({
   await expect(
     page.getByRole("heading", { name: "Le vestibule des maladroits" }),
   ).toBeVisible();
-  await expect.poll(async () => Boolean(await getExpeditionSave(page))).toBe(
-    true,
-  );
+  await expect
+    .poll(async () => Boolean(await getExpeditionSave(page)))
+    .toBe(true);
 });
 
 test("joue un déplacement, verrouille les phases et restaure l’expédition", async ({
@@ -202,9 +199,7 @@ test("joue un déplacement, verrouille les phases et restaure l’expédition", 
   await expect(
     page.getByRole("button", { name: "Reprendre l’expédition" }),
   ).toBeEnabled();
-  await page
-    .getByRole("button", { name: "Reprendre l’expédition" })
-    .click();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
   await expect.poll(async () => readCanvasState(page)).toEqual(beforeReload);
 });
 
@@ -212,21 +207,23 @@ test("sécurise une salle puis passe explicitement à la suivante", async ({
   page,
 }) => {
   await enterRoom(page);
-  await expect.poll(async () => Boolean(await getExpeditionSave(page))).toBe(
-    true,
-  );
+  await expect
+    .poll(async () => Boolean(await getExpeditionSave(page)))
+    .toBe(true);
   await prepareCurrentRoomForVictory(page);
 
   await page.reload();
-  await page
-    .getByRole("button", { name: "Reprendre l’expédition" })
-    .click();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
   await activateBrunhilda(page);
-  await page.getByRole("button", { name: "Attaquer Gobelin Bricoleur" }).click();
+  await page
+    .getByRole("button", { name: "Attaquer Gobelin Bricoleur" })
+    .click();
   await expect
     .poll(async () => (await readCanvasState(page)).phase)
     .toBe("victory");
-  await expect(page.getByText("Salle sécurisée", { exact: true })).toBeVisible();
+  await expect(
+    page.getByText("Salle sécurisée", { exact: true }),
+  ).toBeVisible();
   await expect(
     page.getByText("Salle sécurisée. La sortie peut être empruntée."),
   ).toBeVisible();
@@ -242,17 +239,16 @@ test("sécurise une salle puis passe explicitement à la suivante", async ({
     .toBe("heroes-turn");
   await expect
     .poll(async () => (await readCanvasState(page)).processedSpawnRequests)
-    .toEqual([
-      "population-galerie-bricoleur",
-      "population-galerie-lance-tout",
-    ]);
+    .toEqual(["population-galerie-bricoleur", "population-galerie-lance-tout"]);
 });
 
-test("masque les commandes techniques hors mode diagnostic", async ({ page }) => {
+test("masque les commandes techniques hors mode diagnostic", async ({
+  page,
+}) => {
   await enterRoom(page);
-  await expect(
-    page.getByRole("button", { name: /Combat engagé/ }),
-  ).toHaveCount(0);
+  await expect(page.getByRole("button", { name: /Combat engagé/ })).toHaveCount(
+    0,
+  );
   const diagnostic = page.getByRole("button", {
     name: "Activer le mode diagnostic",
   });
@@ -270,22 +266,20 @@ test("termine la troisième salle, affiche le résultat et permet le rejeu", asy
   page,
 }) => {
   await enterRoom(page);
-  await expect.poll(async () => Boolean(await getExpeditionSave(page))).toBe(
-    true,
-  );
+  await expect
+    .poll(async () => Boolean(await getExpeditionSave(page)))
+    .toBe(true);
   await prepareCurrentRoomForVictory(page, "bastognac-salle-3");
 
   await page.reload();
-  await page
-    .getByRole("button", { name: "Reprendre l’expédition" })
-    .click();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
   await activateBrunhilda(page);
-  await page.getByRole("button", { name: "Attaquer Gobelin Bricoleur" }).click();
+  await page
+    .getByRole("button", { name: "Attaquer Gobelin Bricoleur" })
+    .click();
   await expect(page.getByText("Victoire", { exact: true })).toBeVisible();
   await expect(page.getByText(/Le chemin de ronde est nettoyé/)).toBeVisible();
-  await page
-    .getByRole("button", { name: "Rejouer le micro-donjon" })
-    .click();
+  await page.getByRole("button", { name: "Rejouer le micro-donjon" }).click();
   await expect(
     page.getByRole("heading", { name: "Le vestibule des maladroits" }),
   ).toBeVisible();
