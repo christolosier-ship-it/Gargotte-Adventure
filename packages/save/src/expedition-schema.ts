@@ -14,7 +14,7 @@ const persistentHeroSchema = z
   .refine((hero) => hero.hp <= hero.maxHp, {
     message: "les PV persistants dépassent les PV maximum",
   })
-  .refine((hero) => hero.alive === (hero.hp > 0), {
+  .refine((hero) => hero.alive === hero.hp > 0, {
     message: "l’état vivant doit correspondre aux PV persistants",
   });
 
@@ -117,14 +117,30 @@ function validateExpeditionState(
     if (room.phase === "victory" && !completed.has(roomId))
       issue(context, ["completedRoomIds"], `${roomId} doit être terminée`);
     if (completed.has(roomId) && room.phase !== "victory")
-      issue(context, ["roomStates", roomId, "phase"], "salle terminée sans victoire locale");
+      issue(
+        context,
+        ["roomStates", roomId, "phase"],
+        "salle terminée sans victoire locale",
+      );
   }
 
   if (state.status === "preparation") {
-    if (state.currentRoomId !== null || state.visitedRoomIds.length > 0)
-      issue(context, ["status"], "une expédition en préparation ne contient aucune salle active");
+    if (
+      state.currentRoomId !== null ||
+      state.visitedRoomIds.length > 0 ||
+      Object.keys(state.roomStates).length > 0
+    )
+      issue(
+        context,
+        ["status"],
+        "une expédition en préparation ne contient aucune salle active",
+      );
     if (state.result !== null)
-      issue(context, ["result"], "une expédition en préparation ne possède pas de résultat");
+      issue(
+        context,
+        ["result"],
+        "une expédition en préparation ne possède pas de résultat",
+      );
     return;
   }
 
@@ -134,13 +150,21 @@ function validateExpeditionState(
     issue(context, ["roomStates"], "l’état de la salle courante est absent");
 
   if (state.status === "in-progress" && state.result !== null)
-    issue(context, ["result"], "une expédition active ne possède pas de résultat");
+    issue(
+      context,
+      ["result"],
+      "une expédition active ne possède pas de résultat",
+    );
   if (state.status === "victory") {
     if (state.result?.outcome !== "victory")
       issue(context, ["result"], "le résultat de victoire est absent");
     const lastRoomId = state.orderedRoomIds[2];
     if (!completed.has(lastRoomId))
-      issue(context, ["completedRoomIds"], "la troisième salle doit être terminée");
+      issue(
+        context,
+        ["completedRoomIds"],
+        "la troisième salle doit être terminée",
+      );
   }
   if (state.status === "defeat" && state.result?.outcome !== "defeat")
     issue(context, ["result"], "le résultat de défaite est absent");
@@ -157,7 +181,7 @@ function validateUnique(
 
 function issue(
   context: z.RefinementCtx,
-  path: PropertyKey[],
+  path: (string | number)[],
   message: string,
 ): void {
   context.addIssue({ code: "custom", path, message });
