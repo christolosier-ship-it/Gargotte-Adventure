@@ -20,7 +20,6 @@ import {
   type GridPosition,
   type InteractableDefinition,
   type RoomState,
-  type TacticalEvent,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
@@ -40,12 +39,10 @@ import { PersistenceController } from "./persistence-controller";
 import { PresentationController } from "./presentation-controller";
 import { buildTacticalRoom } from "./room-builder";
 import { executeScriptedSpawn } from "./scripted-spawn-controller";
-import { runTacticalResultPipeline } from "./tactical-result-pipeline";
-
-interface StatefulTacticalResult {
-  state: RoomState;
-  events: TacticalEvent[];
-}
+import {
+  runTacticalResultPipeline,
+  type StatefulTacticalResult,
+} from "./tactical-result-pipeline";
 
 export class GameController {
   private readonly shell: GameShell;
@@ -234,9 +231,7 @@ export class GameController {
 
   private readonly handleMove = (position: GridPosition): void => {
     if (!this.room?.activeHeroId) return;
-    this.applyResult(
-      moveCombatant(this.room, this.room.activeHeroId, position),
-    );
+    this.applyResult(moveCombatant(this.room, this.room.activeHeroId, position));
   };
 
   private readonly handleAttack = (enemyId: string): void => {
