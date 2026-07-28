@@ -1,8 +1,6 @@
 import { z } from "zod";
-import type {
-  BrouhahaReinforcementDefinition,
-  ChainReactionDefinition,
-} from "./index";
+import type { BrouhahaReinforcementDefinition } from "./brouhaha-reinforcements";
+import type { ChainReactionDefinition } from "./chain-reactions";
 
 interface Position {
   column: number;
