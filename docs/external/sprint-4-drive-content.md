@@ -27,7 +27,8 @@ Le document a été créé le 28 juillet 2026. Il conserve :
 
 ## Références GitHub actives
 
-- issue documentaire #61 ;
+- [Issue documentaire #61](https://github.com/christolosier-ship-it/Gargotte-Adventure/issues/61) ;
+- [Pull Request documentaire #62](https://github.com/christolosier-ship-it/Gargotte-Adventure/pull/62) ;
 - [Suivi du Sprint 4](../sprints/sprint-4.md) ;
 - [Micro-donjon et état d'expédition](../architecture/micro-dungeon-and-expedition.md) ;
 - [Héros, créatures et comportements](../architecture/actors-and-behaviors.md) ;
@@ -36,7 +37,7 @@ Le document a été créé le 28 juillet 2026. Il conserve :
 - [ADR-0009](../adr/0009-declarative-actor-behaviors.md) ;
 - [Roadmap](../roadmap.md).
 
-La Pull Request documentaire sera ajoutée au document Drive après son ouverture.
+La PR #62 reste ouverte pour validation. Elle ne sera pas fusionnée par ce lot sans décision explicite.
 
 ## Répartition des responsabilités
 
