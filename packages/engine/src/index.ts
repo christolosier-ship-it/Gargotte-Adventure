@@ -99,4 +99,6 @@ export function createDeterministicRandom(seed: number): () => number {
     return ((result ^ (result >>> 14)) >>> 0) / 4_294_967_296;
   };
 }
+
+export * from "./expedition";
 export * from "./tactical";
