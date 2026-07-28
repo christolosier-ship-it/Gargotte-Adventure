@@ -108,9 +108,7 @@ test("reprend sans replay et conserve un renderer stable", async ({ page }) => {
     .toBe(0);
 
   await page.reload();
-  await page
-    .getByRole("button", { name: "Reprendre l’expédition" })
-    .click();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
   await expect(canvasLocator(page)).toHaveAttribute(
     "data-presentation-cue-count",
     "0",
