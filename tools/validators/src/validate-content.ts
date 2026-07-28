@@ -5,35 +5,30 @@ import {
   parseContentManifest,
   parseCreatureCatalog,
   parseDungeon,
+  parseExpeditionDefinition,
   parseInteractableCatalog,
   parseTacticalRoom,
+  type TacticalRoomDefinition,
 } from "@gargotte/content-schema";
 import { assetBudgets, validateRuntimeAssetManifest } from "@gargotte/renderer";
 
 const packDirectory = resolve("content/bastognac");
-const manifest = parseContentManifest(
-  JSON.parse(await readFile(resolve(packDirectory, "manifest.json"), "utf8")),
-);
-const dungeon = parseDungeon(
-  JSON.parse(await readFile(resolve(packDirectory, "dungeon.json"), "utf8")),
-);
-const creatureCatalog = parseCreatureCatalog(
-  JSON.parse(await readFile(resolve(packDirectory, "creatures.json"), "utf8")),
-);
+const readJson = async (name: string): Promise<unknown> =>
+  JSON.parse(await readFile(resolve(packDirectory, name), "utf8"));
+
+const manifest = parseContentManifest(await readJson("manifest.json"));
+const dungeon = parseDungeon(await readJson("dungeon.json"));
+const expedition = parseExpeditionDefinition(await readJson("expedition.json"));
+const creatureCatalog = parseCreatureCatalog(await readJson("creatures.json"));
 const brouhahaCatalog = parseBrouhahaEffectCatalog(
-  JSON.parse(
-    await readFile(resolve(packDirectory, "brouhaha-effects.json"), "utf8"),
-  ),
+  await readJson("brouhaha-effects.json"),
 );
 const interactableCatalog = parseInteractableCatalog(
-  JSON.parse(
-    await readFile(resolve(packDirectory, "interactables.json"), "utf8"),
-  ),
+  await readJson("interactables.json"),
 );
-const room = parseTacticalRoom(
-  JSON.parse(
-    await readFile(resolve(packDirectory, "sprint-1-room.json"), "utf8"),
-  ),
+const roomFiles = ["room-1.json", "room-2.json", "room-3.json"] as const;
+const rooms = await Promise.all(
+  roomFiles.map(async (file) => parseTacticalRoom(await readJson(file))),
 );
 
 for (const required of [
@@ -42,81 +37,39 @@ for (const required of [
   "brouhaha-effects.json",
   "interactables.json",
   "sprint-1-room.json",
+  "expedition.json",
+  ...roomFiles,
 ])
   if (!manifest.files.includes(required))
     throw new Error(`Le manifeste Bastognac ne référence pas ${required}.`);
 if (manifest.packId !== dungeon.id)
   throw new Error(`Pack incohérent: ${manifest.packId} ≠ ${dungeon.id}.`);
 
+const roomsById = new Map(rooms.map((room) => [room.id, room]));
+if (expedition.roomIds.some((id) => !roomsById.has(id)))
+  throw new Error("L’expédition référence une salle tactique absente.");
+if (rooms.some((room, index) => room.id !== expedition.roomIds[index]))
+  throw new Error("L’ordre des fichiers de salle diverge de l’expédition.");
+
+const firstHeroIds = rooms[0]!.heroes.map((hero) => hero.id);
+for (const room of rooms)
+  if (
+    room.heroes.length !== firstHeroIds.length ||
+    room.heroes.some((hero, index) => hero.id !== firstHeroIds[index])
+  )
+    throw new Error(`${room.id}: catalogue de héros incohérent.`);
+
 const creatureIds = new Set(
   creatureCatalog.creatures.map((creature) => creature.id),
 );
-for (const enemy of room.enemies)
-  if (!creatureIds.has(enemy.creatureId))
-    throw new Error(
-      `Instance ${enemy.id}: créature absente ${enemy.creatureId}.`,
-    );
-for (const scripted of room.scriptedSpawns)
-  if (!creatureIds.has(scripted.creatureId))
-    throw new Error(
-      `Spawn ${scripted.id}: créature absente ${scripted.creatureId}.`,
-    );
-for (const reinforcement of room.brouhahaReinforcements)
-  if (!creatureIds.has(reinforcement.creatureId))
-    throw new Error(
-      `Renfort ${reinforcement.id}: créature absente ${reinforcement.creatureId}.`,
-    );
-
 const interactablesById = new Map(
   interactableCatalog.interactables.map((definition) => [
     definition.id,
     definition,
   ]),
 );
-const placementsById = new Map(
-  room.interactables.map((placement) => [placement.id, placement]),
-);
-for (const placement of room.interactables) {
-  const definition = interactablesById.get(placement.interactableId);
-  if (!definition)
-    throw new Error(
-      `Objet ${placement.id}: définition absente ${placement.interactableId}.`,
-    );
-  if (!definition.states.some((state) => state.id === placement.stateId))
-    throw new Error(
-      `Objet ${placement.id}: état absent ${placement.stateId} dans ${definition.id}.`,
-    );
-}
-
-for (const reaction of room.chainReactions) {
-  if (!placementsById.has(reaction.trigger.interactableInstanceId))
-    throw new Error(
-      `Réaction ${reaction.id}: déclencheur absent ${reaction.trigger.interactableInstanceId}.`,
-    );
-  for (const action of reaction.actions) {
-    if (action.type === "brouhaha") continue;
-    const targetId =
-      action.type === "damage"
-        ? action.centerInstanceId
-        : action.targetInstanceId;
-    const placement = placementsById.get(targetId);
-    if (!placement)
-      throw new Error(`Réaction ${reaction.id}: cible absente ${targetId}.`);
-    if (action.type !== "transition") continue;
-    const definition = interactablesById.get(placement.interactableId);
-    const interaction = definition?.interactions.find(
-      (candidate) => candidate.id === action.interactionId,
-    );
-    if (!interaction)
-      throw new Error(
-        `Réaction ${reaction.id}: interaction absente ${targetId}/${action.interactionId}.`,
-      );
-    if (interaction.movement)
-      throw new Error(
-        `Réaction ${reaction.id}: une transition propagée ne peut pas pousser ${targetId}.`,
-      );
-  }
-}
+for (const room of rooms)
+  validateRoomReferences(room, creatureIds, interactablesById);
 
 const dungeonScopedEffects = brouhahaCatalog.effects.filter(
   (effect) => effect.scope.type === "dungeon",
@@ -175,6 +128,71 @@ if (total > assetBudgets.pilotTotalBytes)
   throw new Error(
     `Lot pilote 2B.1: poids total ${total} > ${assetBudgets.pilotTotalBytes}.`,
   );
+
 console.log(
-  `Contenu valide: ${dungeon.name} · schéma ${manifest.schemaVersion} · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets de Brouhaha · ${interactableCatalog.interactables.length} objets · ${room.chainReactions.length} réactions · ${room.brouhahaReinforcements.length} renforts · salle ${room.grid.width}x${room.grid.height} · ${room.spawnPoints.length} points de spawn · assets isométriques ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · expédition ${expedition.name} · ${rooms.length} salles · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets · ${interactableCatalog.interactables.length} objets · ${rooms.reduce((total, room) => total + room.initialSpawns.length, 0)} populations initiales · assets ${assetManifest.assets.length}/${total} octets.`,
 );
+
+function validateRoomReferences(
+  room: TacticalRoomDefinition,
+  creatureIds: ReadonlySet<string>,
+  interactablesById: ReadonlyMap<
+    string,
+    (typeof interactableCatalog.interactables)[number]
+  >,
+): void {
+  for (const spawn of [
+    ...room.initialSpawns,
+    ...room.scriptedSpawns,
+    ...room.brouhahaReinforcements,
+  ])
+    if (!creatureIds.has(spawn.creatureId))
+      throw new Error(
+        `${room.id}/${spawn.id}: créature absente ${spawn.creatureId}.`,
+      );
+
+  const placementsById = new Map(
+    room.interactables.map((placement) => [placement.id, placement]),
+  );
+  for (const placement of room.interactables) {
+    const definition = interactablesById.get(placement.interactableId);
+    if (!definition)
+      throw new Error(
+        `${room.id}/${placement.id}: définition absente ${placement.interactableId}.`,
+      );
+    if (!definition.states.some((state) => state.id === placement.stateId))
+      throw new Error(
+        `${room.id}/${placement.id}: état absent ${placement.stateId}.`,
+      );
+  }
+
+  for (const reaction of room.chainReactions) {
+    if (!placementsById.has(reaction.trigger.interactableInstanceId))
+      throw new Error(
+        `${room.id}/${reaction.id}: déclencheur absent ${reaction.trigger.interactableInstanceId}.`,
+      );
+    for (const action of reaction.actions) {
+      if (action.type === "brouhaha") continue;
+      const targetId =
+        action.type === "damage"
+          ? action.centerInstanceId
+          : action.targetInstanceId;
+      const placement = placementsById.get(targetId);
+      if (!placement)
+        throw new Error(`${room.id}/${reaction.id}: cible absente ${targetId}.`);
+      if (action.type !== "transition") continue;
+      const definition = interactablesById.get(placement.interactableId);
+      const interaction = definition?.interactions.find(
+        (candidate) => candidate.id === action.interactionId,
+      );
+      if (!interaction)
+        throw new Error(
+          `${room.id}/${reaction.id}: interaction absente ${targetId}/${action.interactionId}.`,
+        );
+      if (interaction.movement)
+        throw new Error(
+          `${room.id}/${reaction.id}: une transition propagée ne peut pas pousser ${targetId}.`,
+        );
+    }
+  }
+}
