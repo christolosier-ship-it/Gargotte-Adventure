@@ -49,7 +49,10 @@ export const expeditionDefinitionSchema = z
         message: "les trois salles doivent être uniques",
       });
 
-    const roomsById = new Map<string, z.infer<typeof expeditionRoomDefinitionSchema>>();
+    const roomsById = new Map<
+      string,
+      z.infer<typeof expeditionRoomDefinitionSchema>
+    >();
     for (const room of definition.rooms) {
       if (roomsById.has(room.id))
         context.addIssue({
@@ -109,7 +112,10 @@ export const expeditionDefinitionSchema = z
       connectionIds.add(connection.id);
       const expectedFrom = orderedIds[index];
       const expectedTo = orderedIds[index + 1];
-      if (connection.fromRoomId !== expectedFrom || connection.toRoomId !== expectedTo)
+      if (
+        connection.fromRoomId !== expectedFrom ||
+        connection.toRoomId !== expectedTo
+      )
         context.addIssue({
           code: "custom",
           path: ["connections", index],
@@ -140,6 +146,8 @@ export type RoomConnectionDefinition = z.infer<
 >;
 export type ExpeditionDefinition = z.infer<typeof expeditionDefinitionSchema>;
 
-export function parseExpeditionDefinition(value: unknown): ExpeditionDefinition {
+export function parseExpeditionDefinition(
+  value: unknown,
+): ExpeditionDefinition {
   return expeditionDefinitionSchema.parse(value);
 }
