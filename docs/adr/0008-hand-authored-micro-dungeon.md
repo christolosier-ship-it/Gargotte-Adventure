@@ -15,7 +15,13 @@ Le Sprint 4 livre un micro-donjon fixe de trois salles adjacentes, entièrement 
 
 Une structure `ExpeditionState` minimale orchestre l'équipe, la salle courante, la progression, les états de salles et le résultat final. Chaque `RoomState` reste local à sa salle.
 
-Les connexions, portes, objectifs, placements, objets, réactions, points de spawn, renforts et conditions de sortie sont explicitement déclarés.
+Les connexions, portes, objectifs, populations, objets, réactions, points de spawn, renforts et conditions de sortie sont explicitement déclarés.
+
+Les populations ennemies initiales sont traduites en `SpawnRequest` déterministes lors de la première création d'une salle. Le contenu et l'orchestrateur ne construisent jamais directement une `CreatureInstance`.
+
+Une salle est enregistrée dans `completedRoomIds` après résolution complète de son objectif. Les salles 1 et 2 autorisent ensuite une transition explicite. La salle 3 produit le résultat global sans transition supplémentaire.
+
+Le Sprint 4.1 définit les schémas Zod et la sauvegarde de l'expédition avant l'implémentation des transitions.
 
 Le Brouhaha reste local à chaque salle. Les héros ne transfèrent que les propriétés explicitement persistantes.
 
@@ -27,6 +33,7 @@ La génération procédurale de topologie, géométrie et rencontres reste rése
 - séparation nette entre orchestration d'expédition et moteur tactique ;
 - test réel des transitions, de la persistance et de l'écran final ;
 - contenu déterministe et reproductible ;
+- frontière unique d'instanciation pour les populations initiales et runtime ;
 - absence de générateur provisoire jetable ;
 - base claire pour comparer plus tard une expédition générée au parcours de référence.
 
@@ -35,6 +42,8 @@ La génération procédurale de topologie, géométrie et rencontres reste rése
 - les trois salles nécessitent un travail éditorial manuel ;
 - l'architecture doit éviter de coder l'ordre des salles dans l'UI ;
 - l'état persistant des héros doit être limité et versionné ;
+- les demandes initiales doivent être idempotentes et ne jamais être rejouées à la reprise ;
+- la complétion locale doit être enregistrée séparément de la transition ;
 - la victoire locale doit rester distincte de la victoire globale ;
 - une salle déjà visitée ne doit pas être réinitialisée silencieusement.
 
@@ -45,11 +54,14 @@ La génération procédurale de topologie, géométrie et rencontres reste rése
 3. `ExpeditionState` n'applique aucune règle tactique.
 4. `RoomState` reste la source de vérité locale.
 5. Brouhaha, ennemis, objets, réactions et renforts restent propres à la salle.
-6. Une transition exige une sortie disponible et une intention explicite.
-7. Le moteur de spawn reste la frontière d'instanciation.
-8. Le budget de menace reste propre à chaque salle.
-9. La reprise ne rejoue aucune conséquence historique.
-10. Gargottex reste en lecture seule.
+6. Toute créature initiale ou runtime est créée par une `SpawnRequest` exécutée par le moteur de spawn.
+7. Une salle est enregistrée comme terminée avant une transition ou une victoire globale.
+8. La salle 3 ne dépend d'aucune transition fictive pour apparaître dans `completedRoomIds`.
+9. Une transition exige une sortie disponible et une intention explicite.
+10. Les schémas et la sauvegarde d'expédition appartiennent au Sprint 4.1.
+11. Le budget de menace reste propre à chaque salle.
+12. La reprise ne rejoue aucune conséquence historique.
+13. Gargottex reste en lecture seule.
 
 ## Réévaluation
 
