@@ -22,6 +22,17 @@ export type {
   ChainReactionTriggerDefinition,
 } from "./chain-reactions";
 export {
+  expeditionDefinitionSchema,
+  expeditionRoomDefinitionSchema,
+  parseExpeditionDefinition,
+  roomConnectionDefinitionSchema,
+} from "./expedition";
+export type {
+  ExpeditionDefinition,
+  ExpeditionRoomDefinition,
+  RoomConnectionDefinition,
+} from "./expedition";
+export {
   interactableCatalogSchema,
   interactableDefinitionSchema,
   interactableInteractionDefinitionSchema,
