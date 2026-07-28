@@ -232,7 +232,9 @@ export async function environmentAssetStatus(
 
 export async function enterRoom(page: Page): Promise<void> {
   await page.goto("./");
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Entrer dans le micro-donjon" })
+    .click();
 }
 
 export async function activateBrunhilda(page: Page): Promise<void> {
