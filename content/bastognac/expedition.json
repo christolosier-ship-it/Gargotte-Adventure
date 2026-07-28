@@ -3,11 +3,7 @@
   "id": "micro-donjon-bastognac",
   "name": "Le chemin de ronde de Bastognac",
   "introduction": "Trois salles gardent l’accès aux profondeurs du château. Les Va-Nu-Pieds devront conserver leurs forces, leur dignité étant déjà hors budget.",
-  "roomIds": [
-    "bastognac-salle-1",
-    "bastognac-salle-2",
-    "bastognac-salle-3"
-  ],
+  "roomIds": ["bastognac-salle-1", "bastognac-salle-2", "bastognac-salle-3"],
   "entryRoomId": "bastognac-salle-1",
   "rooms": [
     {
