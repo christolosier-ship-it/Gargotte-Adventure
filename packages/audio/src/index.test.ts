@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   AudioDirector,
+  defaultAudioSettings,
   type AudioPlayer,
   type AudioPlayerFactory,
   type AudioPresentationCue,
@@ -55,7 +56,19 @@ describe("AudioDirector", () => {
     expect(player?.volume).toBe(0.45);
     expect(player?.currentTime).toBe(0);
     expect(player?.playCount).toBe(2);
+    expect(player?.pauseCount).toBe(1);
     expect(director.cacheSize).toBe(1);
+  });
+
+  it("préserve les défauts lorsque la configuration est invalide", () => {
+    const director = new AudioDirector();
+
+    director.configure({
+      masterVolume: Number.NaN,
+      muted: undefined,
+    });
+
+    expect(director.settings).toEqual(defaultAudioSettings);
   });
 
   it("respecte le mode muet et arrête les lecteurs", async () => {
