@@ -95,9 +95,7 @@ test("réinitialise la caméra sans modifier la salle sauvegardée", async ({
   }));
 
   await page.reload();
-  await page
-    .getByRole("button", { name: "Reprendre l’expédition" })
-    .click();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
   const restored = await readCanvasState(page);
   expect(restored.rotation).toBe(0);
   expect(
