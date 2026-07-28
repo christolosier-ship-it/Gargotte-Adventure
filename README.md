@@ -17,78 +17,118 @@ Gargotte Adventure vise une expérience installable, tactile et offline-first su
 - **Sprint 3.2** : Brouhaha 0 à 12 livré ;
 - **Sprint 3.3** : objets interactifs livrés ;
 - **Sprint 3.4** : réactions en chaîne livrées ;
-- **Sprint 3.5** : renforts de Brouhaha livrés et stabilisés ;
-- **Sprint 3.6** : présentation, audio utile et finition livrés par la PR #59.
+- **Sprint 3.5** : renforts de Brouhaha livrés ;
+- **Sprint 3.6** : présentation, audio utile, journal causal et reprise sans replay livrés par la PR #59.
 
-Le **Sprint 3 est terminé**. La prochaine phase est le Sprint 4 consacré aux héros et créatures de Bastognac.
+Le Sprint 3 est fonctionnellement livré et fusionné. Sa clôture définitive reste soumise à un dernier lot de stabilisation du Sprint 3.6 et à la résolution des écarts P2 post-fusion.
 
-## Version stable
+Le **Sprint 4.0** traitera cette stabilisation séparément. Les lots fonctionnels **4.1 à 4.7** construiront ensuite le micro-donjon de Bastognac.
 
-La version stable permet de :
+## Réserve de stabilisation Sprint 3.6
 
-- sélectionner de 1 à 4 héros officiels ;
+Sept P2 restent ouverts après les PR #59 et #60 :
+
+- cues terminaux sur les transitions réelles victoire et défaite ;
+- validation défensive des préférences audio persistées ;
+- conservation des cues prioritaires lorsque les plafonds sont atteints ;
+- redémarrage des tonalités répétées sans superposition ;
+- garantie documentaire de priorité à aligner ;
+- ordre runtime à documenter selon l'orchestration réelle ;
+- package `presentation` à intégrer au validateur de frontières.
+
+Voir [Addenda post-fusion du Sprint 3.6](docs/audits/sprint-3-6-post-fusion-p2-addendum.md).
+
+## Sprint 4 : héros, créatures et comportements de Bastognac
+
+Le résultat attendu n'est plus une simple collection de statistiques et de fiches. Le Sprint 4 doit livrer une expérience presque finale sur un micro-donjon fixe de trois salles adjacentes :
+
+```text
+Préparation
+→ Salle 1 : prise en main tactique
+→ Salle 2 : décor, réactions et Brouhaha
+→ Salle 3 : confrontation complète
+→ Résultat de l'expédition
+```
+
+Le Sprint 4 couvre :
+
+- quatre héros définitifs ;
+- seize créatures de Bastognac ;
+- rôles, statistiques, compétences et capacités ;
+- profils d'IA différenciés, déterministes et explicables ;
+- interactions des héros et créatures avec le décor ;
+- influences déclaratives du Brouhaha ;
+- état minimal d'expédition et persistance inter-salles ;
+- objectifs, portes, transitions, victoire et défaite ;
+- parcours joueur sans commandes techniques ;
+- mode diagnostic distinct ;
+- sauvegarde et reprise sur les trois salles.
+
+Voir [Suivi du Sprint 4](docs/sprints/sprint-4.md).
+
+## Frontière avec le Sprint 5
+
+Le Sprint 4 écrit ses trois salles à la main. Il ne crée aucun générateur provisoire.
+
+Le Sprint 5 générera :
+
+- la topologie des cinq étages ;
+- la géométrie des salles ;
+- les embranchements ;
+- les rencontres automatiques ;
+- le loot et la progression ;
+- la campagne ;
+- le Baron Pas-Très-Terrifiant ;
+- la reprise d'une expédition générée.
+
+Chaque salle conserve son propre budget de menace. Le moteur de spawn reste l'unique frontière d'instanciation des créatures.
+
+## Version fonctionnelle actuelle
+
+La version fusionnée permet de :
+
+- sélectionner de 1 à 4 héros pilotes ;
 - jouer une salle tactique 8 × 4 ;
 - déplacer, attaquer et résoudre une IA déterministe ;
 - interagir avec tables, tonneaux, grilles, torches et piliers ;
-- pousser certains objets et propager des réactions déclarées par la salle ;
+- pousser certains objets et propager des réactions déclarées ;
 - faire évoluer une jauge de Brouhaha de 0 à 12 ;
 - déclencher des renforts lors de franchissements montants ;
 - expliquer les apparitions totales, partielles ou refusées ;
-- figer le roster du tour ennemi et reprendre une sauvegarde version 6 ;
-- afficher des cues visuels dérivés des événements tactiques ;
-- jouer des sons locaux respectant volume, mute et autoplay ;
-- regrouper les conséquences d'une action dans un journal borné ;
-- respecter `prefers-reduced-motion` ;
-- restaurer une partie sans rejouer les effets historiques ;
+- sauvegarder et restaurer une salle tactique version 6 ;
+- afficher des cues visuels et jouer des sons locaux ;
+- regrouper les conséquences dans un journal borné ;
+- respecter le mouvement réduit ;
+- reprendre sans rejouer les effets historiques ;
 - rester jouable au clavier, à la souris et au toucher en paysage.
 
-## Livraison Sprint 3.6
+Ces capacités restent soumises aux réserves P2 listées plus haut pour la clôture définitive du Sprint 3.
 
-La PR #59, fusionnée au commit `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`, livre :
-
-- le package pur `packages/presentation` ;
-- un routeur événements → cues visuels, cues audio et journal ;
-- une couche PixiJS transitoire dédiée et non interactive ;
-- sept sons pilotes synthétisés localement par Web Audio ;
-- les réglages locaux de volume et de mode muet ;
-- un journal groupé limité à six actions racines ;
-- l'annulation des effets lors d'un rendu, d'une rotation ou d'une reprise ;
-- des diagnostics sur canvas, listeners, objets stables, cues actifs et cache audio ;
-- 131 tests unitaires et des parcours Playwright bureau/mobile.
-
-La présentation ne modifie jamais `RoomState`, ne recalcule aucune règle et ne change pas la version de sauvegarde tactique.
-
-Voir [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md) et l'[audit de livraison](docs/audits/sprint-3-6-presentation-finishing.md).
-
-## Génération future du donjon
-
-Le Sprint 5 générera la topologie des cinq étages et la géométrie complète des salles : dimensions, formes, murs, portes, passages, zones, obstacles, points de spawn et décor initial.
-
-Chaque salle reçoit son propre budget de menace. **Le budget est calculé et validé par salle, jamais comme un portefeuille global d'étage.**
-
-Le générateur compose une rencontre, puis le moteur de spawn crée les instances. Les renforts restent une augmentation runtime distincte de la rencontre initiale.
-
-## Héros disponibles
+## Héros concernés par le Sprint 4
 
 - **Brünhilda la Torgnole** ;
 - **Aelion Trois-Gorgées** ;
 - **Magdalena Coquinelle** ;
 - **Grompif Arcabidon**.
 
+Les valeurs détaillées, capacités exactes et équilibrages ne sont pas fixés par le cadrage documentaire.
+
 ## Principes directeurs
 
-1. **Un jeu, pas un éditeur.** Gargottex reste la source de vérité éditoriale.
+1. **Un jeu, pas un éditeur.** Gargottex reste une source éditoriale externe en lecture seule.
 2. **Déterministe et lisible.** Aucun résultat caché ou opaque.
 3. **Mobile d'abord.** Interface tactile en paysage.
 4. **Offline-first.** Parties et réglages restent locaux.
 5. **Aucun secret côté client.** Aucune clé OpenAI dans la PWA.
 6. **Une version démontrable à chaque sprint.**
 7. **Le rendu et la présentation ne gouvernent pas les règles.**
-8. **Définitions, instances et génération restent séparées.**
+8. **Définitions, instances, placements et génération restent séparés.**
 9. **Le budget de menace appartient à la salle.**
-10. **Gargottex reste une frontière externe en lecture seule.**
+10. **Les acteurs produisent des intentions, les moteurs appliquent les conséquences.**
+11. **Le mode diagnostic reste distinct du parcours joueur.**
+12. **Aucun faux générateur avant le Sprint 5.**
 
-## Architecture actuelle
+## Architecture actuelle et cible
 
 ```text
 apps/game                    composition de la PWA et orchestration
@@ -100,11 +140,11 @@ packages/ui                  menus, HUD, journal et commandes accessibles
 packages/save                sauvegardes IndexedDB versionnées et migrations
 packages/audio               lecture locale Web Audio, volume, mute et cache
 packages/common              types et utilitaires partagés
-content/bastognac            donjon, créatures, effets, objets et salle pilote
+content/bastognac            contenu éditorial du vertical slice
 tests/e2e                    parcours Playwright desktop et mobile
 ```
 
-Le moteur ne dépend ni du DOM, ni de PixiJS, ni d'IndexedDB. Il reçoit un état et une intention, puis retourne un nouvel état, des événements ou une erreur métier typée.
+Le Sprint 4 ajoutera conceptuellement `ExpeditionState`, `HeroDefinition`, les profils de comportement et les trois salles, sans créer de dossier vide ni d'implémentation dans ce lot documentaire.
 
 ## Démarrage local
 
@@ -128,18 +168,20 @@ npm run test:e2e
 - [Index documentaire](docs/README.md)
 - [Vision produit](docs/product/vision.md)
 - [Roadmap](docs/roadmap.md)
-- [Architecture générale](docs/architecture/overview.md)
-- [Présentation et finition du Sprint 3.6](docs/architecture/presentation-and-finishing.md)
 - [Suivi du Sprint 3](docs/sprints/sprint-3.md)
-- [Audit Sprint 3.6](docs/audits/sprint-3-6-presentation-finishing.md)
+- [Suivi du Sprint 4](docs/sprints/sprint-4.md)
+- [Micro-donjon et état d'expédition](docs/architecture/micro-dungeon-and-expedition.md)
+- [Héros, créatures et comportements](docs/architecture/actors-and-behaviors.md)
+- [Architecture générale](docs/architecture/overview.md)
+- [Addenda P2 du Sprint 3.6](docs/audits/sprint-3-6-post-fusion-p2-addendum.md)
 - [Décisions d'architecture](docs/adr/README.md)
 
 ## Sources du projet
 
-- **Gargottex V5** pour les données structurées et l'édition du contenu, en lecture seule depuis ce projet ;
-- **Google Drive** pour les règles, le lore, les médias maîtres et comptes rendus ;
+- **Gargottex V5** pour les données structurées et l'édition du contenu, strictement en lecture seule depuis ce projet ;
+- **Google Drive** pour les règles humaines, le lore, les médias maîtres et comptes rendus ;
 - **Figma / FigJam** pour les écrans et diagrammes ;
-- ce dépôt pour le moteur, l'interface, les builds et les tests.
+- ce dépôt pour le moteur, l'interface, les builds, les contrats et les tests.
 
 ## Licence
 
