@@ -53,7 +53,8 @@ export function renderGameView(options: GameViewOptions): void {
   const latestEffectNames = latestBrouhaha
     ? latestBrouhaha.effectIds.map(
         (id) =>
-          options.brouhahaEffects.find((effect) => effect.id === id)?.name ?? id,
+          options.brouhahaEffects.find((effect) => effect.id === id)?.name ??
+          id,
       )
     : [];
   const roomIndex = options.expedition?.currentRoomId
