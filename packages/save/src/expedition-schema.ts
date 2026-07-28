@@ -14,7 +14,7 @@ const persistentHeroSchema = z
   .refine((hero) => hero.hp <= hero.maxHp, {
     message: "les PV persistants dépassent les PV maximum",
   })
-  .refine((hero) => hero.alive === (hero.hp > 0), {
+  .refine((hero) => hero.alive === hero.hp > 0, {
     message: "l’état vivant doit correspondre aux PV persistants",
   });
 
