@@ -84,7 +84,16 @@ Persistance IndexedDB, sauvegarde tactique version 6, migrations et validation p
 
 Validation Zod des catalogues, salles, objets, réactions, Brouhaha, spawn et renforts.
 
-Le Sprint 4.2 devra y définir les contrats des héros, compétences, profils, influences du Brouhaha et expédition, selon la stratégie d'implémentation retenue.
+Le Sprint 4.1 doit y définir, avant les transitions :
+
+- `ExpeditionDefinition` ;
+- définitions des trois salles et connexions ;
+- `ExpeditionState` ;
+- demandes de spawn initiales ;
+- validation des objectifs, sorties et références croisées ;
+- format de sauvegarde d'expédition, version initiale et migration depuis l'absence d'expédition.
+
+Le Sprint 4.2 doit ensuite y définir les contrats propres aux héros, créatures, compétences, profils et influences du Brouhaha, avec leurs migrations de contenu.
 
 ### `packages/common`
 
@@ -142,7 +151,7 @@ Le cadrage introduit conceptuellement :
 - vues de préparation et résultat ;
 - mode diagnostic distinct.
 
-Leur emplacement exact n'est pas décidé par cette page. Les lots 4.1 et 4.2 doivent choisir la structure la plus cohérente avec les responsabilités réelles, puis mettre à jour cette documentation et le validateur.
+Le Sprint 4.1 choisit les emplacements des contrats d'expédition, de leur orchestration et de leur sauvegarde, puis met à jour cette documentation et le validateur. Le Sprint 4.2 choisit les emplacements des contrats d'acteurs et de comportements en respectant les mêmes frontières.
 
 Aucun dossier, package ou fichier de production n'est créé dans le lot documentaire.
 
