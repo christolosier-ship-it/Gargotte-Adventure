@@ -40,6 +40,7 @@ import { PersistenceController } from "./persistence-controller";
 import { PresentationController } from "./presentation-controller";
 import { buildTacticalRoom } from "./room-builder";
 import { executeScriptedSpawn } from "./scripted-spawn-controller";
+import { runTacticalResultPipeline } from "./tactical-result-pipeline";
 
 interface StatefulTacticalResult {
   state: RoomState;
@@ -315,11 +316,17 @@ export class GameController {
     result: StatefulTacticalResult,
     unchangedText: string,
   ): void {
-    const changed = result.state !== this.room;
+    const previousRoom = this.room;
+    const changed = result.state !== previousRoom;
     this.room = result.state;
-    this.render(changed ? "Enregistrement…" : unchangedText);
-    this.presentation.present(result.events);
-    if (changed) this.persist();
+    runTacticalResultPipeline({
+      previousRoom,
+      nextRoom: result.state,
+      events: result.events,
+      render: () => this.render(changed ? "Enregistrement…" : unchangedText),
+      present: (events) => this.presentation.present(events),
+      persist: changed ? () => this.persist() : undefined,
+    });
   }
 
   private applyResult(
@@ -335,9 +342,15 @@ export class GameController {
       this.shell.appendEvent(result.error.message);
       return;
     }
+    const previousRoom = this.room;
     this.room = result.value.state;
-    this.render("Enregistrement…");
-    this.presentation.present(result.value.events);
-    this.persist();
+    runTacticalResultPipeline({
+      previousRoom,
+      nextRoom: result.value.state,
+      events: result.value.events,
+      render: () => this.render("Enregistrement…"),
+      present: (events) => this.presentation.present(events),
+      persist: () => this.persist(),
+    });
   }
 }
