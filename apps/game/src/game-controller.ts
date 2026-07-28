@@ -231,7 +231,9 @@ export class GameController {
 
   private readonly handleMove = (position: GridPosition): void => {
     if (!this.room?.activeHeroId) return;
-    this.applyResult(moveCombatant(this.room, this.room.activeHeroId, position));
+    this.applyResult(
+      moveCombatant(this.room, this.room.activeHeroId, position),
+    );
   };
 
   private readonly handleAttack = (enemyId: string): void => {
