@@ -248,7 +248,8 @@ export class GameController {
   }
 
   private activeRoom(): RoomState | null {
-    return this.awaitingResume || this.session.expedition?.status !== "in-progress"
+    return this.awaitingResume ||
+      this.session.expedition?.status !== "in-progress"
       ? null
       : this.session.room;
   }
