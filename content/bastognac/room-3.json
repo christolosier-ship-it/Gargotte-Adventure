@@ -94,10 +94,7 @@
       "threshold": 1,
       "creatureId": "gobelin-bricoleur",
       "quantity": 1,
-      "candidateSpawnPointIds": [
-        "renfort-verrou-haut",
-        "renfort-verrou-bas"
-      ],
+      "candidateSpawnPointIds": ["renfort-verrou-haut", "renfort-verrou-bas"],
       "failureMode": "all-or-nothing",
       "maxActivations": 2
     },
@@ -106,10 +103,7 @@
       "threshold": 3,
       "creatureId": "gobelin-lance-tout",
       "quantity": 2,
-      "candidateSpawnPointIds": [
-        "renfort-verrou-haut",
-        "renfort-verrou-bas"
-      ],
+      "candidateSpawnPointIds": ["renfort-verrou-haut", "renfort-verrou-bas"],
       "failureMode": "partial",
       "maxActivations": 1
     }
