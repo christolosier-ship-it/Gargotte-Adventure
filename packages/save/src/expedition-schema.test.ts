@@ -85,7 +85,8 @@ describe("sauvegarde d’expédition", () => {
   it("rejette une salle courante absente des états tactiques", () => {
     const expedition = activeExpedition();
     expect(
-      expeditionStateSchema.safeParse({ ...expedition, roomStates: {} }).success,
+      expeditionStateSchema.safeParse({ ...expedition, roomStates: {} })
+        .success,
     ).toBe(false);
   });
 
