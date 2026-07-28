@@ -10,7 +10,7 @@
 
 ## Objet
 
-Le moteur propage de façon déterministe les conséquences d'une interaction : déplacement d'objet, transition, dégâts et demandes de Brouhaha.
+Le moteur propage de façon déterministe les conséquences secondaires d'une interaction : déplacement d'objet, transition, dégâts et demandes de Brouhaha.
 
 Le renderer affiche l'état reçu. L'interface et les profils d'acteurs proposent uniquement des intentions que les moteurs peuvent valider.
 
@@ -46,19 +46,36 @@ Au Sprint 4, héros et créatures peuvent produire cette intention si leur défi
 
 ## Ordre de résolution
 
-La propagation utilise une file FIFO locale à la demande racine :
+Une interaction d'objet bruyante résout d'abord sa conséquence directe, puis son Brouhaha direct et les renforts associés. La propagation secondaire commence ensuite.
 
-1. intention validée et conséquence directe ;
-2. déclencheurs racines ;
-3. définitions correspondantes triées ;
-4. actions exécutées dans l'ordre du contenu ;
-5. demandes de Brouhaha et renforts résolus selon le contrat moteur ;
-6. nouveaux déclencheurs ajoutés à la fin de la file ;
-7. phase terminale calculée après épuisement de la file.
+```text
+intention validée
+→ conséquence directe de l'objet
+→ Brouhaha direct éventuel
+→ effets et renforts directs
+→ déclencheurs racines
+→ file FIFO de réactions
+→ actions de réaction
+→ Brouhaha secondaire éventuel à sa position causale
+→ effets et renforts secondaires
+→ nouveaux déclencheurs
+→ phase terminale après épuisement de la file
+```
+
+La file FIFO locale à la demande racine suit donc :
+
+1. recevoir les déclencheurs après la résolution complète du Brouhaha direct ;
+2. trier les définitions correspondantes ;
+3. exécuter les actions dans l'ordre du contenu ;
+4. résoudre immédiatement toute demande de Brouhaha secondaire et ses renforts à la position causale de l'action ;
+5. ajouter les nouveaux déclencheurs à la fin de la file ;
+6. calculer la phase terminale après épuisement de la file.
+
+Une apparition produite par le Brouhaha direct peut occuper une case ou modifier une condition avant la première action de réaction. Le Sprint 4 ne doit pas repousser toutes les demandes de Brouhaha après la propagation.
 
 À entrées identiques, état final, événements, historiques et séquences sont identiques.
 
-Une sortie de salle ne peut pas interrompre une propagation. L'objectif local et l'ouverture de la sortie ne sont évalués qu'après résolution complète.
+Une sortie de salle ne peut pas interrompre une propagation. L'objectif local, la complétion et l'ouverture de la sortie ne sont évalués qu'après résolution complète.
 
 ## Causalité
 
@@ -102,9 +119,11 @@ La décision doit expliquer pourquoi l'acteur déclenche ou évite la réaction.
 
 Les réactions ne choisissent aucun effet, seuil, archétype ou point de spawn. Elles produisent uniquement des demandes de Brouhaha explicites.
 
+Le Brouhaha direct de l'interaction est résolu avant l'entrée dans la file. Le Brouhaha secondaire d'une action de réaction est résolu à sa place dans la file, avec ses renforts, avant la suite de la propagation.
+
 La phase terminale est évaluée après toutes les actions, demandes de Brouhaha et apparitions de la résolution racine.
 
-Si un renfort empêche une victoire locale, la sortie ne devient pas disponible.
+Si un renfort empêche une victoire locale, la salle n'est pas marquée terminée et la sortie ne devient pas disponible.
 
 Voir [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
 
@@ -134,6 +153,9 @@ Dans `ExpeditionState`, chaque salle conserve son propre `RoomState`. Une migrat
 
 ## Tests cibles
 
+- Brouhaha direct et renforts avant la file ;
+- Brouhaha secondaire à la position causale ;
+- renfort direct modifiant l'occupation avant une réaction ;
 - racines héroïques et ennemies ;
 - intention de déclenchement volontaire ;
 - intention d'évitement ;
@@ -141,7 +163,7 @@ Dans `ExpeditionState`, chaque salle conserve son propre `RoomState`. Une migrat
 - chaînes courtes de salle 1 ;
 - chaînes principales de salle 2 ;
 - chaînes combinées de salle 3 ;
-- renfort empêchant une sortie ;
+- renfort empêchant une complétion et une sortie ;
 - résolution complète avant transition ;
 - reprise sans replay ;
 - même décision et même historique à entrées identiques.
