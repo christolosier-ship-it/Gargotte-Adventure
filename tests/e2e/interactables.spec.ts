@@ -1,8 +1,8 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import {
   bringPointIntoViewport,
+  canvasLocator,
   canvasPointForLogicalCell,
-  enterRoom,
   readCanvasState,
   tapOrClick,
 } from "./helpers/canvas";
@@ -16,16 +16,106 @@ import {
   readReinforcementHistory,
 } from "./helpers/reinforcements";
 
+async function enterGallery(
+  page: Page,
+  additionalHeroLabel?: string,
+): Promise<void> {
+  await page.goto("./");
+  if (additionalHeroLabel)
+    await page.getByRole("checkbox", { name: additionalHeroLabel }).check();
+  await page
+    .getByRole("button", { name: "Entrer dans le micro-donjon" })
+    .click();
+  await expect(canvasLocator(page)).toBeVisible();
+
+  await page.evaluate(async () => {
+    const request = indexedDB.open("gargotte-adventure");
+    const database = await new Promise<IDBDatabase>((resolve, reject) => {
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+    });
+    const transaction = database.transaction("saves", "readwrite");
+    const store = transaction.objectStore("saves");
+    const read = store.get("expedition-autosave");
+    const save = await new Promise<{
+      state: {
+        expedition: {
+          currentRoomId: string;
+          completedRoomIds: string[];
+          persistentHeroes: Array<{
+            id: string;
+            hp: number;
+            maxHp: number;
+            alive: boolean;
+          }>;
+          roomStates: Record<
+            string,
+            {
+              heroes: Array<{
+                id: string;
+                hp: number;
+                maxHp: number;
+                alive: boolean;
+              }>;
+              enemies: Record<string, unknown>[];
+              [key: string]: unknown;
+            }
+          >;
+          [key: string]: unknown;
+        };
+        [key: string]: unknown;
+      };
+      [key: string]: unknown;
+    }>((resolve, reject) => {
+      read.onerror = () => reject(read.error);
+      read.onsuccess = () => resolve(read.result);
+    });
+    const expedition = save.state.expedition;
+    const room = expedition.roomStates[expedition.currentRoomId]!;
+    room.enemies = room.enemies.map((enemy) => ({
+      ...enemy,
+      hp: 0,
+      alive: false,
+      blocksMovement: false,
+    }));
+    room.activeHeroId = null;
+    room.enemyTurnRoster = [];
+    room.phase = "victory";
+    expedition.completedRoomIds = [expedition.currentRoomId];
+    expedition.persistentHeroes = room.heroes.map((hero) => ({
+      id: hero.id,
+      hp: hero.hp,
+      maxHp: hero.maxHp,
+      alive: hero.alive,
+    }));
+    store.put(save);
+    await new Promise<void>((resolve, reject) => {
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+    });
+    database.close();
+  });
+
+  await page.reload();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
+  await page.getByRole("button", { name: "Entrer dans la galerie" }).click();
+  await expect(
+    page.getByRole("heading", {
+      name: "La galerie des tonneaux susceptibles",
+    }),
+  ).toBeVisible();
+}
+
 test("brise, renforce et restaure un objet interactif", async ({
   page,
   isMobile,
 }) => {
-  await enterRoom(page);
+  await enterGallery(page);
 
   const initialObjects = await readInteractables(page);
   expect(initialObjects).toHaveLength(5);
   expect(
-    initialObjects.find((object) => object.id === "tonneau-douteux-1"),
+    initialObjects.find((object) => object.id === "tonneau-galerie-1"),
   ).toMatchObject({
     interactableId: "tonneau-bastognac",
     stateId: "intact",
@@ -61,7 +151,7 @@ test("brise, renforce et restaure un objet interactif", async ({
   await expect
     .poll(async () =>
       (await readInteractables(page)).find(
-        (object) => object.id === "tonneau-douteux-1",
+        (object) => object.id === "tonneau-galerie-1",
       ),
     )
     .toMatchObject({
@@ -74,7 +164,7 @@ test("brise, renforce et restaure un objet interactif", async ({
   expect(interacted.enemies).toHaveLength(3);
   expect(
     interacted.enemies.find(
-      (enemy) => enemy.id === "gobelin-bricoleur-spawn-1",
+      (enemy) => enemy.id === "gobelin-bricoleur-spawn-3",
     ),
   ).toMatchObject({
     creatureId: "gobelin-bricoleur",
@@ -90,16 +180,16 @@ test("brise, renforce et restaure un objet interactif", async ({
   expect(await readNextInteractableSequence(page)).toBe(2);
   expect(await readReinforcementHistory(page)).toMatchObject([
     {
-      reinforcementDefinitionId: "seuil-1-bricoleur",
+      reinforcementDefinitionId: "seuil-1-galerie-bricoleur",
       threshold: 1,
       activation: 1,
       result: "succeeded",
-      createdInstanceIds: ["gobelin-bricoleur-spawn-1"],
+      createdInstanceIds: ["gobelin-bricoleur-spawn-3"],
     },
   ]);
   expect(await readNextReinforcementSequence(page)).toBe(2);
   await expect(
-    page.getByText(/Renfort seuil-1-bricoleur réussi/),
+    page.getByText(/Renfort seuil-1-galerie-bricoleur réussi/),
   ).toBeVisible();
 
   const savedObjects = await readInteractables(page);
@@ -121,11 +211,7 @@ test("brise, renforce et restaure un objet interactif", async ({
 test("pousse une table et résout le domino avec deux seuils", async ({
   page,
 }) => {
-  await page.goto("./");
-  await page.getByRole("checkbox", { name: "Magdalena Coquinelle" }).check();
-  await page
-    .getByRole("button", { name: "Entrer dans le micro-donjon" })
-    .click();
+  await enterGallery(page, "Magdalena Coquinelle");
   await page
     .getByRole("button", { name: "Activer Magdalena Coquinelle" })
     .click();
@@ -153,9 +239,9 @@ test("pousse une table et résout le domino avec deux seuils", async ({
     .poll(async () => {
       const objects = await readInteractables(page);
       return {
-        table: objects.find((object) => object.id === "table-bancale-1"),
-        pillar: objects.find((object) => object.id === "pilier-susceptible-1"),
-        gate: objects.find((object) => object.id === "grille-grincante-1"),
+        table: objects.find((object) => object.id === "table-galerie-1"),
+        pillar: objects.find((object) => object.id === "pilier-galerie-1"),
+        gate: objects.find((object) => object.id === "grille-galerie-1"),
       };
     })
     .toMatchObject({
@@ -175,29 +261,29 @@ test("pousse une table et résout le domino avec deux seuils", async ({
     actionsRemaining: 0,
   });
   expect(
-    chained.enemies.find((enemy) => enemy.id === "gobelin-bricoleur-spawn-1"),
+    chained.enemies.find((enemy) => enemy.id === "gobelin-bricoleur-spawn-3"),
   ).toMatchObject({ hp: 4, position: { column: 6, row: 0 } });
   expect(
-    chained.enemies.find((enemy) => enemy.id === "gobelin-lance-tout-spawn-2"),
+    chained.enemies.find((enemy) => enemy.id === "gobelin-lance-tout-spawn-4"),
   ).toMatchObject({ position: { column: 6, row: 3 }, alive: true });
   expect(await readProcessedInteractableRequests(page)).toEqual([
     "interaction-objet-1",
   ]);
   expect(await readReinforcementHistory(page)).toMatchObject([
     {
-      reinforcementDefinitionId: "seuil-1-bricoleur",
+      reinforcementDefinitionId: "seuil-1-galerie-bricoleur",
       result: "succeeded",
-      createdInstanceIds: ["gobelin-bricoleur-spawn-1"],
+      createdInstanceIds: ["gobelin-bricoleur-spawn-3"],
     },
     {
-      reinforcementDefinitionId: "seuil-2-lance-tout",
+      reinforcementDefinitionId: "seuil-2-galerie-lance-tout",
       result: "partial",
-      createdInstanceIds: ["gobelin-lance-tout-spawn-2"],
+      createdInstanceIds: ["gobelin-lance-tout-spawn-4"],
     },
   ]);
   expect(await readNextReinforcementSequence(page)).toBe(3);
   await expect(
-    page.getByText(/Renfort seuil-2-lance-tout partiel/),
+    page.getByText(/Renfort seuil-2-galerie-lance-tout partiel/),
   ).toBeVisible();
 
   const savedObjects = await readInteractables(page);
