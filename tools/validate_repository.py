@@ -4,12 +4,15 @@
 from __future__ import annotations
 
 import json
+import os
 import re
 import struct
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(
+    os.environ.get("GARGOTTE_VALIDATION_ROOT", Path(__file__).resolve().parents[1])
+).resolve()
 IGNORED_DIRECTORIES = {
     ".git",
     "node_modules",
@@ -74,6 +77,7 @@ ALLOWED_PACKAGE_DEPENDENCIES = {
     "common": set(),
     "content-schema": set(),
     "engine": {"common"},
+    "presentation": {"engine"},
     "renderer": {"common", "engine"},
     "save": {"engine"},
     "ui": {"engine"},

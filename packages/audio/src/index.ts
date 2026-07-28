@@ -139,14 +139,15 @@ export class AudioDirector {
   }
 
   configure(next: Partial<AudioSettings>): void {
-    this.#settings = {
-      ...this.#settings,
-      ...next,
-      masterVolume: Math.min(
-        1,
-        Math.max(0, next.masterVolume ?? this.#settings.masterVolume),
-      ),
-    };
+    const masterVolume =
+      typeof next.masterVolume === "number" &&
+      Number.isFinite(next.masterVolume)
+        ? Math.min(1, Math.max(0, next.masterVolume))
+        : this.#settings.masterVolume;
+    const muted =
+      typeof next.muted === "boolean" ? next.muted : this.#settings.muted;
+
+    this.#settings = { masterVolume, muted };
     if (this.#settings.muted) this.stopAll();
   }
 
@@ -156,9 +157,11 @@ export class AudioDirector {
 
   async playCue(cue: AudioPresentationCue): Promise<boolean> {
     if (!this.#unlocked || this.#settings.muted) return false;
+    const shouldRestart = this.#players.has(cue.key);
     const player = this.playerFor(cue.key);
     if (!player) return false;
 
+    if (shouldRestart) player.pause();
     player.volume = this.#settings.masterVolume;
     player.currentTime = 0;
     try {

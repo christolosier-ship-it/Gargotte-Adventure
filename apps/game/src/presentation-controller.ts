@@ -7,6 +7,7 @@ import type {
 import { routeTacticalPresentation } from "@gargotte/presentation";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
+import { parseStoredAudioSettings } from "./audio-settings";
 import { describeTacticalEvent } from "./event-messages";
 
 const audioSettingsKey = "gargotte-audio-settings-v1";
@@ -33,7 +34,9 @@ export class PresentationController {
     this.#creatureDefinitions = options.creatureDefinitions;
     this.#interactableDefinitions = options.interactableDefinitions;
     this.#audio = new AudioDirector();
-    this.#audio.configure(readStoredAudioSettings());
+    this.#audio.configure(
+      parseStoredAudioSettings(localStorage.getItem(audioSettingsKey)),
+    );
     this.#motionQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
     this.#reducedMotion = this.#motionQuery.matches;
   }
@@ -150,22 +153,5 @@ export class PresentationController {
       this.#audio.cacheSize,
     );
     this.#shell.boardHost.dataset.reducedMotion = String(this.#reducedMotion);
-  }
-}
-
-function readStoredAudioSettings(): Partial<AudioSettings> {
-  try {
-    const stored = localStorage.getItem(audioSettingsKey);
-    if (!stored) return {};
-    const parsed = JSON.parse(stored) as Partial<AudioSettings>;
-    return {
-      masterVolume:
-        typeof parsed.masterVolume === "number"
-          ? parsed.masterVolume
-          : undefined,
-      muted: typeof parsed.muted === "boolean" ? parsed.muted : undefined,
-    };
-  } catch {
-    return {};
   }
 }

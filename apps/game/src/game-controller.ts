@@ -20,7 +20,7 @@ import {
   type GridPosition,
   type InteractableDefinition,
   type RoomState,
-  type TacticalEvent,
+  type TacticalResult,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
@@ -40,11 +40,10 @@ import { PersistenceController } from "./persistence-controller";
 import { PresentationController } from "./presentation-controller";
 import { buildTacticalRoom } from "./room-builder";
 import { executeScriptedSpawn } from "./scripted-spawn-controller";
-
-interface StatefulTacticalResult {
-  state: RoomState;
-  events: TacticalEvent[];
-}
+import {
+  runTacticalResultPipeline,
+  type StatefulTacticalResult,
+} from "./tactical-result-pipeline";
 
 export class GameController {
   private readonly shell: GameShell;
@@ -315,29 +314,33 @@ export class GameController {
     result: StatefulTacticalResult,
     unchangedText: string,
   ): void {
-    const changed = result.state !== this.room;
+    const previousRoom = this.room;
+    const changed = result.state !== previousRoom;
     this.room = result.state;
-    this.render(changed ? "Enregistrement…" : unchangedText);
-    this.presentation.present(result.events);
-    if (changed) this.persist();
+    runTacticalResultPipeline({
+      previousRoom,
+      nextRoom: result.state,
+      events: result.events,
+      render: () => this.render(changed ? "Enregistrement…" : unchangedText),
+      present: (events) => this.presentation.present(events),
+      persist: changed ? () => this.persist() : undefined,
+    });
   }
 
-  private applyResult(
-    result:
-      | ReturnType<typeof selectHero>
-      | ReturnType<typeof moveCombatant>
-      | ReturnType<typeof attackTarget>
-      | ReturnType<typeof endHeroActivation>
-      | ReturnType<typeof endHeroesTurn>
-      | ReturnType<typeof finishEnemyTurn>,
-  ): void {
+  private applyResult(result: TacticalResult<StatefulTacticalResult>): void {
     if (!result.ok) {
       this.shell.appendEvent(result.error.message);
       return;
     }
+    const previousRoom = this.room;
     this.room = result.value.state;
-    this.render("Enregistrement…");
-    this.presentation.present(result.value.events);
-    this.persist();
+    runTacticalResultPipeline({
+      previousRoom,
+      nextRoom: result.value.state,
+      events: result.value.events,
+      render: () => this.render("Enregistrement…"),
+      present: (events) => this.presentation.present(events),
+      persist: () => this.persist(),
+    });
   }
 }
