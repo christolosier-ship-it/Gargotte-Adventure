@@ -3,7 +3,7 @@
 ## Statut
 
 - Cible initiale : Sprint 3.1
-- État : livré dans `main`, utilisé par le Sprint 3.5
+- État : livré dans `main`, utilisé par les renforts
 - Issue initiale : #33, clôturée
 - Pull Request initiale : #35, fusionnée
 - Commit initial : `dd8c749f3afb73104270d87c9e920aab4e926bf3`
@@ -11,51 +11,51 @@
 
 ## Objectif
 
-Le moteur de spawn ajoute des créatures à une salle déjà créée, pendant son initialisation ou en cours de partie, sans confondre la définition éditoriale d'une créature avec son état runtime.
+Le moteur de spawn ajoute des créatures à une salle pendant son initialisation ou en cours de partie, sans confondre la définition éditoriale d'une créature avec son état runtime.
 
-Il constitue la fondation commune aux spawns de scénario, renforts de Brouhaha, boss et futures populations initiales générées.
-
-## Étude de Gargottex en lecture seule
-
-Le générateur du dépôt `christolosier-ship-it/Gargotte-V5` a été consulté sans aucune écriture. Il inspire la séparation entre sélection éditoriale et résultat, mais n'est ni copié ni importé : il compose une rencontre et utilise encore du hasard, tandis que ce moteur exécute seulement une demande déterministe.
+Il reste la frontière unique d'instanciation des créatures au Sprint 4 et au Sprint 5.
 
 ## Séparation des responsabilités
 
 ```text
 CreatureDefinition
-    │
-    ▼
-SpawnRequest explicite
-    │
-    ▼
+      │
+placement éditorial
+      │
+      ▼
+SpawnRequest initiale ou runtime
+      │
+      ▼
 moteur de spawn
-    ├─ valide la phase et la requête
-    ├─ filtre les points candidats dans leur ordre
-    ├─ contrôle l'occupation
-    ├─ crée des identifiants stables
-    └─ produit des événements explicatifs
-    │
-    ▼
+      ├─ valide la phase et la requête
+      ├─ filtre les points candidats
+      ├─ contrôle l'occupation
+      ├─ crée des identifiants stables
+      └─ produit des événements explicatifs
+      │
+      ▼
 CreatureInstance dans RoomState
 ```
 
-Le système appelant décide pourquoi une apparition est demandée. Le moteur de spawn ne choisit pas la composition tactique d'une salle et ne dépense aucun budget de menace.
+Le système appelant décide pourquoi une apparition est demandée. Le moteur ne choisit pas la composition tactique d'une salle et ne dépense aucun budget de menace.
 
 ## Contrats
 
 ### `CreatureDefinition`
 
-Archétype stable : identifiant, nom, PV maximum, attaque, défense, portée et blocage. Le contenu ajoute catégorie, menace et tags, que le spawn n'interprète pas.
+Archétype stable : identité, statistiques, catégorie, menace, tags, capacités, profils et références de présentation.
+
+Le spawn utilise uniquement les informations nécessaires à l'instanciation. Il n'interprète pas les profils d'IA ou l'équilibrage.
 
 ### `CreatureInstance`
 
-État runtime : identifiant unique, `creatureId`, position, PV, statistiques courantes, état vivant et blocage.
+État runtime : identifiant unique, `creatureId`, position, PV, statistiques courantes, état vivant, ressources et blocage.
 
-Deux instances peuvent partager le même `creatureId` sans partager leur identifiant ni leur état.
+Deux instances peuvent partager le même `creatureId` sans partager leur identifiant ou leur état.
 
 ### `SpawnPoint`
 
-Point logique stable de la salle : identifiant, position, tags et état activé. Il n'est pas consommé automatiquement.
+Point logique stable de la salle : identifiant, position, tags et état activé.
 
 ### `SpawnRequest`
 
@@ -65,69 +65,92 @@ Demande sérialisable contenant :
 - source typée ;
 - `creatureId` ;
 - quantité ;
-- liste ordonnée de points candidats ;
+- points candidats ordonnés ;
 - mode `all-or-nothing` ou `partial`.
 
-Le type de source `brouhaha` est utilisé par la politique de renfort du Sprint 3.5.
+Les demandes initiales utilisent une source dédiée et des identifiants dérivés de la salle et du placement éditorial. Elles sont soumises une seule fois lors de la première création de la salle.
 
 ### `SpawnResult`
 
 Résultat pur comprenant nouvel état, instances créées, refus structurés et événements tactiques.
-
-## État de salle
-
-Les champs de spawn introduits en version 2 restent présents dans `RoomState` version 6 :
-
-- `spawnPoints` ;
-- `processedSpawnRequestIds` ;
-- `nextEnemyInstanceSequence` ;
-- ennemis portant un `creatureId`.
-
-`processedSpawnRequestIds` protège contre la répétition d'une demande. `nextEnemyInstanceSequence` produit des identifiants tels que `gobelin-bricoleur-spawn-1` et saute tout identifiant déjà occupé.
 
 ## Algorithme
 
 Pour une demande valide, le moteur :
 
 1. refuse une requête déjà traitée ;
-2. vérifie la quantité ;
-3. refuse une salle terminale ;
-4. résout la définition de créature ;
-5. parcourt les points dans l'ordre fourni ;
-6. ignore et explique doublons, absences, désactivations, sorties de plateau ou occupations ;
-7. applique le mode d'échec ;
-8. crée les instances avec la séquence persistée ;
-9. marque la demande comme traitée lorsqu'une apparition est appliquée ;
-10. retourne état, instances, refus et événements.
+2. vérifie la quantité et la phase ;
+3. résout la définition de créature ;
+4. parcourt les points dans l'ordre fourni ;
+5. explique absences, doublons, désactivations, sorties ou occupations ;
+6. applique le mode d'échec ;
+7. crée les instances avec la séquence persistée ;
+8. marque la demande selon le contrat livré ;
+9. retourne état, instances, refus et événements.
 
-`all-or-nothing` refuse sans mutation si les points valides sont insuffisants. `partial` crée les instances possibles et explique le reliquat.
+`all-or-nothing` refuse sans mutation si les positions sont insuffisantes. `partial` crée les instances possibles et explique le reliquat.
 
-Les obstacles, héros, ennemis et objets bloquants participent à l'occupation. Une grille ouverte ou un tonneau brisé peut libérer un point.
+Obstacles, héros, ennemis et objets bloquants participent à l'occupation.
 
-## Utilisation par les renforts de Brouhaha
+## Utilisation par les renforts
 
-La politique `resolveBrouhahaReinforcements` :
+La politique de Brouhaha détecte les seuils, construit une `SpawnRequest`, transmet les points candidats et historise le résultat. Elle ne choisit aucune case et ne crée aucune instance.
 
-- détecte les franchissements de seuil ;
-- construit une `SpawnRequest` avec source `{ type: "brouhaha", id: rule.id }` ;
-- transmet les points candidats dans l'ordre éditorial ;
-- laisse le moteur décider du succès total, partiel ou du refus ;
-- conserve le résultat dans son propre historique.
+Un refus total peut consommer l'activation de renfort sans modifier les champs de spawn.
 
-Un refus total ne modifie pas les champs du spawn, mais l'activation de la règle est tout de même historisée par la politique de renfort.
+## Utilisation par le Sprint 4
+
+### Populations initiales
+
+Les trois salles sont écrites à la main. Le contenu déclare explicitement leurs populations initiales et leurs points candidats ordonnés.
+
+Lors de la première création d'une salle :
+
+1. l'état tactique est construit sans `CreatureInstance` ennemie directe ;
+2. les placements éditoriaux sont traduits en `SpawnRequest` initiales déterministes ;
+3. ces demandes sont exécutées dans un ordre stable par le moteur de spawn ;
+4. demandes traitées, séquence, instances et événements produits sont conservés dans `RoomState` ;
+5. une reprise restaure cet état sans rejouer les demandes initiales.
+
+Aucune couche de contenu, d'expédition, d'IA ou d'application ne construit directement une `CreatureInstance`, y compris pendant l'initialisation.
+
+Le Sprint 4.1 définit le contrat des demandes initiales avec les schémas d'expédition et de salle. Le Sprint 4.2 enrichit les `CreatureDefinition` sans modifier cette frontière.
+
+### Renforts
+
+Les salles 2 et 3 démontrent les renforts complets. La salle 2 doit aussi couvrir un succès partiel et un refus expliqué.
+
+Les règles restent locales à la salle et ne dépensent pas son budget de menace.
+
+### Seize créatures
+
+Les seize `CreatureDefinition` de Bastognac doivent être instanciables sans branchement particulier dans le moteur de spawn.
+
+Ajouter une créature ne doit pas nécessiter de modifier l'algorithme de spawn.
+
+### Profils d'IA
+
+Les profils et capacités n'affectent pas l'instanciation. Ils sont résolus après création à partir de `creatureId` et de la définition correspondante.
+
+### Transitions entre salles
+
+Une transition d'expédition ne déplace pas directement une instance ennemie d'une salle vers une autre. Chaque `RoomState` conserve sa propre population.
+
+Les héros sont transférés par le contrat d'expédition, pas par le moteur de spawn des créatures.
 
 ## Invariants
 
 1. À état, catalogue et requête identiques, le résultat est identique.
-2. Aucun `Date.now()`, UUID ou hasard implicite ne crée les identifiants.
-3. Aucun `Math.random()` n'est utilisé.
-4. Les identifiants proviennent d'une séquence monotone persistée.
-5. Une instance vivante ne peut apparaître hors limites ou sur une case bloquée.
-6. Un refus total ne modifie pas la salle.
-7. Chaque succès ou refus est expliqué.
-8. Les coordonnées restent logiques et indépendantes de la caméra.
-9. Le moteur ne dépend ni du DOM, ni de PixiJS, ni d'IndexedDB.
-10. Le renderer résout l'asset par `creatureId` sans décider de l'apparition.
+2. Aucun temps système, UUID ou hasard implicite ne crée les identifiants.
+3. Les identifiants proviennent d'une séquence persistée.
+4. Une instance vivante n'apparaît pas sur une case invalide.
+5. Un refus total ne modifie pas la salle.
+6. Chaque succès ou refus est expliqué.
+7. Les coordonnées restent logiques et indépendantes de la caméra.
+8. Le moteur ne dépend ni du DOM, ni de PixiJS, ni d'IndexedDB.
+9. Le renderer ne décide jamais de l'apparition.
+10. Toute créature initiale ou runtime est créée par une `SpawnRequest` exécutée par le moteur de spawn.
+11. Aucun acteur, profil d'IA ou orchestrateur d'expédition ne construit directement une `CreatureInstance`.
 
 ## Événements
 
@@ -138,31 +161,37 @@ Un refus total ne modifie pas les champs du spawn, mais l'activation de la règl
 
 La politique de renfort encadre ces événements avec `reinforcement-triggered` et `reinforcement-resolved`.
 
+Les demandes initiales produisent les événements ordinaires du spawn. La présentation de la salle peut les résumer sans les rejouer lors d'une reprise.
+
 ## Budget de menace
 
-Le budget de menace appartient à chaque salle et servira au générateur de rencontre du Sprint 5. Le moteur de spawn ne le lit ni ne le dépense.
+Le budget de menace appartient à chaque salle. Le moteur de spawn ne le lit ni ne le dépense.
 
-Les renforts de Brouhaha sont une augmentation runtime explicitement autorisée par les règles de la salle.
-
-## Contenu pilote Bastognac
-
-Le paquet contient :
-
-- Gobelin Bricoleur et Gobelin Lance-Tout ;
-- une salle tactique de schéma version 5 ;
-- deux ennemis initiaux ;
-- deux points de spawn à l'est ;
-- un spawn scripté de contrôle ;
-- deux règles de renfort automatiques réutilisant ces points.
-
-Le tonneau démontre un renfort total. La chaîne table → pilier → grille démontre un renfort total suivi d'un renfort partiel.
+Au Sprint 4, les compositions sont écrites à la main et traduites en demandes initiales. Au Sprint 5, le générateur de rencontre utilisera le budget propre à la salle pour produire des `SpawnRequest` initiales.
 
 ## Sauvegarde et tests
 
-La sauvegarde version 6 conserve les champs de spawn et l'historique séparé des renforts. Les migrations versions 1 à 5 préservent le spawn sans déclencher rétroactivement de règle.
+La sauvegarde version 6 conserve les champs actuels de spawn et l'historique séparé des renforts.
 
-Les tests couvrent les modes total et partiel, l'ordre des points, l'occupation, les requêtes dupliquées, les salles terminales, les compteurs, la restauration, les renforts de seuil et les parcours Playwright desktop/mobile.
+Le Sprint 4 ajoutera des tests pour :
 
-## Préparation du Sprint 5
+- populations initiales créées uniquement par `SpawnRequest` ;
+- ordre stable des demandes initiales ;
+- absence de replay après reprise ;
+- toutes les catégories du bestiaire ;
+- placements et renforts des trois salles ;
+- succès total, partiel et refus ;
+- reprise dans chaque salle ;
+- absence d'instanciation directe par une capacité ou un profil ;
+- séparation des populations entre salles.
 
-Le Sprint 5 produira des plans de salles avec géométrie, connexions et points de spawn. Le générateur de rencontre utilisera le budget propre à chaque salle pour produire des demandes initiales. Le moteur de spawn restera l'exécutant générique de ces demandes.
+## Hors périmètre du Sprint 4
+
+- génération de topologie ou géométrie ;
+- composition automatique des rencontres ;
+- calcul ou dépense du budget de menace ;
+- vagues adaptatives générées ;
+- boss final ;
+- loot et progression.
+
+Gargottex reste strictement en lecture seule.

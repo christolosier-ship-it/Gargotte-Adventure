@@ -3,28 +3,25 @@
 ## Statut
 
 - Cible initiale : Sprint 3.3, livré
-- Extension Sprint 3.4 : réactions en chaîne, livrée
-- Extension Sprint 3.5 : renforts de Brouhaha, livrée
-- Issue initiale : #42, clôturée
-- Pull Request initiale : #43, fusionnée
-- Réactions : [architecture dédiée](chain-reactions.md)
-- Renforts : [architecture dédiée](brouhaha-reinforcements.md)
+- Réactions en chaîne : Sprint 3.4, livré
+- Renforts de Brouhaha : Sprint 3.5, livré
+- Extension cible : héros, créatures et profils du Sprint 4
 
 ## Responsabilité
 
-Le moteur d'objets transforme une demande explicite d'un héros actif en transition de décor, consommation d'action, événements et, lorsque l'interaction est bruyante, demande de Brouhaha.
+Le moteur d'objets transforme une intention explicite en transition de décor, consommation de ressource, événements et, lorsque l'interaction est bruyante, demande de Brouhaha.
 
-La poussée et la propagation restent dans les systèmes tactiques dédiés. Les renforts ne sont jamais référencés par un objet : ils observent les changements de niveau du Brouhaha.
+La poussée et la propagation restent dans les systèmes tactiques dédiés. Les renforts ne sont jamais référencés directement par un objet.
 
-Le loot reste exclu de cette responsabilité.
+Les acteurs du Sprint 4 ne doivent pas appliquer les conséquences d'un objet. Ils produisent une intention qui reste résolue par les moteurs existants.
 
 ## Séparation définition et instance
 
-`InteractableDefinition` décrit un archétype stable : identité, famille, états, blocages, transitions, coût de Brouhaha et mouvement direct optionnel.
+`InteractableDefinition` décrit une famille, ses états, blocages, transitions, coûts, acteurs autorisés et mouvement direct optionnel.
 
 `InteractableInstance` représente un objet présent : identifiant runtime, référence, position, état courant et propriétés de blocage calculées.
 
-Le contenu place les instances et le moteur calcule leurs conséquences. Le renderer ne décide jamais si une transition est légale.
+Le contenu place les instances. Le moteur calcule leurs conséquences. Le renderer ne décide jamais si une transition est légale.
 
 ## Catalogue pilote Bastognac
 
@@ -38,75 +35,184 @@ Le contenu place les instances et le moteur calcule leurs conséquences. Le rend
 
 Ces objets n'accordent aucun loot direct.
 
-## Demande d'interaction
+## Intention d'interaction
 
-Une `InteractableInteractionRequest` contient un identifiant idempotent, le héros, l'instance et l'interaction demandée.
+Le contrat du Sprint 4 doit généraliser l'acteur sans perdre l'idempotence :
+
+- identifiant stable de demande ;
+- type et identifiant de l'acteur ;
+- instance ciblée ;
+- interaction demandée ;
+- éventuelle direction ou cible ;
+- source et raison explicatives.
 
 La résolution vérifie :
 
 1. demande non traitée ;
 2. salle non terminale ;
-3. tour des héros ;
-4. héros vivant, actif et disposant d'une action ;
+3. phase et acteur autorisés ;
+4. acteur vivant et disposant de la ressource requise ;
 5. objet, définition et transition présents ;
-6. distance orthogonale d'une case ;
+6. portée et ligne de vue éventuelle ;
 7. destination valide pour une poussée ;
-8. absence de combattant lorsqu'une transition rend la case bloquante.
+8. absence de collision interdite ;
+9. restrictions de profil ou de compétence.
 
-Un refus retourne le même `RoomState` et ne consomme aucune action.
+Un refus retourne le même état et ne consomme aucune ressource, sauf règle explicite différente validée pour une capacité particulière.
+
+## Acteurs autorisés
+
+Une interaction peut être accessible :
+
+- à tous les héros ;
+- à certains héros ou rôles ;
+- à toutes les créatures ;
+- à certains profils de créatures ;
+- à une capacité identifiée ;
+- au mode diagnostic uniquement.
+
+L'autorisation est déclarative. Elle ne doit pas être déduite d'un nom affiché.
+
+## Comportements possibles des créatures
+
+Une créature peut :
+
+- ignorer un objet ;
+- le contourner ;
+- l'utiliser ;
+- le pousser ;
+- le détruire ;
+- le protéger ;
+- le rejoindre ;
+- empêcher un héros de l'utiliser ;
+- déclencher volontairement une réaction ;
+- éviter une réaction dangereuse.
+
+Le profil produit une intention candidate. Le moteur d'objets valide et résout.
+
+## Évaluation déterministe par l'IA
+
+```text
+profil de l'acteur
+→ interactions accessibles
+→ conditions et exclusions
+→ intérêt tactique et risques déclarés
+→ priorité déterministe
+→ intention retenue et expliquée
+→ moteur d'objets
+```
+
+Une interaction candidate peut considérer :
+
+- accomplissement de l'objectif ;
+- dommages ou protection attendus ;
+- libération ou blocage d'une case ;
+- ligne de vue ;
+- réaction en chaîne connue ;
+- variation de Brouhaha ;
+- renfort possible ;
+- risque pour les alliés ;
+- distance logique ;
+- départage stable.
+
+Le moteur d'objets ne calcule pas cette priorité. Il résout l'intention retenue.
 
 ## Intégration au Brouhaha et aux renforts
 
-Une transition dont `brouhahaDelta` est non nul produit une demande `<requestId>-brouhaha`.
+Une transition dont la variation est non nulle produit une `BrouhahaRequest` dérivée de la demande racine.
 
-Le moteur d'objets ne choisit aucun effet, seuil, créature ou point. Il délègue au Brouhaha, qui résout ensuite les règles de seuil franchies.
+Le moteur d'objets ne choisit aucun effet, seuil, créature ou point. Il délègue au Brouhaha, qui résout ensuite les règles franchies.
 
-L'ordre causal est :
+L'ordre livré distingue le Brouhaha direct de l'interaction et le Brouhaha secondaire produit par les réactions :
 
-1. demande d'interaction ;
-2. déplacement éventuel ;
-3. changement d'état ;
-4. succès et consommation d'action ;
-5. Brouhaha direct éventuel et renforts associés ;
-6. propagation des réactions secondaires ;
-7. Brouhaha et renforts secondaires ;
-8. phase terminale.
+```text
+intention d'interaction
+→ validation
+→ déplacement éventuel
+→ changement d'état
+→ consommation de ressource
+→ Brouhaha direct éventuel
+→ effets et renforts du Brouhaha direct
+→ réactions en chaîne FIFO
+→ Brouhaha secondaire éventuel de chaque action de réaction
+→ effets et renforts secondaires dans l'ordre causal
+→ phase terminale
+```
 
-Le tonneau démontre un renfort au seuil 1. La chaîne table → pilier → grille démontre plusieurs seuils dans une même résolution.
+Le Brouhaha direct et ses renforts sont entièrement résolus avant la propagation des réactions. Une apparition directe peut donc occuper une case ou modifier la condition terminale avant les actions secondaires.
+
+Chaque action de réaction peut ensuite produire sa propre demande de Brouhaha. Cette demande et ses renforts sont résolus à leur position dans la file causale avant de poursuivre selon le contrat du moteur.
+
+Le Sprint 4 doit réutiliser cet ordre sans déplacer toutes les demandes de Brouhaha après la chaîne.
 
 ## Déplacement, spawn et ligne de vue
 
 - un objet bloquant interdit déplacement et apparition ;
 - un objet opaque bloque la ligne de vue ;
 - un état ouvert ou brisé peut libérer la case ;
-- fermer une grille sur un combattant est refusé ;
-- pousser un objet sur obstacle, combattant ou objet est refusé.
+- une transition rendant une case bloquante sur un acteur est refusée ;
+- pousser sur un obstacle, combattant ou objet est refusé ;
+- les coordonnées restent logiques et indépendantes de la caméra.
 
-Les coordonnées restent logiques et indépendantes de la caméra.
+## Couverture des trois salles
+
+### Salle 1
+
+Interaction simple, faible risque et réaction courte.
+
+### Salle 2
+
+Poussées, destructions, états, réactions principales, dégâts du décor, interactions propres aux héros et créatures, Brouhaha et renforts.
+
+### Salle 3
+
+Usage stratégique du décor, protection d'objets ou de zones, déclenchement ou évitement volontaire de réactions et combinaisons avec plusieurs profils.
 
 ## Interface et renderer
 
-L'application expose les interactions disponibles sous forme de boutons accessibles. Le même contrat est utilisé lors d'une sélection directe sur le canvas.
+L'application expose uniquement les interactions calculées. La sélection peut provenir du DOM ou du canvas, mais le même contrat moteur est utilisé.
 
-Le renderer dessine l'état, utilise les assets disponibles, remonte l'identifiant sélectionné et expose des diagnostics de test. Il ne connaît ni transitions autorisées, ni seuils de renfort.
+Le renderer dessine l'état, remonte l'identifiant sélectionné et expose des diagnostics. Il ne connaît ni les transitions autorisées, ni les priorités d'IA, ni les seuils de renfort.
 
-## Sauvegarde
+Les commandes de transition forcée ou de destruction artificielle appartiennent au mode diagnostic.
 
-Le Sprint 3.3 a introduit la version 4, le Sprint 3.4 la version 5 et le Sprint 3.5 la version 6.
+## Sauvegarde et expédition
 
-La version 6 conserve sans modifier la structure des objets :
+Chaque `RoomState` conserve les objets et leur historique. Les objets ne traversent pas les salles du micro-donjon.
 
-- prochaine séquence de réaction et historique causal ;
-- prochaine séquence de renfort et historique des activations ;
-- résultats appliqués, ignorés, interrompus, réussis, partiels ou refusés.
+Une salle restaurée retrouve ses objets exactement dans leur état sauvegardé. Une transition d'expédition ne réinitialise ni ne rejoue leurs réactions.
 
-Les versions 1 à 5 migrent avec des structures absentes initialisées sans inventer de réactions ni déclencher de renforts.
+## Invariants
 
-## Frontière avec les phases suivantes
+1. Les acteurs produisent des intentions.
+2. Le moteur d'objets applique les transitions.
+3. Le Brouhaha direct est résolu avant les réactions en chaîne.
+4. Les réactions restent déclarées par salle.
+5. Le Brouhaha secondaire est résolu à sa position causale dans la file.
+6. Toutes les variations passent par le moteur de Brouhaha.
+7. Les renforts passent par la politique de seuil et le spawn.
+8. Les autorisations sont déclaratives.
+9. Les décisions d'IA sont déterministes et expliquées.
+10. Un refus n'applique aucune conséquence implicite.
+11. Le renderer et l'UI ne décident aucune interaction.
+12. Le loot reste hors de cette responsabilité.
 
-- Sprint 3.4 : poussée et réactions, livré ;
-- Sprint 3.5 : renforts de seuil, livré ;
-- Sprint 3.6 : retours visuels, audio utile et finition ;
-- Sprint 4 : équilibrage définitif.
+## Tests cibles
 
-Gargottex reste strictement en lecture seule et n'est pas une dépendance runtime.
+- autorisations par type d'acteur et profil ;
+- coût et refus sans consommation ;
+- portée et destination ;
+- choix déterministe d'un objet par l'IA ;
+- utilisation, protection, destruction et évitement ;
+- Brouhaha direct et renfort avant réaction ;
+- Brouhaha secondaire dans l'ordre causal ;
+- renfort direct modifiant l'occupation avant la chaîne ;
+- renforts complets, partiels et refusés ;
+- reprise dans chaque salle ;
+- absence de commandes diagnostic en mode joueur.
+
+## Frontière avec le Sprint 5
+
+Le Sprint 4 place les objets à la main dans ses trois salles. Le Sprint 5 pourra générer le décor initial, mais continuera à utiliser les mêmes définitions, instances, intentions et moteurs.
+
+Gargottex reste strictement en lecture seule.

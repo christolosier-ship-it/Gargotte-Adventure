@@ -16,6 +16,8 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Structure du dépôt](architecture/repository-structure.md)
 - [Architecture d'exécution](architecture/runtime.md)
 - [Salle tactique](architecture/tactical-room.md)
+- [Micro-donjon et état d'expédition](architecture/micro-dungeon-and-expedition.md)
+- [Héros, créatures et comportements](architecture/actors-and-behaviors.md)
 - [Moteur de spawn déterministe](architecture/spawn-engine.md)
 - [Moteur de Brouhaha](architecture/brouhaha.md)
 - [Objets interactifs](architecture/interactable-objects.md)
@@ -31,6 +33,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 1 : rapport de clôture](sprints/sprint-1.md)
 - [Sprint 2 : rapport de clôture](sprints/sprint-2.md)
 - [Sprint 3 : Brouhaha, spawn, décor et finition](sprints/sprint-3.md)
+- [Sprint 4 : héros, créatures et comportements de Bastognac](sprints/sprint-4.md)
 
 ## Audits
 
@@ -43,6 +46,14 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 3.4 : réactions en chaîne déterministes](audits/sprint-3-4-chain-reactions.md)
 - [Sprint 3.5 : renforts de Brouhaha](audits/sprint-3-5-brouhaha-reinforcements.md)
 - [Sprint 3.6 : présentation et finition](audits/sprint-3-6-presentation-finishing.md)
+- [Addenda post-fusion du Sprint 3.6](audits/sprint-3-6-post-fusion-p2-addendum.md)
+
+Les audits historiques terminés ne sont pas réécrits. L'addenda consigne les sept P2 découverts après les fusions des PR #59 et #60.
+
+## ADR du Sprint 4
+
+- [ADR-0008 : micro-donjon manuel de trois salles](adr/0008-hand-authored-micro-dungeon.md)
+- [ADR-0009 : profils de comportements déclaratifs](adr/0009-declarative-actor-behaviors.md)
 
 ## Design et sources externes
 
@@ -52,6 +63,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Rapport Sprint 1 dans Google Drive](external/sprint-1-drive-content.md)
 - [Relais Sprint 2 dans Google Drive](external/sprint-2-drive-content.md)
 - [Relais Sprint 3 dans Google Drive](external/sprint-3-drive-content.md)
+- [Relais Sprint 4 dans Google Drive](external/sprint-4-drive-content.md)
 - [Diagramme FigJam](https://www.figma.com/board/wscHfycwhhvJRWQqelY4f9)
 
 ## Rôle des sources
@@ -67,14 +79,24 @@ Gargottex n'est pas une dépendance runtime et reste strictement en lecture seul
 
 ## État documentaire
 
-Le Sprint 3 est terminé :
+Le Sprint 3 est fonctionnellement livré et fusionné. Sa clôture définitive reste soumise au Sprint 4.0 et à la résolution de sept P2 post-fusion.
 
-- Sprints 3.1 à 3.6 implémentés ;
-- livraison fonctionnelle 3.6 par la PR #59 au commit `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4` ;
-- routeur pur de présentation, cues PixiJS, audio local, journal groupé et reprise sans replay ;
-- sauvegarde tactique toujours en version 6 ;
-- mouvement réduit, mute, volume et diagnostics de stabilité validés ;
-- tests unitaires et Playwright bureau/mobile verts ;
-- prochaine phase : Sprint 4, héros et créatures de Bastognac.
+Le Sprint 4 est cadré comme un micro-donjon manuel de trois salles adjacentes couvrant :
 
-Le relais GitHub et le document Google Drive sont alignés sur cette clôture.
+- état minimal d'expédition ;
+- quatre héros et seize créatures ;
+- compétences et profils d'IA ;
+- interactions des acteurs avec les objets ;
+- influences déclaratives du Brouhaha ;
+- transitions entre salles ;
+- victoire ou défaite globale ;
+- parcours joueur séparé du mode diagnostic ;
+- sauvegarde et reprise sur l'ensemble du micro-donjon.
+
+Le Sprint 5 conserve la génération complète des cinq étages, des salles et des rencontres, ainsi que loot, progression, campagne et boss final.
+
+## Portes de démarrage
+
+- La préparation documentaire du Sprint 4 est autorisée.
+- Le Sprint 4.0 doit être livré avant le développement fonctionnel des lots 4.1 à 4.7.
+- Aucun code ou contenu de jeu n'est introduit par ce cadrage.
