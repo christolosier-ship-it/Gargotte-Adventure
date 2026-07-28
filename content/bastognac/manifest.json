@@ -3,16 +3,20 @@
   "packId": "chateau-de-bastognac",
   "title": "Le Château de Bastognac",
   "source": {
-    "kind": "gargottex-export",
-    "reference": "gargottex_export_2026-05-21.xlsx"
+    "kind": "hand-authored",
+    "reference": "sprint-4-1-micro-donjon"
   },
-  "generatedAt": "2026-07-23T00:00:00.000Z",
-  "contentHash": "sprint-3-3-interactable-objects",
+  "generatedAt": "2026-07-28T16:45:00.000Z",
+  "contentHash": "sprint-4-1-micro-dungeon-expedition",
   "files": [
     "dungeon.json",
     "creatures.json",
     "brouhaha-effects.json",
     "interactables.json",
-    "sprint-1-room.json"
+    "sprint-1-room.json",
+    "expedition.json",
+    "room-1.json",
+    "room-2.json",
+    "room-3.json"
   ]
 }
