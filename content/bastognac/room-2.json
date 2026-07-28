@@ -129,10 +129,7 @@
       "label": "Faire entrer un renfort de diagnostic",
       "creatureId": "gobelin-bricoleur",
       "quantity": 1,
-      "candidateSpawnPointIds": [
-        "renfort-galerie-haut",
-        "renfort-galerie-bas"
-      ],
+      "candidateSpawnPointIds": ["renfort-galerie-haut", "renfort-galerie-bas"],
       "failureMode": "all-or-nothing"
     }
   ],
@@ -142,10 +139,7 @@
       "threshold": 1,
       "creatureId": "gobelin-bricoleur",
       "quantity": 1,
-      "candidateSpawnPointIds": [
-        "renfort-galerie-haut",
-        "renfort-galerie-bas"
-      ],
+      "candidateSpawnPointIds": ["renfort-galerie-haut", "renfort-galerie-bas"],
       "failureMode": "all-or-nothing",
       "maxActivations": 2
     },
@@ -154,10 +148,7 @@
       "threshold": 2,
       "creatureId": "gobelin-lance-tout",
       "quantity": 2,
-      "candidateSpawnPointIds": [
-        "renfort-galerie-haut",
-        "renfort-galerie-bas"
-      ],
+      "candidateSpawnPointIds": ["renfort-galerie-haut", "renfort-galerie-bas"],
       "failureMode": "partial",
       "maxActivations": 1
     }
