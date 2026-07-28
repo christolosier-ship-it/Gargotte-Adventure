@@ -53,7 +53,18 @@ jobs:
         run: npm run typecheck
 
       - name: Unit tests
-        run: npm run test
+        id: unit-tests
+        run: |
+          set -o pipefail
+          npm run test 2>&1 | tee unit-tests.log
+
+      - name: Upload unit test diagnostics
+        if: failure() && steps.unit-tests.outcome == 'failure'
+        uses: actions/upload-artifact@v7
+        with:
+          name: unit-test-diagnostics
+          path: unit-tests.log
+          if-no-files-found: error
 
       - name: Production build
         run: npm run build
