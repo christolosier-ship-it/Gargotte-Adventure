@@ -33,13 +33,40 @@ export function routeTacticalPresentation(
 
   return {
     rootId,
-    visualCues: visualCues.slice(
-      0,
+    visualCues: selectPrioritizedCues(
+      visualCues,
       options.maxVisualCues ?? defaultMaxVisualCues,
     ),
-    audioCues: audioCues.slice(0, options.maxAudioCues ?? defaultMaxAudioCues),
+    audioCues: selectPrioritizedCues(
+      audioCues,
+      options.maxAudioCues ?? defaultMaxAudioCues,
+    ),
     journal: journalEntry(events, describe, rootId),
   };
+}
+
+function selectPrioritizedCues<
+  TCue extends { priority: number; sequence: number },
+>(cues: readonly TCue[], requestedLimit: number): TCue[] {
+  const limit = Number.isFinite(requestedLimit)
+    ? Math.max(0, Math.floor(requestedLimit))
+    : cues.length;
+  if (cues.length <= limit) return [...cues];
+
+  return cues
+    .map((cue, index) => ({ cue, index }))
+    .sort(
+      (left, right) =>
+        right.cue.priority - left.cue.priority ||
+        left.cue.sequence - right.cue.sequence ||
+        left.index - right.index,
+    )
+    .slice(0, limit)
+    .sort(
+      (left, right) =>
+        left.cue.sequence - right.cue.sequence || left.index - right.index,
+    )
+    .map(({ cue }) => cue);
 }
 
 function resolveRootId(events: readonly TacticalEvent[]): string {
