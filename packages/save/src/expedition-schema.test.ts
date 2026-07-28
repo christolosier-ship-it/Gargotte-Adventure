@@ -134,6 +134,7 @@ describe("sauvegarde d’expédition", () => {
         ...enemy,
         hp: 0,
         alive: false,
+        blocksMovement: false,
       })),
       phase: "victory",
     };
