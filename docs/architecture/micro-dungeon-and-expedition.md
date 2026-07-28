@@ -167,33 +167,41 @@ Le Brouhaha est local à chaque salle. Entrer dans une nouvelle salle utilise so
 Lors de la première entrée :
 
 1. charger et valider la définition de salle ;
-2. construire son état initial déterministe ;
+2. construire son état initial déterministe sans `CreatureInstance` initiale directe ;
 3. injecter l'équipe à ses points d'entrée déclarés ;
 4. appliquer uniquement les états persistants autorisés ;
-5. conserver les ennemis initiaux comme demandes ou placements validés par les contrats existants ;
-6. démarrer la phase prévue ;
-7. produire les événements de présentation de salle ;
-8. persister l'expédition.
+5. soumettre les populations ennemies initiales comme `SpawnRequest` ordonnées au moteur de spawn ;
+6. conserver les événements, séquences et demandes traitées produits par ces apparitions initiales ;
+7. démarrer la phase prévue ;
+8. produire les événements de présentation de salle ;
+9. persister l'expédition.
 
-Une salle déjà visitée est restaurée depuis son état enregistré. Elle n'est pas réinitialisée silencieusement.
+Le contenu peut déclarer les populations et points initiaux, mais aucune couche ne construit directement une `CreatureInstance`. Le moteur de spawn reste la frontière unique d'instanciation dès la création de la salle.
 
-## Objectif et sortie de salle
+Une salle déjà visitée est restaurée depuis son état enregistré. Elle n'est pas réinitialisée silencieusement et ses apparitions initiales ne sont pas rejouées.
+
+## Objectif, complétion et sortie de salle
 
 Une salle distingue :
 
 - condition d'objectif atteinte ;
 - conséquences encore en cours ;
+- salle enregistrée comme terminée ;
 - sortie disponible ;
 - transition effectivement demandée par le joueur.
 
-L'objectif ne suffit pas à transférer immédiatement l'équipe. Avant d'ouvrir la sortie :
+L'objectif ne suffit pas à transférer immédiatement l'équipe. La complétion locale suit cet ordre :
 
 1. achever la résolution tactique courante ;
 2. traiter réactions, Brouhaha et renforts ;
-3. calculer la phase locale ;
+3. calculer la phase et la condition locales ;
 4. stabiliser l'état ;
-5. rendre la sortie disponible ;
-6. attendre l'intention explicite de quitter la salle.
+5. ajouter idempotemment la salle à `visitedRoomIds` et `completedRoomIds` ;
+6. si une salle suivante existe, rendre sa sortie disponible ;
+7. si la troisième salle est terminée, calculer le résultat global sans exiger de transition ;
+8. sinon attendre l'intention explicite de quitter la salle.
+
+La complétion est donc enregistrée avant toute transition. La troisième salle figure toujours dans `completedRoomIds` lorsque l'expédition passe à `victory`.
 
 Cette séparation évite qu'une animation, une apparition tardive ou une conséquence de décor soit sautée par une transition automatique.
 
@@ -203,6 +211,7 @@ Une intention de transition est valide uniquement lorsque :
 
 - l'expédition est active ;
 - la salle source est la salle courante ;
+- la salle source figure déjà dans `completedRoomIds` ;
 - sa sortie est disponible ;
 - la connexion cible est déclarée ;
 - aucun effet tactique n'est en cours de résolution ;
@@ -212,11 +221,11 @@ La transition :
 
 1. clôture l'état local de la salle source ;
 2. extrait l'état persistant des héros ;
-3. marque la salle visitée et terminée ;
+3. vérifie la complétion déjà enregistrée sans la dupliquer ;
 4. sélectionne la connexion déclarée ;
 5. restaure ou crée la salle cible ;
 6. place l'équipe aux points d'entrée ;
-7. met à jour `currentRoomId` ;
+7. met à jour `currentRoomId` et `visitedRoomIds` ;
 8. produit les événements d'expédition ;
 9. rend, présente et persiste le nouvel état stable.
 
@@ -224,11 +233,11 @@ Aucune porte ne doit modifier directement `ExpeditionState` depuis le renderer o
 
 ## Phase terminale locale et globale
 
-La victoire locale signifie que la condition de sortie est remplie et que les conséquences de la salle sont résolues. Elle ne signifie pas nécessairement la victoire de l'expédition.
+La victoire locale signifie que la condition de sortie est remplie, que les conséquences de la salle sont résolues et que la salle est enregistrée dans `completedRoomIds`. Elle ne signifie pas nécessairement la victoire de l'expédition.
 
 La défaite de l'équipe peut rendre l'expédition terminale selon le contrat produit retenu.
 
-La victoire globale est acquise lorsque la troisième salle est terminée et sa condition finale validée. Le Baron Pas-Très-Terrifiant n'est pas introduit par ce micro-donjon.
+La victoire globale est acquise lorsque la troisième salle est enregistrée comme terminée et que sa condition finale est validée. Elle ne dépend d'aucune transition vers une quatrième salle. Le Baron Pas-Très-Terrifiant n'est pas introduit par ce micro-donjon.
 
 ## Présentation du parcours
 
@@ -238,9 +247,9 @@ Le parcours joueur comprend :
 2. présentation de la salle ;
 3. tours héroïques et ennemis ;
 4. résolution des conséquences ;
-5. disponibilité de la sortie ;
-6. transition choisie ;
-7. résultat final.
+5. complétion locale et disponibilité de la sortie ;
+6. transition choisie pour les salles 1 et 2 ;
+7. résultat final après la salle 3.
 
 Les commandes de diagnostic ne participent pas à ce parcours.
 
@@ -285,7 +294,7 @@ Une reprise :
 - ne change pas le Brouhaha d'une salle ;
 - restaure le parcours joueur ou le mode diagnostic explicitement choisi selon le contrat retenu.
 
-La version et la stratégie de migration seront décidées au Sprint 4.2 après inventaire des formats réellement nécessaires.
+Le Sprint 4.1 définit le schéma Zod de l'expédition, son format de sauvegarde, sa version initiale et sa stratégie de migration avant d'implémenter les transitions. Le Sprint 4.2 reste responsable des schémas et migrations propres aux héros, créatures, compétences et profils.
 
 ## Contenu des trois salles
 
@@ -308,26 +317,31 @@ Valide la combinaison des profils, les compétences avancées, le Brouhaha inten
 3. `RoomState` reste local à une salle.
 4. `ExpeditionState` ne réimplémente aucune règle tactique.
 5. Le Brouhaha ne traverse pas les salles.
-6. Une sortie ne s'ouvre qu'après résolution complète.
-7. Une transition exige une intention explicite du joueur.
-8. Une reprise ne rejoue aucune conséquence historique.
-9. Le mode diagnostic est séparé du parcours normal.
-10. Le budget de menace reste propre à chaque salle.
-11. Gargottex reste en lecture seule.
-12. L'expérience reste offline-first.
+6. Toute créature initiale ou ajoutée est instanciée par le moteur de spawn.
+7. Une salle est enregistrée comme terminée avant une transition ou une victoire globale.
+8. Une sortie ne s'ouvre qu'après résolution complète.
+9. Une transition exige une intention explicite du joueur.
+10. Une reprise ne rejoue aucune conséquence historique.
+11. Le mode diagnostic est séparé du parcours normal.
+12. Le budget de menace reste propre à chaque salle.
+13. Gargottex reste en lecture seule.
+14. L'expérience reste offline-first.
 
 ## Validation
 
 ### Tests unitaires
 
 - cohérence de l'ordre et des connexions ;
+- création des ennemis initiaux par `SpawnRequest` ;
 - création et restauration des salles ;
 - extraction et injection de l'état persistant des héros ;
 - Brouhaha local ;
+- complétion enregistrée avant transition ;
+- troisième salle présente dans `completedRoomIds` lors de la victoire globale ;
 - transition refusée avant la fin des conséquences ;
 - victoire locale distincte de la victoire globale ;
 - reprise dans chacune des trois salles ;
-- idempotence des transitions ;
+- idempotence de la complétion et des transitions ;
 - validation des états corrompus.
 
 ### Tests d'intégration
