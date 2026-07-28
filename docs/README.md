@@ -14,17 +14,17 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 
 - [Architecture générale](architecture/overview.md)
 - [Structure du dépôt](architecture/repository-structure.md)
-- [Architecture d'exécution](architecture/runtime.md)
+- [Architecture d’exécution](architecture/runtime.md)
+- [Présentation tactique stabilisée](architecture/presentation-and-finishing.md)
 - [Salle tactique](architecture/tactical-room.md)
-- [Micro-donjon et état d'expédition](architecture/micro-dungeon-and-expedition.md)
+- [Micro-donjon et état d’expédition](architecture/micro-dungeon-and-expedition.md)
 - [Héros, créatures et comportements](architecture/actors-and-behaviors.md)
 - [Moteur de spawn déterministe](architecture/spawn-engine.md)
 - [Moteur de Brouhaha](architecture/brouhaha.md)
 - [Objets interactifs](architecture/interactable-objects.md)
 - [Réactions en chaîne déterministes](architecture/chain-reactions.md)
 - [Renforts déclenchés par le Brouhaha](architecture/brouhaha-reinforcements.md)
-- [Présentation et finition du Sprint 3.6](architecture/presentation-and-finishing.md)
-- [Décisions d'architecture](adr/README.md)
+- [Décisions d’architecture](adr/README.md)
 
 ## Sprints
 
@@ -33,11 +33,11 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 1 : rapport de clôture](sprints/sprint-1.md)
 - [Sprint 2 : rapport de clôture](sprints/sprint-2.md)
 - [Sprint 3 : Brouhaha, spawn, décor et finition](sprints/sprint-3.md)
-- [Sprint 4 : héros, créatures et comportements de Bastognac](sprints/sprint-4.md)
+- [Sprint 4 : micro-donjon, héros, créatures et comportements](sprints/sprint-4.md)
 
 ## Audits
 
-- [Audit d'alignement du Sprint 2](audits/sprint-2-alignment.md)
+- [Audit d’alignement du Sprint 2](audits/sprint-2-alignment.md)
 - [Stabilisation pré-Sprint 3 : murs arrière et rotation caméra](audits/pre-sprint-3-camera-aware-walls.md)
 - [Désendettement structurel pré-Sprint 3](audits/pre-sprint-3-structural-debt.md)
 - [Sprint 3.1 : fondation de spawn déterministe](audits/sprint-3-1-spawn-foundation.md)
@@ -46,9 +46,10 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 3.4 : réactions en chaîne déterministes](audits/sprint-3-4-chain-reactions.md)
 - [Sprint 3.5 : renforts de Brouhaha](audits/sprint-3-5-brouhaha-reinforcements.md)
 - [Sprint 3.6 : présentation et finition](audits/sprint-3-6-presentation-finishing.md)
-- [Addenda post-fusion du Sprint 3.6](audits/sprint-3-6-post-fusion-p2-addendum.md)
+- [Addenda P2 clôturés du Sprint 3.6](audits/sprint-3-6-post-fusion-p2-addendum.md)
+- [Sprint 4.0 : stabilisation finale](audits/sprint-4-0-stabilization.md)
 
-Les audits historiques terminés ne sont pas réécrits. L'addenda consigne les sept P2 découverts après les fusions des PR #59 et #60.
+Les audits historiques restent inchangés. L’addenda post-fusion est clôturé par l’audit du Sprint 4.0.
 
 ## ADR du Sprint 4
 
@@ -75,28 +76,18 @@ Les audits historiques terminés ne sont pas réécrits. L'addenda consigne les 
 | Google Drive   | Règles humaines, lore, médias maîtres, comptes rendus et archives               |
 | Figma / FigJam | Écrans, composants, gabarits, tokens et diagrammes                              |
 
-Gargottex n'est pas une dépendance runtime et reste strictement en lecture seule.
+Gargottex n’est pas une dépendance runtime et reste strictement en lecture seule.
 
 ## État documentaire
 
-Le Sprint 3 est fonctionnellement livré et fusionné. Sa clôture définitive reste soumise au Sprint 4.0 et à la résolution de sept P2 post-fusion.
+- le Sprint 3 est définitivement stabilisé ;
+- le Sprint 4.0 est livré par la PR #64 au commit `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf` ;
+- les sept P2 post-fusion et leurs fils de revue sont clos ;
+- l’ordre runtime rendu, présentation, persistance est figé ;
+- `packages/presentation` est couvert par le validateur de frontières ;
+- le Sprint 4.1 est la prochaine phase fonctionnelle ;
+- le Sprint 5 conserve la génération complète, le loot, la progression, la campagne et le boss final.
 
-Le Sprint 4 est cadré comme un micro-donjon manuel de trois salles adjacentes couvrant :
+## Porte de démarrage
 
-- état minimal d'expédition ;
-- quatre héros et seize créatures ;
-- compétences et profils d'IA ;
-- interactions des acteurs avec les objets ;
-- influences déclaratives du Brouhaha ;
-- transitions entre salles ;
-- victoire ou défaite globale ;
-- parcours joueur séparé du mode diagnostic ;
-- sauvegarde et reprise sur l'ensemble du micro-donjon.
-
-Le Sprint 5 conserve la génération complète des cinq étages, des salles et des rencontres, ainsi que loot, progression, campagne et boss final.
-
-## Portes de démarrage
-
-- La préparation documentaire du Sprint 4 est autorisée.
-- Le Sprint 4.0 doit être livré avant le développement fonctionnel des lots 4.1 à 4.7.
-- Aucun code ou contenu de jeu n'est introduit par ce cadrage.
+Le développement fonctionnel du Sprint 4.1 est autorisé sur la base stable issue du Sprint 4.0. Toute nouvelle fonctionnalité doit préserver les contrats tactiques, de présentation et de sauvegarde déjà stabilisés.
