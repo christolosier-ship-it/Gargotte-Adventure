@@ -53,8 +53,7 @@ export function renderGameView(options: GameViewOptions): void {
   const latestEffectNames = latestBrouhaha
     ? latestBrouhaha.effectIds.map(
         (id) =>
-          options.brouhahaEffects.find((effect) => effect.id === id)?.name ??
-          id,
+          options.brouhahaEffects.find((effect) => effect.id === id)?.name ?? id,
       )
     : [];
   const roomIndex = options.expedition?.currentRoomId
@@ -83,7 +82,8 @@ export function renderGameView(options: GameViewOptions): void {
     saveText: options.saveText,
     roomName: options.roomMetadata?.name ?? options.expeditionDefinition.name,
     roomObjective:
-      options.roomMetadata?.objective ?? options.expeditionDefinition.introduction,
+      options.roomMetadata?.objective ??
+      options.expeditionDefinition.introduction,
     roomProgress:
       roomIndex > 0
         ? `MICRO-DONJON · SALLE ${roomIndex}/3`
