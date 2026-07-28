@@ -64,7 +64,9 @@ describe("construction d’une salle d’expédition", () => {
     ).state;
 
     expect(built.heroes.find((hero) => hero.id === "brunhilda")?.hp).toBe(5);
-    expect(built.heroes.find((hero) => hero.id === "aelion")?.alive).toBe(false);
+    expect(built.heroes.find((hero) => hero.id === "aelion")?.alive).toBe(
+      false,
+    );
     expect(built.brouhaha.level).toBe(0);
     expect(built.turn).toBe(1);
   });
