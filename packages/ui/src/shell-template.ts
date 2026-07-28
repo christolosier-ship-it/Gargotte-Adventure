@@ -17,25 +17,33 @@ export function gameShellMarkup(buildLabel: string): string {
     <main class="game-layout">
       <section class="board-panel" aria-labelledby="board-title">
         <div class="panel-heading">
-          <div><p class="eyebrow">PREMIER DONJON</p><h2 id="board-title">Le Château de Bastognac</h2></div>
+          <div>
+            <p class="eyebrow" data-progress>MICRO-DONJON · PRÉPARATION</p>
+            <h2 id="board-title" data-room-title>Le Château de Bastognac</h2>
+            <p class="room-objective" data-room-objective>Choisissez votre équipe avant d’entrer dans les trois salles.</p>
+          </div>
           <span class="status-chip" data-status>Préparation</span>
         </div>
         <div class="board-host" data-board></div>
       </section>
       <aside class="control-panel" aria-label="Commandes tactiques">
         <section class="hero-card">
-          <p class="eyebrow">SALLE TACTIQUE</p><h2>Choisir l'équipe</h2>
+          <p class="eyebrow">PRÉPARATION DE L’EXPÉDITION</p><h2>Choisir l’équipe</h2>
           <div data-hero-picker class="hero-picker"></div>
         </section>
         <div class="actions">
-          <button class="button button-primary" type="button" data-start>Entrer dans la salle</button>
-          <button class="button button-secondary" type="button" data-continue disabled>Reprendre</button>
+          <button class="button button-primary" type="button" data-start>Entrer dans le micro-donjon</button>
+          <button class="button button-secondary" type="button" data-continue disabled>Reprendre l’expédition</button>
+          <button class="button button-primary" type="button" data-next-room hidden disabled>Passer à la salle suivante</button>
+          <button class="button button-secondary" type="button" data-replay hidden disabled>Rejouer le micro-donjon</button>
           <button class="button button-ghost" type="button" data-rotate-camera disabled>↻ Pivoter la caméra de 90°</button>
-          <button class="button button-secondary" type="button" data-end-activation disabled>Terminer l'activation</button>
+          <button class="button button-secondary" type="button" data-end-activation disabled>Terminer l’activation</button>
           <button class="button button-ghost" type="button" data-end-heroes-turn disabled>Terminer le tour des héros</button>
           <button class="button button-ghost" type="button" data-resolve-enemy-turn disabled>Résoudre le tour ennemi</button>
-          <button class="button button-ghost" type="button" data-install hidden>Installer l'application</button>
+          <button class="button button-ghost diagnostic-toggle" type="button" data-diagnostic aria-pressed="false">Activer le mode diagnostic</button>
+          <button class="button button-ghost" type="button" data-install hidden>Installer l’application</button>
         </div>
+        <section class="result-card" data-result hidden aria-live="polite"></section>
         <section class="system-card" aria-live="polite">
           <div class="system-line"><span>Sauvegarde locale</span><strong data-save-status>Initialisation…</strong></div>
           <div class="system-line"><span>Caméra de contrôle</span><strong data-camera-status>Vue : 0°</strong></div>
@@ -54,7 +62,7 @@ export function gameShellMarkup(buildLabel: string): string {
         </section>
         <section class="event-card">
           <p class="eyebrow">JOURNAL</p>
-          <ol data-events aria-label="Journal tactique"><li>La salle tactique est prête.</li></ol>
+          <ol data-events aria-label="Journal tactique"><li>Le micro-donjon est prêt.</li></ol>
         </section>
       </aside>
     </main>
