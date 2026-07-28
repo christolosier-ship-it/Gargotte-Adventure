@@ -1,120 +1,51 @@
 # Addenda post-fusion du Sprint 3.6
 
-## Statut
+## Statut final
 
 - Date du constat : 28 juillet 2026
 - Sprint fonctionnel : 3.6
-- Pull Request fonctionnelle : #59, fusionnée
-- Commit fonctionnel : `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`
-- Pull Request documentaire de clôture : #60, fusionnée
-- Base observée : `cc7756ba94a41be0eb2e20ca5a9f6ff6766df3fe`
-- Écarts P2 ouverts : 7
-- Lot de traitement : Sprint 4.0
-- Issue documentaire : #61
+- PR fonctionnelle initiale : #59
+- PR documentaire initiale : #60
+- Lot correctif : Sprint 4.0
+- Issue : #63
+- PR corrective : #64
+- HEAD validé : `1c806a8d7362bc125fcf8c5ea92185e7cf9be7d1`
+- Commit de fusion : `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf`
+- Écarts P2 ouverts : 0
+- Fils de revue ouverts : 0
 
-## Rôle de cet addenda
+## Origine
 
-Les audits historiques restent inchangés. Cet addenda consigne les constats apparus après les fusions des PR #59 et #60.
+La revue post-fusion du Sprint 3.6 avait identifié sept écarts P2. Ils ne remettaient pas en cause les règles tactiques ou la sauvegarde, mais empêchaient de considérer la couche de présentation comme définitivement stabilisée.
 
-Le Sprint 3 est fonctionnellement livré et fusionné. Sa clôture définitive reste soumise à un dernier lot de stabilisation du Sprint 3.6 et à la résolution des écarts P2 post-fusion.
+Le Sprint 4.0 a été isolé pour traiter ces écarts avant l’introduction de l’expédition et des acteurs définitifs.
 
-La CI verte de la livraison confirme que les contrôles automatisés existants passent. Elle ne clôt pas les écarts de comportement ou de couverture découverts ensuite par la revue.
+## Résolution des sept écarts
 
-## P2 fonctionnels de la PR #59
+1. **Transitions terminales** : victoire et défaite produisent désormais les cues terminaux à partir de la transition réelle du `RoomState`.
+2. **Préférences audio** : les champs absents, invalides ou non finis sont ignorés et les valeurs par défaut sont préservées.
+3. **Plafonds de cues** : les cues les plus prioritaires sont retenus, puis remis dans leur ordre causal.
+4. **Tonalités répétées** : le lecteur actif d’une même clé est arrêté avant redémarrage.
+5. **Garantie de priorité** : la documentation est alignée sur les sorties visuelles, audio et journal.
+6. **Ordre runtime** : le contrat testé est rendu stable, présentation, puis persistance asynchrone.
+7. **Frontière presentation** : `packages/presentation` est couvert par le validateur et ne peut dépendre que de `packages/engine`.
 
-### P2-1 : cues terminaux sur les transitions réelles
+## Preuves
 
-- Fichier signalé : `packages/presentation/src/router.ts`
-- Statut : ouvert
-- Constat : les chemins ordinaires de victoire et de défaite peuvent produire un `RoomState` terminal sans événement `phase-changed` consommable par le routeur.
-- Risque : absence de cue visuel, son de victoire ou défaite et message terminal dans le journal.
-- Attendu Sprint 4.0 : dériver la transition terminale à partir des états précédent et suivant ou produire un événement moteur explicite, sans déplacer la règle dans la présentation.
+- Repository quality `30361556238` : succès complet ;
+- Validate application `30361556300` : succès complet ;
+- tests unitaires des transitions terminales réelles ;
+- tests des plafonds prioritaires ;
+- tests des préférences audio invalides ;
+- tests du redémarrage audio ;
+- test de l’ordre d’orchestration ;
+- test de frontière `presentation → engine` autorisée et `presentation → renderer` refusée ;
+- Playwright Chromium bureau et mobile paysage.
 
-### P2-2 : préférences audio persistées invalides
+Les quatre fils P2 de la PR #59 et les trois fils P2 de la PR #60 ont été commentés avec leurs preuves puis résolus.
 
-- Fichier signalé : `apps/game/src/presentation-controller.ts`
-- Statut : ouvert
-- Constat : un JSON valide mais incomplet ou mal typé peut transmettre `muted: undefined` et écraser la valeur par défaut.
-- Risque : état audio incohérent et attribut accessible `aria-pressed` invalide.
-- Attendu Sprint 4.0 : ne conserver que les champs validés ou ignorer les valeurs `undefined` lors de la configuration.
+## Conclusion
 
-### P2-3 : plafonds et priorité des cues
+La réserve post-fusion du Sprint 3.6 est close. Le Sprint 3 est définitivement stabilisé et le Sprint 4.1 peut démarrer sur la base publiée par le Sprint 4.0.
 
-- Fichier signalé : `packages/presentation/src/router.ts`
-- Statut : ouvert
-- Constat : les limites de dix cues visuels et six cues audio sont appliquées par troncature dans l'ordre, sans préserver les conséquences de priorité supérieure.
-- Risque : renfort ou phase terminale tardive supprimé d'une longue chaîne.
-- Attendu Sprint 4.0 : sélectionner les cues prioritaires tout en restaurant leur ordre causal, puis couvrir les chaînes longues.
-
-### P2-4 : superposition des tonalités répétées
-
-- Fichier signalé : `packages/audio/src/index.ts`
-- Statut : ouvert
-- Constat : rejouer rapidement une même clé ajoute des oscillateurs actifs au lieu de redémarrer le son.
-- Risque : amplification et superposition involontaires dans une résolution dense.
-- Attendu Sprint 4.0 : arrêter ou redémarrer le lecteur actif de la clé avant une nouvelle lecture.
-
-## P2 documentaires et de frontière de la PR #60
-
-### P2-5 : garantie de priorité trop large
-
-- Fichier signalé : `docs/architecture/presentation-and-finishing.md`
-- Statut : ouvert, corrigé dans le cadrage actif mais pas dans le code
-- Constat : la documentation garantissait la conservation prioritaire de toutes les conséquences, alors que le comportement livré la garantit seulement pour le journal.
-- Attendu Sprint 4.0 : aligner définitivement le code et les garanties après correction du P2-3.
-
-### P2-6 : ordre runtime documenté incorrect
-
-- Fichier signalé : `docs/architecture/runtime.md`
-- Statut : ouvert, formulation active corrigée
-- Constat : l'orchestration livrée effectue rendu stable, présentation puis persistance asynchrone, contrairement à l'ordre précédemment documenté.
-- Attendu Sprint 4.0 : décider si cet ordre reste le contrat ou si l'orchestration doit changer, puis tester la décision.
-
-### P2-7 : package presentation absent du validateur de frontières
-
-- Fichier signalé : `docs/architecture/repository-structure.md`
-- Statut : ouvert
-- Constat : le graphe documentaire inclut `packages/presentation`, mais `tools/validate_repository.py` ne le couvre pas dans sa table de dépendances autorisées.
-- Risque : une dépendance interdite ou un cycle impliquant ce package peut échapper au contrôle annoncé.
-- Attendu Sprint 4.0 : étendre le validateur au package et ajouter les tests correspondants.
-
-## Frontière du Sprint 4.0
-
-Le Sprint 4.0 peut modifier uniquement ce qui est nécessaire pour :
-
-- corriger les sept P2 ;
-- ajouter les tests de non-régression ;
-- résoudre les fils de revue ;
-- aligner les documents actifs et Google Drive ;
-- produire une base stable validée.
-
-Il ne doit pas introduire :
-
-- `ExpeditionState` ;
-- les trois salles ;
-- héros ou créatures définitifs ;
-- compétences ;
-- profils d'IA du Sprint 4 ;
-- équilibrage ;
-- génération procédurale.
-
-## Critères de clôture du Sprint 4.0
-
-- les sept fils P2 sont corrigés ou explicitement arbitrés ;
-- les fils de revue correspondants sont résolus ;
-- les cues terminaux sont couverts sur victoire et défaite réelles ;
-- les plafonds préservent les priorités ;
-- les préférences audio invalides conservent les défauts ;
-- les tonalités répétées ne se superposent pas ;
-- le chemin runtime documenté correspond au code ;
-- le package `presentation` est couvert par le validateur de frontières ;
-- tests unitaires, build et Playwright sont verts ;
-- GitHub et Drive sont alignés ;
-- un nouveau commit stable de `main` est identifié.
-
-## Verdict actuel
-
-- Livraison fonctionnelle du Sprint 3 : oui
-- Clôture définitive du Sprint 3 : non
-- Documentation du Sprint 4 : peut être préparée
-- Développement fonctionnel des lots 4.1 à 4.7 : bloqué jusqu'à la clôture du Sprint 4.0
+Voir [Audit de livraison du Sprint 4.0](sprint-4-0-stabilization.md).
