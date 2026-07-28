@@ -40,6 +40,7 @@ export function createGameShell(
   const cameraStatus = query<HTMLElement>("[data-camera-status]");
   const reducedMotionStatus = query<HTMLElement>("[data-reduced-motion]");
   const eventLog = query<HTMLElement>("[data-events]");
+  const startButton = query<HTMLButtonElement>("[data-start]");
   const continueButton = query<HTMLButtonElement>("[data-continue]");
   const nextRoomButton = query<HTMLButtonElement>("[data-next-room]");
   const replayButton = query<HTMLButtonElement>("[data-replay]");
@@ -79,7 +80,7 @@ export function createGameShell(
     saveStatus,
     cameraStatus,
     eventLog,
-    startButton: query("[data-start]"),
+    startButton,
     continueButton,
     nextRoomButton,
     replayButton,
@@ -98,7 +99,11 @@ export function createGameShell(
     update(next) {
       const tacticalPhase = next.tacticalPhase ?? null;
       const expeditionStatus = next.expeditionStatus ?? null;
-      status.textContent = statusText(next.phase, expeditionStatus, tacticalPhase);
+      status.textContent = statusText(
+        next.phase,
+        expeditionStatus,
+        tacticalPhase,
+      );
       status.dataset.active = String(next.phase === "expedition");
       roomTitle.textContent = next.roomName ?? "Le Château de Bastognac";
       roomObjective.textContent =
@@ -107,7 +112,6 @@ export function createGameShell(
       progressStatus.textContent =
         next.roomProgress ?? "MICRO-DONJON · PRÉPARATION";
 
-      const startButton = query<HTMLButtonElement>("[data-start]");
       startButton.disabled = !(next.canStart ?? true);
       continueButton.disabled = !next.canContinue;
       nextRoomButton.disabled = !next.canTransition;
@@ -189,7 +193,12 @@ export function createGameShell(
 
 function statusText(
   phase: "boot" | "menu" | "expedition",
-  expeditionStatus: "preparation" | "in-progress" | "victory" | "defeat" | null,
+  expeditionStatus:
+    | "preparation"
+    | "in-progress"
+    | "victory"
+    | "defeat"
+    | null,
   tacticalPhase: "heroes-turn" | "enemy-turn" | "victory" | "defeat" | null,
 ): string {
   if (expeditionStatus === "victory") return "Victoire";
