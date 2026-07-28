@@ -45,6 +45,7 @@ export function renderTacticalActions(
   scriptedSpawns: readonly ScriptedSpawnAction[] = [],
   brouhahaControls: readonly BrouhahaControlAction[] = [],
   interactableActions: readonly InteractableAction[] = [],
+  diagnosticMode = false,
 ): void {
   container.replaceChildren();
   if (!room) return;
@@ -57,10 +58,27 @@ export function renderTacticalActions(
   );
   container.append(brouhahaStatus);
 
+  if (diagnosticMode) {
+    const diagnostic = document.createElement("strong");
+    diagnostic.className = "diagnostic-label";
+    diagnostic.textContent = "Mode diagnostic actif";
+    container.append(diagnostic);
+    for (const control of brouhahaControls)
+      container.append(
+        createActionButton(control.label, () => handlers.brouhaha(control.id)),
+      );
+    for (const spawn of scriptedSpawns)
+      container.append(
+        createActionButton(`🧪 ${spawn.label}`, () => handlers.spawn(spawn.id)),
+      );
+  }
+
   if (room.phase === "victory" || room.phase === "defeat") {
     const message = document.createElement("strong");
     message.textContent =
-      room.phase === "victory" ? "Salle nettoyée !" : "Expédition vaincue.";
+      room.phase === "victory"
+        ? "Salle sécurisée. La sortie peut être empruntée."
+        : "L’expédition est vaincue.";
     container.append(message);
     return;
   }
@@ -71,16 +89,6 @@ export function renderTacticalActions(
     container.append(message);
     return;
   }
-
-  for (const control of brouhahaControls)
-    container.append(
-      createActionButton(control.label, () => handlers.brouhaha(control.id)),
-    );
-
-  for (const spawn of scriptedSpawns)
-    container.append(
-      createActionButton(`🧪 ${spawn.label}`, () => handlers.spawn(spawn.id)),
-    );
 
   for (const hero of room.heroes.filter(
     (candidate) => candidate.alive && !candidate.activationCompleted,

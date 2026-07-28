@@ -6,12 +6,15 @@ import {
   bastognacBrouhahaEffects,
   bastognacCreatureDefinitions,
   bastognacDungeon,
+  bastognacExpedition,
   bastognacInteractableDefinitions,
   bastognacRoom,
+  bastognacRoomDefinitions,
 } from "./bastognac";
 import { GameController } from "./game-controller";
 import { restoreSession } from "./persistence-controller";
 import { registerPwaInstall } from "./pwa-install";
+import { buildTacticalRoomWithEvents } from "./room-builder";
 
 export async function bootstrapGame(root: HTMLElement): Promise<void> {
   const defaultHeroId = bastognacRoom.heroes[0]?.id;
@@ -27,13 +30,27 @@ export async function bootstrapGame(root: HTMLElement): Promise<void> {
 
   const [renderer, restored] = await Promise.all([
     createTabletopRenderer(shell.boardHost, bastognacAssetCatalog),
-    restoreSession(validHeroIds, defaultHeroId),
+    restoreSession({
+      validHeroIds,
+      defaultHeroId,
+      definitionId: bastognacExpedition.id,
+      orderedRoomIds: bastognacExpedition.roomIds,
+      buildFirstRoom: (selectedHeroIds, persistentHeroes) =>
+        buildTacticalRoomWithEvents(
+          bastognacRoom,
+          bastognacCreatureDefinitions,
+          bastognacInteractableDefinitions,
+          selectedHeroIds,
+          persistentHeroes,
+        ).state,
+    }),
   ]);
   const controller = new GameController({
     shell,
     renderer,
     dungeon: bastognacDungeon,
-    roomDefinition: bastognacRoom,
+    expeditionDefinition: bastognacExpedition,
+    roomDefinitions: bastognacRoomDefinitions,
     creatureDefinitions: bastognacCreatureDefinitions,
     brouhahaEffects: bastognacBrouhahaEffects,
     interactableDefinitions: bastognacInteractableDefinitions,

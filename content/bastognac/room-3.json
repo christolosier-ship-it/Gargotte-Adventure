@@ -1,0 +1,154 @@
+{
+  "schemaVersion": 6,
+  "id": "bastognac-salle-3",
+  "name": "La salle du dernier verrou",
+  "grid": { "width": 8, "height": 4 },
+  "obstacles": [
+    { "column": 4, "row": 1 },
+    { "column": 4, "row": 2 }
+  ],
+  "interactables": [
+    {
+      "id": "tonneau-verrou-1",
+      "interactableId": "tonneau-bastognac",
+      "position": { "column": 2, "row": 1 },
+      "stateId": "intact"
+    },
+    {
+      "id": "table-verrou-1",
+      "interactableId": "table-bastognac",
+      "position": { "column": 3, "row": 3 },
+      "stateId": "debout"
+    },
+    {
+      "id": "pilier-verrou-1",
+      "interactableId": "pilier-bastognac",
+      "position": { "column": 5, "row": 1 },
+      "stateId": "intact"
+    },
+    {
+      "id": "torche-verrou-1",
+      "interactableId": "torche-bastognac",
+      "position": { "column": 1, "row": 3 },
+      "stateId": "allumee"
+    }
+  ],
+  "chainReactions": [],
+  "spawnPoints": [
+    {
+      "id": "initial-verrou-haut",
+      "position": { "column": 7, "row": 0 },
+      "tags": ["initial", "edge"],
+      "enabled": true
+    },
+    {
+      "id": "initial-verrou-milieu",
+      "position": { "column": 7, "row": 2 },
+      "tags": ["initial", "edge"],
+      "enabled": true
+    },
+    {
+      "id": "initial-verrou-bas",
+      "position": { "column": 7, "row": 3 },
+      "tags": ["initial", "edge"],
+      "enabled": true
+    },
+    {
+      "id": "renfort-verrou-haut",
+      "position": { "column": 6, "row": 0 },
+      "tags": ["reinforcement", "edge"],
+      "enabled": true
+    },
+    {
+      "id": "renfort-verrou-bas",
+      "position": { "column": 6, "row": 3 },
+      "tags": ["reinforcement", "edge"],
+      "enabled": true
+    }
+  ],
+  "initialSpawns": [
+    {
+      "id": "population-verrou-bricoleurs",
+      "label": "Bricoleurs du dernier verrou",
+      "creatureId": "gobelin-bricoleur",
+      "quantity": 2,
+      "candidateSpawnPointIds": [
+        "initial-verrou-haut",
+        "initial-verrou-milieu"
+      ],
+      "failureMode": "all-or-nothing"
+    },
+    {
+      "id": "population-verrou-lance-tout",
+      "label": "Lance-tout du dernier verrou",
+      "creatureId": "gobelin-lance-tout",
+      "quantity": 1,
+      "candidateSpawnPointIds": ["initial-verrou-bas"],
+      "failureMode": "all-or-nothing"
+    }
+  ],
+  "scriptedSpawns": [],
+  "brouhahaReinforcements": [
+    {
+      "id": "seuil-1-verrou-bricoleur",
+      "threshold": 1,
+      "creatureId": "gobelin-bricoleur",
+      "quantity": 1,
+      "candidateSpawnPointIds": ["renfort-verrou-haut", "renfort-verrou-bas"],
+      "failureMode": "all-or-nothing",
+      "maxActivations": 2
+    },
+    {
+      "id": "seuil-3-verrou-lance-tout",
+      "threshold": 3,
+      "creatureId": "gobelin-lance-tout",
+      "quantity": 2,
+      "candidateSpawnPointIds": ["renfort-verrou-haut", "renfort-verrou-bas"],
+      "failureMode": "partial",
+      "maxActivations": 1
+    }
+  ],
+  "heroes": [
+    {
+      "id": "brunhilda",
+      "name": "Brünhilda la Torgnole",
+      "position": { "column": 0, "row": 0 },
+      "hp": 12,
+      "maxHp": 12,
+      "atk": 4,
+      "def": 2,
+      "range": 1
+    },
+    {
+      "id": "aelion",
+      "name": "Aelion Trois-Gorgées",
+      "position": { "column": 0, "row": 1 },
+      "hp": 8,
+      "maxHp": 8,
+      "atk": 3,
+      "def": 1,
+      "range": 2
+    },
+    {
+      "id": "magdalena",
+      "name": "Magdalena Coquinelle",
+      "position": { "column": 0, "row": 2 },
+      "hp": 9,
+      "maxHp": 9,
+      "atk": 2,
+      "def": 1,
+      "range": 3
+    },
+    {
+      "id": "grompif",
+      "name": "Grompif Arcabidon",
+      "position": { "column": 0, "row": 3 },
+      "hp": 10,
+      "maxHp": 10,
+      "atk": 4,
+      "def": 1,
+      "range": 3
+    }
+  ],
+  "notes": "Salle 3 du micro-donjon manuel. Confrontation pilote finale sans boss ni équilibrage définitif."
+}

@@ -1,5 +1,6 @@
 import type {
   DungeonDefinition,
+  ExpeditionDefinition,
   TacticalRoomDefinition,
 } from "@gargotte/content-schema";
 import type {
@@ -15,7 +16,8 @@ export interface GameControllerOptions {
   shell: GameShell;
   renderer: TabletopRenderer;
   dungeon: DungeonDefinition;
-  roomDefinition: TacticalRoomDefinition;
+  expeditionDefinition: ExpeditionDefinition;
+  roomDefinitions: TacticalRoomDefinition[];
   creatureDefinitions: CreatureDefinition[];
   brouhahaEffects: BrouhahaEffectDefinition[];
   interactableDefinitions: InteractableDefinition[];

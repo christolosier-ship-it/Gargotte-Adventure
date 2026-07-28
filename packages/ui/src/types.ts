@@ -1,4 +1,4 @@
-import type { GamePhase, RoomPhase } from "@gargotte/engine";
+import type { ExpeditionStatus, GamePhase, RoomPhase } from "@gargotte/engine";
 
 export type PresentationTone = "info" | "warning" | "success" | "danger";
 
@@ -19,11 +19,20 @@ export interface HeroOption {
 export interface GameShellUpdate {
   phase: GamePhase;
   tacticalPhase?: RoomPhase | null;
+  expeditionStatus?: ExpeditionStatus | null;
   expeditionNumber: number;
+  canStart?: boolean;
   canContinue: boolean;
+  canTransition?: boolean;
+  transitionLabel?: string | null;
+  canReplay?: boolean;
   canRotateCamera?: boolean;
   cameraRotation?: number;
   saveText: string;
+  roomName?: string | null;
+  roomObjective?: string | null;
+  roomProgress?: string | null;
+  resultText?: string | null;
   actions?: number;
   activeHero?: string | null;
   selectedHeroIds?: string[];
@@ -33,16 +42,24 @@ export interface GameShellUpdate {
   audioMuted?: boolean;
   audioVolume?: number;
   reducedMotion?: boolean;
+  diagnosticMode?: boolean;
 }
 
 export interface GameShell {
   boardHost: HTMLElement;
+  roomTitle: HTMLElement;
+  roomObjective: HTMLElement;
+  progressStatus: HTMLElement;
+  resultPanel: HTMLElement;
   status: HTMLElement;
   saveStatus: HTMLElement;
   cameraStatus: HTMLElement;
   eventLog: HTMLElement;
   startButton: HTMLButtonElement;
   continueButton: HTMLButtonElement;
+  nextRoomButton: HTMLButtonElement;
+  replayButton: HTMLButtonElement;
+  diagnosticToggleButton: HTMLButtonElement;
   rotateCameraButton: HTMLButtonElement;
   installButton: HTMLButtonElement;
   heroPicker: HTMLElement;

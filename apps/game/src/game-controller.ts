@@ -1,45 +1,23 @@
 import { BUILD_LABEL } from "@gargotte/common";
-import type {
-  DungeonDefinition,
-  TacticalRoomDefinition,
-} from "@gargotte/content-schema";
 import {
-  EventBus,
-  attackTarget,
   createEvent,
   createInitialGameState,
-  endHeroActivation,
-  endHeroesTurn,
-  finishEnemyTurn,
-  moveCombatant,
   reduceGameState,
-  selectHero,
-  type BrouhahaEffectDefinition,
-  type CreatureDefinition,
+  type ExpeditionState,
   type GameState,
-  type GridPosition,
-  type InteractableDefinition,
   type RoomState,
   type TacticalResult,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
-import {
-  executeBrouhahaControl,
-  type BrouhahaControlId,
-} from "./brouhaha-controller";
 import { describeDomainEvent } from "./event-messages";
+import { ExpeditionSession } from "./expedition-session";
 import type { GameControllerOptions } from "./game-controller-options";
 import { renderGameView } from "./game-view";
 import { readSelectedHeroIds } from "./hero-selection";
-import {
-  availableInteractableActions,
-  executeInteractableAction,
-} from "./interactable-controller";
 import { PersistenceController } from "./persistence-controller";
 import { PresentationController } from "./presentation-controller";
-import { buildTacticalRoom } from "./room-builder";
-import { executeScriptedSpawn } from "./scripted-spawn-controller";
+import { TacticalIntentController } from "./tactical-intent-controller";
 import {
   runTacticalResultPipeline,
   type StatefulTacticalResult,
@@ -48,92 +26,115 @@ import {
 export class GameController {
   private readonly shell: GameShell;
   private readonly renderer: TabletopRenderer;
-  private readonly dungeon: DungeonDefinition;
-  private readonly roomDefinition: TacticalRoomDefinition;
-  private readonly creatureDefinitions: CreatureDefinition[];
-  private readonly brouhahaEffects: BrouhahaEffectDefinition[];
-  private readonly interactableDefinitions: InteractableDefinition[];
-  private readonly events = new EventBus();
+  private readonly options: GameControllerOptions;
   private readonly persistence = new PersistenceController();
   private readonly presentation: PresentationController;
+  private readonly session: ExpeditionSession;
+  private readonly tactical: TacticalIntentController;
   private readonly defaultHeroId: string;
   private readonly validHeroIds: ReadonlySet<string>;
   private state: GameState;
-  private room: RoomState | null;
   private selectedHeroIds: string[];
-  private readonly roomWasRestored: boolean;
+  private awaitingResume: boolean;
+  private diagnosticMode: boolean;
+  private readonly migratedLegacyRoom: boolean;
 
   constructor(options: GameControllerOptions) {
+    this.options = options;
     this.shell = options.shell;
     this.renderer = options.renderer;
-    this.dungeon = options.dungeon;
-    this.roomDefinition = options.roomDefinition;
-    this.creatureDefinitions = options.creatureDefinitions;
-    this.brouhahaEffects = options.brouhahaEffects;
-    this.interactableDefinitions = options.interactableDefinitions;
     this.presentation = new PresentationController({
       shell: this.shell,
       renderer: this.renderer,
-      creatureDefinitions: this.creatureDefinitions,
-      interactableDefinitions: this.interactableDefinitions,
+      creatureDefinitions: options.creatureDefinitions,
+      interactableDefinitions: options.interactableDefinitions,
     });
-    const defaultHeroId = options.roomDefinition.heroes[0]?.id;
+    this.session = new ExpeditionSession({
+      definition: options.expeditionDefinition,
+      roomDefinitions: options.roomDefinitions,
+      creatureDefinitions: options.creatureDefinitions,
+      interactableDefinitions: options.interactableDefinitions,
+      restored: options.restored.expedition,
+    });
+    this.tactical = new TacticalIntentController({
+      dungeonId: options.dungeon.id,
+      creatureDefinitions: options.creatureDefinitions,
+      brouhahaEffects: options.brouhahaEffects,
+      interactableDefinitions: options.interactableDefinitions,
+      getRoom: () => this.activeRoom(),
+      getRoomDefinition: () => this.session.roomDefinition,
+      isDiagnosticMode: () => this.diagnosticMode,
+      applyResult: (result) => this.applyResult(result),
+      applyStatefulResult: (result, unchangedText) =>
+        this.applyStatefulResult(result, unchangedText),
+    });
+    const defaultHeroId = options.roomDefinitions[0]?.heroes[0]?.id;
     if (!defaultHeroId)
-      throw new Error("Aucun héros disponible dans le scénario.");
+      throw new Error("Aucun héros disponible dans le micro-donjon.");
     this.defaultHeroId = defaultHeroId;
     this.validHeroIds = new Set(
-      options.roomDefinition.heroes.map((hero) => hero.id),
+      options.roomDefinitions[0]!.heroes.map((hero) => hero.id),
     );
-    this.state = options.restored.gameState ?? createInitialGameState(1);
-    this.room = options.restored.room;
+    this.state = reduceGameState(
+      options.restored.gameState ?? createInitialGameState(1),
+      createEvent("app/ready"),
+    );
+    if (this.session.expedition)
+      this.state = { ...this.state, phase: "expedition" };
     this.selectedHeroIds = [...options.restored.selectedHeroIds];
-    this.roomWasRestored = options.restored.roomWasRestored;
-
-    if (this.room)
-      this.state = {
-        ...this.state,
-        phase: "expedition",
-        expeditionNumber: Math.max(1, this.state.expeditionNumber),
-      };
-    this.state = reduceGameState(this.state, createEvent("app/ready"));
-    if (this.room) this.state = { ...this.state, phase: "expedition" };
+    this.awaitingResume = options.restored.expeditionWasRestored;
+    this.diagnosticMode = options.restored.diagnosticMode;
+    this.migratedLegacyRoom = options.restored.migratedLegacyRoom;
   }
 
   start(): void {
     this.presentation.start();
-    this.events.subscribe((event) => {
-      this.state = reduceGameState(this.state, event);
-      this.shell.appendEvent(describeDomainEvent(event));
-      this.persist();
-    });
     this.shell.heroPicker.addEventListener("change", () =>
       this.updateHeroSelection(),
     );
-    this.shell.startButton.addEventListener("click", () => this.startRoom());
+    this.shell.startButton.addEventListener("click", () =>
+      this.startExpedition(),
+    );
     this.shell.continueButton.addEventListener("click", () =>
-      this.continueRoom(),
+      this.continueExpedition(),
+    );
+    this.shell.nextRoomButton.addEventListener("click", () =>
+      this.enterNextRoom(),
+    );
+    this.shell.replayButton.addEventListener("click", () =>
+      this.replayExpedition(),
+    );
+    this.shell.diagnosticToggleButton.addEventListener("click", () =>
+      this.toggleDiagnosticMode(),
     );
     this.shell.rotateCameraButton.addEventListener("click", () =>
       this.rotateCamera(),
     );
     this.shell.endActivationButton.addEventListener("click", () =>
-      this.endActivation(),
+      this.tactical.endActivation(),
     );
     this.shell.endHeroesTurnButton.addEventListener("click", () =>
-      this.finishHeroesTurn(),
+      this.tactical.finishHeroesTurn(),
     );
     this.shell.resolveEnemyTurnButton.addEventListener("click", () =>
-      this.resolveEnemyTurn(),
+      this.tactical.resolveEnemyTurn(),
+    );
+    this.renderer.onHeroSelected(this.tactical.handleHeroSelection);
+    this.renderer.onCellSelected(this.tactical.handleMove);
+    this.renderer.onEnemySelected(this.tactical.handleAttack);
+    this.renderer.onInteractableSelected(
+      this.tactical.handleInteractableSelection,
     );
 
-    this.renderer.onHeroSelected(this.handleHeroSelection);
-    this.renderer.onCellSelected(this.handleMove);
-    this.renderer.onEnemySelected(this.handleAttack);
-    this.renderer.onInteractableSelected(this.handleInteractableSelection);
-
     this.shell.startButton.disabled = false;
-    this.render(this.roomWasRestored ? "Salle restaurée" : "Prête");
-    this.shell.appendEvent(`${this.dungeon.name} chargé · ${BUILD_LABEL}.`);
+    this.render(this.awaitingResume ? "Expédition sauvegardée" : "Prête");
+    this.shell.appendEvent(
+      `${this.options.dungeon.name} chargé · ${BUILD_LABEL}.`,
+    );
+    if (this.migratedLegacyRoom)
+      this.shell.appendEvent(
+        "Ancienne salle migrée vers la première étape du micro-donjon, sans replay.",
+      );
   }
 
   private render(saveText: string): void {
@@ -141,32 +142,30 @@ export class GameController {
       shell: this.shell,
       renderer: this.renderer,
       state: this.state,
-      room: this.room,
+      expeditionDefinition: this.options.expeditionDefinition,
+      expedition: this.session.expedition,
+      room: this.session.room,
+      roomDefinition: this.session.roomDefinition,
+      roomMetadata: this.session.roomMetadata,
+      connection: this.session.connection,
+      awaitingResume: this.awaitingResume,
+      diagnosticMode: this.diagnosticMode,
       selectedHeroIds: this.selectedHeroIds,
       saveText,
       audioSettings: this.presentation.audioSettings,
       reducedMotion: this.presentation.reducedMotion,
-      brouhahaEffects: this.brouhahaEffects,
-      interactableDefinitions: this.interactableDefinitions,
-      roomDefinition: this.roomDefinition,
-      handlers: {
-        selectHero: this.handleHeroSelection,
-        move: this.handleMove,
-        attack: this.handleAttack,
-        interact: this.handleInteractableAction,
-        spawn: this.handleScriptedSpawn,
-        brouhaha: this.handleBrouhahaControl,
-      },
+      brouhahaEffects: this.options.brouhahaEffects,
+      interactableDefinitions: this.options.interactableDefinitions,
+      handlers: this.tactical.handlers,
     });
   }
 
   private persist(): void {
     const state = this.state;
-    const room = this.room;
-    const selectedHeroIds = [...this.selectedHeroIds];
+    const expedition = this.session.expedition;
     this.shell.setSaveStatus("Enregistrement…");
     void this.persistence
-      .save(state, room, selectedHeroIds)
+      .save(state, expedition, this.diagnosticMode)
       .then(() => this.shell.setSaveStatus("Enregistrée sur cet appareil"))
       .catch((error: unknown) => {
         console.error("[save] écriture locale échouée", error);
@@ -176,6 +175,7 @@ export class GameController {
   }
 
   private updateHeroSelection(): void {
+    if (this.session.expedition) return;
     this.selectedHeroIds = readSelectedHeroIds(
       this.shell.heroPicker,
       this.validHeroIds,
@@ -183,140 +183,84 @@ export class GameController {
     );
   }
 
-  private startRoom(): void {
+  private startExpedition(): void {
     this.presentation.clear();
-    this.room = buildTacticalRoom(
-      this.roomDefinition,
-      this.creatureDefinitions,
-      this.interactableDefinitions,
+    this.updateHeroSelection();
+    const expeditionNumber = this.state.expeditionNumber + 1;
+    const built = this.session.start(
+      `${this.options.expeditionDefinition.id}-${expeditionNumber}`,
       this.selectedHeroIds,
     );
-    const seed = 10_000 + this.state.expeditionNumber * 137 + 1;
-    this.events.publish(createEvent("expedition/started", { seed }));
-    this.render("Salle lancée");
+    const event = createEvent("expedition/started", {
+      seed: 10_000 + expeditionNumber * 137 + 1,
+    });
+    this.state = reduceGameState(this.state, event);
+    this.awaitingResume = false;
+    this.shell.appendEvent(describeDomainEvent(event));
+    this.appendRoomIntroduction();
+    this.render("Enregistrement…");
+    this.presentation.present(built.events);
+    this.persist();
   }
 
-  private continueRoom(): void {
-    if (!this.room) return;
+  private continueExpedition(): void {
+    if (!this.session.expedition || !this.session.room) return;
     this.presentation.clear();
+    this.awaitingResume = false;
     this.state = { ...this.state, phase: "expedition" };
-    this.shell.appendEvent("Reprise de la salle sauvegardée, sans replay.");
-    this.render("Salle restaurée");
+    this.shell.appendEvent("Reprise de l’expédition sauvegardée, sans replay.");
+    this.render("Expédition restaurée");
+  }
+
+  private enterNextRoom(): void {
+    if (this.awaitingResume || !this.session.canTransition) return;
+    const built = this.session.transition();
+    this.presentation.clear();
+    this.appendRoomIntroduction();
+    this.render("Enregistrement…");
+    this.presentation.present(built.events);
+    this.persist();
+  }
+
+  private replayExpedition(): void {
+    if (!this.session.expedition?.result) return;
+    this.selectedHeroIds = [...this.session.expedition.selectedHeroIds];
+    this.startExpedition();
+  }
+
+  private toggleDiagnosticMode(): void {
+    this.diagnosticMode = !this.diagnosticMode;
+    this.shell.appendEvent(
+      this.diagnosticMode
+        ? "Mode diagnostic activé. Les commandes techniques sont visibles."
+        : "Mode diagnostic désactivé. Retour au parcours joueur.",
+    );
+    this.render("Enregistrement…");
+    this.persist();
   }
 
   private rotateCamera(): void {
-    if (!this.room) return;
+    if (!this.session.room || this.awaitingResume) return;
     this.presentation.clear();
     const rotation = this.renderer.rotateCamera();
     this.shell.cameraStatus.textContent = `Vue : ${rotation}°`;
     this.shell.appendEvent(`Caméra pivotée à ${rotation}°.`);
   }
 
-  private endActivation(): void {
-    if (!this.room?.activeHeroId) return;
-    this.applyResult(endHeroActivation(this.room, this.room.activeHeroId));
+  private activeRoom(): RoomState | null {
+    return this.awaitingResume ||
+      this.session.expedition?.status !== "in-progress"
+      ? null
+      : this.session.room;
   }
-
-  private finishHeroesTurn(): void {
-    if (this.room) this.applyResult(endHeroesTurn(this.room));
-  }
-
-  private resolveEnemyTurn(): void {
-    if (this.room) this.applyResult(finishEnemyTurn(this.room));
-  }
-
-  private readonly handleHeroSelection = (heroId: string): void => {
-    if (!this.room) return;
-    this.applyResult(selectHero(this.room, heroId));
-  };
-
-  private readonly handleMove = (position: GridPosition): void => {
-    if (!this.room?.activeHeroId) return;
-    this.applyResult(
-      moveCombatant(this.room, this.room.activeHeroId, position),
-    );
-  };
-
-  private readonly handleAttack = (enemyId: string): void => {
-    if (!this.room?.activeHeroId) return;
-    this.applyResult(attackTarget(this.room, this.room.activeHeroId, enemyId));
-  };
-
-  private readonly handleInteractableSelection = (
-    interactableInstanceId: string,
-  ): void => {
-    if (!this.room) return;
-    const action = availableInteractableActions(
-      this.room,
-      this.interactableDefinitions,
-    ).find(
-      (candidate) =>
-        candidate.interactableInstanceId === interactableInstanceId,
-    );
-    if (action)
-      this.handleInteractableAction(
-        action.interactableInstanceId,
-        action.interactionId,
-      );
-  };
-
-  private readonly handleInteractableAction = (
-    interactableInstanceId: string,
-    interactionId: string,
-  ): void => {
-    if (!this.room) return;
-    this.applyStatefulResult(
-      executeInteractableAction(
-        this.room,
-        this.interactableDefinitions,
-        this.brouhahaEffects,
-        this.roomDefinition.chainReactions,
-        this.creatureDefinitions,
-        this.roomDefinition.brouhahaReinforcements,
-        this.dungeon.id,
-        interactableInstanceId,
-        interactionId,
-      ),
-      "Interaction refusée",
-    );
-  };
-
-  private readonly handleScriptedSpawn = (spawnId: string): void => {
-    if (!this.room) return;
-    const scripted = this.roomDefinition.scriptedSpawns.find(
-      (candidate) => candidate.id === spawnId,
-    );
-    if (!scripted) return;
-    this.applyStatefulResult(
-      executeScriptedSpawn(this.room, this.creatureDefinitions, scripted),
-      "Apparition refusée",
-    );
-  };
-
-  private readonly handleBrouhahaControl = (
-    controlId: BrouhahaControlId,
-  ): void => {
-    if (!this.room) return;
-    this.applyStatefulResult(
-      executeBrouhahaControl(
-        this.room,
-        this.brouhahaEffects,
-        this.creatureDefinitions,
-        this.roomDefinition.brouhahaReinforcements,
-        this.dungeon.id,
-        controlId,
-      ),
-      "Brouhaha inchangé",
-    );
-  };
 
   private applyStatefulResult(
     result: StatefulTacticalResult,
     unchangedText: string,
   ): void {
-    const previousRoom = this.room;
+    const previousRoom = this.session.room;
     const changed = result.state !== previousRoom;
-    this.room = result.state;
+    if (changed) this.applyRoomState(result.state);
     runTacticalResultPipeline({
       previousRoom,
       nextRoom: result.state,
@@ -332,8 +276,8 @@ export class GameController {
       this.shell.appendEvent(result.error.message);
       return;
     }
-    const previousRoom = this.room;
-    this.room = result.value.state;
+    const previousRoom = this.session.room;
+    this.applyRoomState(result.value.state);
     runTacticalResultPipeline({
       previousRoom,
       nextRoom: result.value.state,
@@ -342,5 +286,30 @@ export class GameController {
       present: (events) => this.presentation.present(events),
       persist: () => this.persist(),
     });
+  }
+
+  private applyRoomState(room: RoomState): void {
+    const previous = this.session.expedition;
+    const next = this.session.synchronize(room);
+    this.announceProgress(previous, next);
+  }
+
+  private announceProgress(
+    previous: ExpeditionState | null,
+    next: ExpeditionState,
+  ): void {
+    if (next.completedRoomIds.length > (previous?.completedRoomIds.length ?? 0))
+      this.shell.appendEvent(
+        `${this.session.roomMetadata?.name ?? "Salle"} sécurisée.`,
+      );
+    if (previous?.status !== next.status && next.status === "victory")
+      this.shell.appendEvent("Victoire : les trois salles sont sécurisées.");
+    if (previous?.status !== next.status && next.status === "defeat")
+      this.shell.appendEvent("Défaite : l’expédition est terminée.");
+  }
+
+  private appendRoomIntroduction(): void {
+    const introduction = this.session.roomMetadata?.introduction;
+    if (introduction) this.shell.appendEvent(introduction);
   }
 }

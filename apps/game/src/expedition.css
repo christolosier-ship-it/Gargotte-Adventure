@@ -1,0 +1,40 @@
+.room-objective {
+  max-width: 58rem;
+  margin: 8px 0 0;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.result-card {
+  border-color: rgb(127 189 118 / 80%) !important;
+  color: var(--cream);
+  background: linear-gradient(
+    145deg,
+    rgb(48 82 43 / 92%),
+    rgb(31 48 28 / 96%)
+  ) !important;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.diagnostic-toggle[data-active="true"] {
+  color: #25120d;
+  border-color: transparent;
+  background: var(--danger);
+}
+
+.diagnostic-label {
+  display: block;
+  border: 1px solid var(--danger);
+  border-radius: 10px;
+  padding: 8px 10px;
+  color: var(--danger);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+@media (max-width: 620px) {
+  .room-objective {
+    font-size: 0.85rem;
+  }
+}

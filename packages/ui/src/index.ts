@@ -32,11 +32,19 @@ export function createGameShell(
   }
 
   const status = query<HTMLElement>("[data-status]");
+  const roomTitle = query<HTMLElement>("[data-room-title]");
+  const roomObjective = query<HTMLElement>("[data-room-objective]");
+  const progressStatus = query<HTMLElement>("[data-progress]");
+  const resultPanel = query<HTMLElement>("[data-result]");
   const saveStatus = query<HTMLElement>("[data-save-status]");
   const cameraStatus = query<HTMLElement>("[data-camera-status]");
   const reducedMotionStatus = query<HTMLElement>("[data-reduced-motion]");
   const eventLog = query<HTMLElement>("[data-events]");
+  const startButton = query<HTMLButtonElement>("[data-start]");
   const continueButton = query<HTMLButtonElement>("[data-continue]");
+  const nextRoomButton = query<HTMLButtonElement>("[data-next-room]");
+  const replayButton = query<HTMLButtonElement>("[data-replay]");
+  const diagnosticToggleButton = query<HTMLButtonElement>("[data-diagnostic]");
   const rotateCameraButton = query<HTMLButtonElement>("[data-rotate-camera]");
   const endActivationButton = query<HTMLButtonElement>("[data-end-activation]");
   const endHeroesTurnButton = query<HTMLButtonElement>(
@@ -61,12 +69,19 @@ export function createGameShell(
 
   return {
     boardHost: query("[data-board]"),
+    roomTitle,
+    roomObjective,
+    progressStatus,
+    resultPanel,
     status,
     saveStatus,
     cameraStatus,
     eventLog,
-    startButton: query("[data-start]"),
+    startButton,
     continueButton,
+    nextRoomButton,
+    replayButton,
+    diagnosticToggleButton,
     rotateCameraButton,
     installButton: query("[data-install]"),
     heroPicker,
@@ -80,16 +95,28 @@ export function createGameShell(
     reducedMotionStatus,
     update(next) {
       const tacticalPhase = next.tacticalPhase ?? null;
-      status.textContent =
-        next.phase === "expedition"
-          ? tacticalPhase === "victory"
-            ? "Victoire"
-            : tacticalPhase === "defeat"
-              ? "Défaite"
-              : "Salle en cours"
-          : next.phase;
+      const expeditionStatus = next.expeditionStatus ?? null;
+      status.textContent = statusText(
+        next.phase,
+        expeditionStatus,
+        tacticalPhase,
+      );
       status.dataset.active = String(next.phase === "expedition");
+      roomTitle.textContent = next.roomName ?? "Le Château de Bastognac";
+      roomObjective.textContent =
+        next.roomObjective ??
+        "Choisissez votre équipe avant d’entrer dans les trois salles.";
+      progressStatus.textContent =
+        next.roomProgress ?? "MICRO-DONJON · PRÉPARATION";
+
+      startButton.disabled = !(next.canStart ?? true);
       continueButton.disabled = !next.canContinue;
+      nextRoomButton.disabled = !next.canTransition;
+      nextRoomButton.hidden = !next.canTransition;
+      nextRoomButton.textContent =
+        next.transitionLabel ?? "Passer à la salle suivante";
+      replayButton.disabled = !next.canReplay;
+      replayButton.hidden = !next.canReplay;
       rotateCameraButton.disabled = !next.canRotateCamera;
       cameraStatus.textContent = `Vue : ${next.cameraRotation ?? 0}°`;
       saveStatus.textContent = next.saveText;
@@ -98,20 +125,34 @@ export function createGameShell(
         : "Désactivé";
       reducedMotionStatus.dataset.active = String(next.reducedMotion ?? false);
       setAudioSettings(next.audioMuted ?? false, next.audioVolume ?? 0.7);
+
+      const diagnostic = next.diagnosticMode ?? false;
+      diagnosticToggleButton.setAttribute("aria-pressed", String(diagnostic));
+      diagnosticToggleButton.textContent = diagnostic
+        ? "Quitter le mode diagnostic"
+        : "Activer le mode diagnostic";
+      diagnosticToggleButton.dataset.active = String(diagnostic);
+
+      resultPanel.hidden = !next.resultText;
+      resultPanel.textContent = next.resultText ?? "";
+
       const brouhahaEffects = next.brouhahaEffects?.length
         ? ` · Effets: ${next.brouhahaEffects.join(" + ")}`
         : "";
-      hud.textContent = `Héros actif: ${next.activeHero ?? "aucun"} · Actions: ${"●".repeat(next.actions ?? 0)}${"○".repeat(Math.max(0, 3 - (next.actions ?? 0)))} · Brouhaha: ${next.brouhahaLevel ?? 0}/${next.brouhahaMax ?? 12}${brouhahaEffects} · Phase: ${tacticalPhase ?? "menu"}`;
+      hud.textContent = `Héros actif: ${next.activeHero ?? "aucun"} · Actions: ${"●".repeat(next.actions ?? 0)}${"○".repeat(Math.max(0, 3 - (next.actions ?? 0)))} · Brouhaha: ${next.brouhahaLevel ?? 0}/${next.brouhahaMax ?? 12}${brouhahaEffects} · Phase: ${tacticalPhase ?? "préparation"}`;
       endActivationButton.disabled =
         tacticalPhase !== "heroes-turn" || !next.activeHero;
       endHeroesTurnButton.disabled = tacticalPhase !== "heroes-turn";
       resolveEnemyTurnButton.disabled = tacticalPhase !== "enemy-turn";
 
-      if (next.selectedHeroIds)
-        for (const input of heroPicker.querySelectorAll<HTMLInputElement>(
-          'input[type="checkbox"]',
-        ))
+      const expeditionActive = next.phase === "expedition";
+      for (const input of heroPicker.querySelectorAll<HTMLInputElement>(
+        'input[type="checkbox"]',
+      )) {
+        if (next.selectedHeroIds)
           input.checked = next.selectedHeroIds.includes(input.value);
+        input.disabled = expeditionActive;
+      }
     },
     setSaveStatus(message) {
       saveStatus.textContent = message;
@@ -145,4 +186,17 @@ export function createGameShell(
       trimEventLog();
     },
   };
+}
+
+function statusText(
+  phase: "boot" | "menu" | "expedition",
+  expeditionStatus: "preparation" | "in-progress" | "victory" | "defeat" | null,
+  tacticalPhase: "heroes-turn" | "enemy-turn" | "victory" | "defeat" | null,
+): string {
+  if (expeditionStatus === "victory") return "Victoire";
+  if (expeditionStatus === "defeat") return "Défaite";
+  if (phase !== "expedition") return "Préparation";
+  if (tacticalPhase === "victory") return "Salle sécurisée";
+  if (tacticalPhase === "defeat") return "Défaite";
+  return "Salle en cours";
 }

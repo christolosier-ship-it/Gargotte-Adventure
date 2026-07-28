@@ -9,7 +9,7 @@ import {
   tapOrClick,
 } from "./helpers/canvas";
 
-const goblinInitialId = "gobelin-bricoleur-initial-1";
+const goblinInitialId = "gobelin-bricoleur-spawn-1";
 
 test("reste jouable lorsqu’une texture technique manque réellement", async ({
   page,

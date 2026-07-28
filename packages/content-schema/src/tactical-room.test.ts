@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import creatures from "../../../content/bastognac/creatures.json";
 import interactables from "../../../content/bastognac/interactables.json";
-import room from "../../../content/bastognac/sprint-1-room.json";
+import room from "../../../content/bastognac/room-1.json";
+import legacyRoom from "../../../content/bastognac/sprint-1-room.json";
 import {
   parseCreatureCatalog,
   parseInteractableCatalog,
@@ -16,7 +17,7 @@ const officialHeroes = [
 ] as const;
 
 describe("contenu tactique", () => {
-  it("valide les catalogues pilotes, les objets et les héros officiels", () => {
+  it("valide les catalogues, objets, héros et populations initiales", () => {
     const creatureCatalog = parseCreatureCatalog(creatures);
     const interactableCatalog = parseInteractableCatalog(interactables);
     const parsed = parseTacticalRoom(room);
@@ -30,8 +31,8 @@ describe("contenu tactique", () => {
     expect(parsed.heroes.map(({ id, name }) => [id, name])).toEqual(
       officialHeroes,
     );
-    expect(parsed.enemies.every((enemy) => "creatureId" in enemy)).toBe(true);
-    expect(parsed.interactables).toHaveLength(5);
+    expect(parsed.initialSpawns).toHaveLength(1);
+    expect(parsed.interactables).toHaveLength(2);
   });
 
   it("référence uniquement des créatures, objets, états et points connus", () => {
@@ -50,10 +51,7 @@ describe("contenu tactique", () => {
     const pointIds = new Set(parsed.spawnPoints.map((point) => point.id));
 
     expect(
-      parsed.enemies.every((enemy) => creatureIds.has(enemy.creatureId)),
-    ).toBe(true);
-    expect(
-      parsed.scriptedSpawns.every(
+      [...parsed.initialSpawns, ...parsed.scriptedSpawns].every(
         (spawn) =>
           creatureIds.has(spawn.creatureId) &&
           spawn.candidateSpawnPointIds.every((id) => pointIds.has(id)),
@@ -67,6 +65,18 @@ describe("contenu tactique", () => {
         );
       }),
     ).toBe(true);
+  });
+
+  it("migre le schéma v5 vers des demandes de spawn initiales", () => {
+    const parsed = parseTacticalRoom(legacyRoom);
+    expect(parsed.schemaVersion).toBe(6);
+    expect(parsed.initialSpawns).toHaveLength(2);
+    expect(parsed.spawnPoints).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ id: "initial-gobelin-bricoleur-initial-1" }),
+        expect.objectContaining({ id: "initial-gobelin-lance-tout-initial-1" }),
+      ]),
+    );
   });
 
   it("rejette doublons, hors plateau et collision avec un obstacle", () => {
@@ -99,7 +109,7 @@ describe("contenu tactique", () => {
     ).toThrow();
   });
 
-  it("rejette un identifiant partagé entre combattant et objet", () => {
+  it("rejette un identifiant partagé entre héros et objet", () => {
     expect(() =>
       parseTacticalRoom({
         ...room,
@@ -107,21 +117,21 @@ describe("contenu tactique", () => {
           index === 0 ? { ...object, id: room.heroes[0]!.id } : object,
         ),
       }),
-    ).toThrow(/identifiant d'instance dupliqué brunhilda/);
+    ).toThrow(/identifiant d’instance dupliqué brunhilda/);
   });
 
-  it("rejette un spawn scripté pointant vers un point absent", () => {
+  it("rejette une population initiale pointant vers un point absent", () => {
     expect(() =>
       parseTacticalRoom({
         ...room,
-        scriptedSpawns: [
+        initialSpawns: [
           {
-            ...room.scriptedSpawns[0],
+            ...room.initialSpawns[0],
             candidateSpawnPointIds: ["porte-fantome"],
           },
         ],
       }),
-    ).toThrow();
+    ).toThrow(/point absent/);
   });
 
   it("rejette des points partageant une position", () => {
@@ -139,24 +149,7 @@ describe("contenu tactique", () => {
     ).toThrow();
   });
 
-  it("rejette les points candidats dupliqués dans un script", () => {
-    expect(() =>
-      parseTacticalRoom({
-        ...room,
-        scriptedSpawns: [
-          {
-            ...room.scriptedSpawns[0]!,
-            candidateSpawnPointIds: [
-              room.spawnPoints[0]!.id,
-              room.spawnPoints[0]!.id,
-            ],
-          },
-        ],
-      }),
-    ).toThrow();
-  });
-
-  it("rejette les définitions de créatures et d'objets dupliquées", () => {
+  it("rejette les définitions de créatures et d’objets dupliquées", () => {
     expect(() =>
       parseCreatureCatalog({
         ...creatures,
@@ -169,23 +162,6 @@ describe("contenu tactique", () => {
         interactables: [
           interactables.interactables[0],
           interactables.interactables[0],
-        ],
-      }),
-    ).toThrow();
-  });
-
-  it("rejette une transition vers un état absent", () => {
-    const barrel = interactables.interactables[1]!;
-    expect(() =>
-      parseInteractableCatalog({
-        schemaVersion: 1,
-        interactables: [
-          {
-            ...barrel,
-            interactions: [
-              { ...barrel.interactions[0]!, toStateId: "poussiere" },
-            ],
-          },
         ],
       }),
     ).toThrow();

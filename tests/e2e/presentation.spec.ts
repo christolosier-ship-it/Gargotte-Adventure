@@ -11,6 +11,15 @@ async function moveBrunhildaWithButton(page: Page): Promise<void> {
     .click();
 }
 
+async function activateDiagnosticMode(page: Page): Promise<void> {
+  await page
+    .getByRole("button", { name: "Activer le mode diagnostic" })
+    .click();
+  await expect(
+    page.getByRole("button", { name: /Combat engagé/ }),
+  ).toBeVisible();
+}
+
 test("expose des réglages audio persistants et non bloquants", async ({
   page,
 }) => {
@@ -50,6 +59,7 @@ test("route une action vers un journal groupé et des cues bornés", async ({
     )
     .toBeGreaterThan(0);
 
+  await activateDiagnosticMode(page);
   await page.getByRole("button", { name: /Combat engagé/ }).click();
   await expect
     .poll(async () =>
@@ -98,7 +108,7 @@ test("reprend sans replay et conserve un renderer stable", async ({ page }) => {
     .toBe(0);
 
   await page.reload();
-  await page.getByRole("button", { name: "Reprendre" }).click();
+  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
   await expect(canvasLocator(page)).toHaveAttribute(
     "data-presentation-cue-count",
     "0",
