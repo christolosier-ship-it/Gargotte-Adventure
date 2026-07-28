@@ -130,7 +130,7 @@ if (total > assetBudgets.pilotTotalBytes)
   );
 
 console.log(
-  `Contenu valide: ${dungeon.name} · expédition ${expedition.name} · ${rooms.length} salles · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets · ${interactableCatalog.interactables.length} objets · ${rooms.reduce((total, room) => total + room.initialSpawns.length, 0)} populations initiales · assets ${assetManifest.assets.length}/${total} octets.`,
+  `Contenu valide: ${dungeon.name} · expédition ${expedition.name} · ${rooms.length} salles · ${creatureCatalog.creatures.length} créatures · ${brouhahaCatalog.effects.length} effets · ${interactableCatalog.interactables.length} objets · ${rooms.reduce((sum, room) => sum + room.initialSpawns.length, 0)} populations initiales · assets ${assetManifest.assets.length}/${total} octets.`,
 );
 
 function validateRoomReferences(
@@ -179,7 +179,9 @@ function validateRoomReferences(
           : action.targetInstanceId;
       const placement = placementsById.get(targetId);
       if (!placement)
-        throw new Error(`${room.id}/${reaction.id}: cible absente ${targetId}.`);
+        throw new Error(
+          `${room.id}/${reaction.id}: cible absente ${targetId}.`,
+        );
       if (action.type !== "transition") continue;
       const definition = interactablesById.get(placement.interactableId);
       const interaction = definition?.interactions.find(
