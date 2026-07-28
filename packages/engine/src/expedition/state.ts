@@ -1,8 +1,4 @@
-import {
-  HERO_ACTIONS,
-  withTerminalPhase,
-  type RoomState,
-} from "../tactical";
+import { HERO_ACTIONS, withTerminalPhase, type RoomState } from "../tactical";
 import type {
   ExpeditionResult,
   ExpeditionState,
@@ -24,7 +20,9 @@ export function createExpeditionState(input: {
     input.selectedHeroIds.length === 0 ||
     input.selectedHeroIds.some((id) => !persistentIds.includes(id))
   )
-    throw new Error("L’état persistant doit contenir chaque héros sélectionné.");
+    throw new Error(
+      "L’état persistant doit contenir chaque héros sélectionné.",
+    );
 
   return {
     version: 1,
