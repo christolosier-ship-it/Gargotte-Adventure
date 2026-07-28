@@ -1,10 +1,7 @@
 import type { RoomState } from "../tactical";
 
 export type ExpeditionStatus =
-  | "preparation"
-  | "in-progress"
-  | "victory"
-  | "defeat";
+  "preparation" | "in-progress" | "victory" | "defeat";
 
 export interface PersistentHeroState {
   id: string;
