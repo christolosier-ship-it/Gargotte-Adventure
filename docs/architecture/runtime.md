@@ -2,187 +2,145 @@
 
 ## Statut
 
-Cette page décrit le runtime livré après le Sprint 3.6 et son articulation cible avec le Sprint 4.
+Cette page décrit le runtime stabilisé après le Sprint 4.0.
 
-Le Sprint 3 est fonctionnellement livré. Sept P2 post-fusion restent à traiter au Sprint 4.0 avant l'ajout fonctionnel de l'expédition.
+- Base fonctionnelle : `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf`
+- Sauvegarde tactique : version 6
+- Sprint 3 : définitivement stabilisé
+- Étape suivante : Sprint 4.1, micro-donjon et état d’expédition
 
-## Chemin nominal livré
+## Chemin nominal
 
 1. `apps/game` monte la coque DOM accessible.
 2. `packages/renderer` initialise PixiJS.
-3. `packages/save` restaure l'autosauvegarde versionnée.
-4. `packages/engine` reçoit une intention et produit `RoomState` final plus des événements ordonnés.
-5. Les effets directs, Brouhaha, renforts, réactions et phase terminale sont entièrement résolus selon le type d'intention.
-6. L'état stable est rendu.
-7. `packages/presentation` transforme les événements en cues visuels, audio et journal.
-8. Les adaptateurs jouent ces cues sans modifier l'état.
-9. La demande de persistance est lancée de manière asynchrone par l'orchestration actuelle.
+3. `packages/save` restaure l’autosauvegarde locale.
+4. `packages/engine` reçoit une intention et produit un nouvel état avec des événements.
+5. Les réactions, demandes de Brouhaha, renforts et phases terminales sont résolus dans leur ordre métier.
+6. La pipeline applicative compare l’ancien et le nouvel état pour dériver une transition terminale de présentation lorsqu’elle manque.
+7. Le renderer affiche le nouvel état stable.
+8. Le routeur produit les cues visuels, audio et le journal groupé.
+9. La persistance asynchrone est déclenchée.
 
-```text
-intention → moteur → RoomState final + événements
-                         │
-                         ├─ rendu stable
-                         ├─ routeur de présentation
-                         │    ├─ cues PixiJS
-                         │    ├─ cues Web Audio
-                         │    └─ journal groupé
-                         └─ persistance asynchrone
-```
+L’application ne réimplémente aucune règle métier.
 
-Cette séquence corrige la description antérieure qui plaçait la sauvegarde avant la présentation. Le Sprint 4.0 doit confirmer ce contrat ou modifier l'orchestration, puis verrouiller le choix par les tests.
-
-L'application ne réimplémente aucune règle métier.
-
-## Résolution tactique actuelle
-
-### Action sans interaction d'objet bruyante
+## Ordre garanti d’un résultat accepté
 
 ```text
 intention
-→ validation
-→ déplacement, attaque, capacité ou autre effet direct
-→ réactions éventuelles
-→ Brouhaha secondaire éventuel à sa position causale
-→ effets et renforts associés
-→ phase terminale
-→ RoomState final et événements
+→ moteur tactique
+→ RoomState final + événements
+→ dérivation terminale éventuelle
+→ rendu stable
+→ présentation visuelle, sonore et textuelle
+→ déclenchement de la persistance asynchrone
 ```
 
-### Interaction d'objet bruyante
+La présentation ne dépend pas du succès préalable de l’écriture IndexedDB. Une panne de sauvegarde produit un statut d’erreur mais ne revient pas sur une résolution tactique déjà acceptée.
+
+## Interaction d’objet
 
 ```text
-intention d'interaction
-→ validation
-→ transition ou déplacement direct de l'objet
+interaction du héros
+→ validation de l’objet, de la portée et du coût
+→ transition ou déplacement direct
 → Brouhaha direct éventuel
 → effets et renforts directs
-→ réactions FIFO
-→ Brouhaha secondaire éventuel de chaque action
-→ effets et renforts secondaires
+→ file FIFO de réactions
+→ transitions, déplacements et dégâts secondaires
+→ Brouhaha secondaire à sa position causale
+→ renforts secondaires
 → phase terminale
-→ RoomState final et événements
+→ pipeline de présentation
 ```
 
-Le Brouhaha direct et ses renforts sont résolus avant la propagation. Une apparition directe peut donc modifier l'occupation ou la condition terminale avant les réactions secondaires.
+Une réaction excessive ou cyclique s’arrête explicitement. Le renderer ne connaît ni le graphe, ni les seuils, ni les règles d’apparition.
 
-Les acteurs du Sprint 4 produiront de nouvelles intentions sans contourner ces ordres. Toute divergence future doit être explicitement décidée, documentée et testée.
+## Spawn
 
-## Présentation
+1. Un scénario, une règle de renfort ou un futur générateur produit une `SpawnRequest`.
+2. Le moteur valide phase, définition, points, limites et occupation.
+3. Il crée des `CreatureInstance` avec des identifiants reproductibles.
+4. Il retourne l’état, les instances et les événements explicatifs.
+5. La présentation observe ces événements sans instancier elle-même une créature.
+6. La sauvegarde persiste instances, demandes et séquence.
 
-`routeTacticalPresentation` reçoit les événements déjà résolus et produit des sorties bornées.
+Une apparition n’est jamais créée directement depuis l’UI ou PixiJS.
 
-Il :
+## Renforts de Brouhaha
 
-- ne mute aucune entrée ;
-- ne recalcule aucune cible ou conséquence ;
-- associe les conséquences à une action racine ;
-- conserve l'ordre des cues retenus.
+```text
+BrouhahaRequest acceptée
+→ previousLevel vers level
+→ règles franchies vers le haut
+→ ordre par seuil puis identifiant
+→ activation déterministe
+→ SpawnRequest source brouhaha
+→ moteur de spawn
+→ succès total, partiel ou refus
+→ historique de renfort
+→ cues de présentation
+```
 
-La version fusionnée applique encore les plafonds visuels et audio par troncature. Elle ne garantit donc pas la conservation de tous les cues prioritaires tardifs. Ce P2 doit être corrigé au Sprint 4.0.
-
-Les cues terminaux doivent être dérivés d'une transition métier réelle. Le Sprint 4.0 doit couvrir les chemins ordinaires de victoire et de défaite, pas seulement un événement artificiel.
-
-## Audio
-
-`AudioDirector` joue des tonalités locales Web Audio après une interaction utilisateur. Volume, mute et cache sont applicatifs.
-
-Le Sprint 4.0 doit :
-
-- ignorer les préférences persistées invalides ou incomplètes ;
-- conserver les valeurs par défaut ;
-- empêcher la superposition de tonalités répétées de même clé ;
-- maintenir une partie jouable lorsque Web Audio échoue.
-
-## Reprise
-
-Une reprise reconstruit l'état sauvegardé sans rejouer les événements historiques. Aucun son, overlay, impact, spawn initial ou renfort déjà résolu n'est reproduit.
-
-Le Sprint 4 étendra ce principe à `ExpeditionState` : restaurer la salle courante, l'équipe et les salles enregistrées sans rejouer les transitions ou présentations historiques.
+Une baisse ne déclenche rien. Une reprise ou une migration ne rejoue aucun seuil ancien. Une activation refusée est consommée et historisée.
 
 ## Tour ennemi
 
-Le roster vivant est capturé et trié au passage en `enemy-turn`. La machine transmet cette liste figée à `runEnemyTurn`.
+Le roster des ennemis vivants est capturé et trié au passage en `enemy-turn`.
 
-Un appel direct à `runEnemyTurn(state)` utilise le roster capturé s'il est non vide, sinon reconstruit un fallback vivant.
+La machine de tour transmet cette liste figée à `runEnemyTurn`, de sorte qu’un renfort créé après l’ouverture du roster attend le tour ennemi suivant.
 
-Le Sprint 4 enrichira la sélection d'intentions ennemies par des profils déclaratifs. La résolution finale continuera à utiliser les moteurs tactiques existants.
+Un appel direct à `runEnemyTurn(state)` utilise le roster capturé lorsqu’il est non vide. S’il est vide, la fonction reconstruit un fallback à partir des ennemis vivants.
 
-## Runtime cible de l'expédition
+## Phase terminale et présentation
 
-```text
-intention d'expédition ou tactique
-        │
-        ▼
-ExpeditionState + RoomState courant
-        │
-        ├─ intention tactique → moteur de salle
-        │
-        └─ intention de transition
-               ├─ vérifie complétion, sortie et connexion
-               ├─ extrait l'état persistant des héros
-               ├─ clôt la salle source
-               ├─ restaure ou crée la salle cible
-               └─ met à jour la progression
-```
+Le moteur reste l’autorité sur `victory` et `defeat`.
 
-Une salle est ajoutée à `completedRoomIds` dès que sa condition locale est remplie et toutes ses conséquences résolues. Les salles 1 et 2 autorisent ensuite une transition explicite. La salle 3 peut produire directement la victoire globale sans transition supplémentaire.
+La pipeline applicative ajoute un événement `phase-changed` uniquement lorsque :
 
-Une transition est refusée tant que la résolution tactique courante n'est pas entièrement terminée ou que la salle source n'est pas enregistrée comme terminée.
+- le nouvel état est terminal ;
+- l’ancien état n’avait pas déjà cette phase ;
+- les événements ne contiennent pas déjà la même transition.
 
-Lors de la première création d'une salle, les populations initiales sont traduites en `SpawnRequest` déterministes et exécutées par le moteur de spawn. Aucun orchestrateur d'expédition ne construit directement une `CreatureInstance`.
+Le cue terminal est donc disponible pour le renderer, l’audio et le journal sans modifier le moteur ni la sauvegarde.
 
-## Persistance cible
+## Audio
 
-La sauvegarde doit distinguer :
+Les préférences sont chargées hors de `RoomState`.
 
-- enveloppe d'expédition ;
-- états tactiques des trois salles ;
-- état persistant des héros ;
-- préférences applicatives hors état métier.
+- les champs persistés sont validés séparément ;
+- une valeur invalide préserve le réglage courant ;
+- une clé répétée redémarre son lecteur au lieu de superposer les sons ;
+- le mode muet, l’autoplay et les fallbacks n’influencent pas les règles.
 
-Le Brouhaha, les ennemis, objets, réactions et renforts restent propres à chaque salle.
+## Persistance tactique
 
-Le Sprint 4.1 définit le schéma Zod, le format de sauvegarde, la version initiale et la stratégie de migration de l'expédition avant l'implémentation des transitions. Le Sprint 4.2 définit ensuite les contrats et migrations propres aux acteurs et comportements.
+La sauvegarde version 6 conserve notamment :
 
-## Mode diagnostic
+- combattants, phase, tour et actions ;
+- Brouhaha, historique et séquence ;
+- objets, interactions et réactions ;
+- points, demandes et séquence de spawn ;
+- historique, résultats et séquence des renforts ;
+- `enemyTurnRoster` ;
+- héros sélectionnés.
 
-Le mode diagnostic est une branche explicite de l'orchestration applicative. Il peut produire des intentions techniques, mais n'ajoute aucune règle au moteur et n'est jamais requis dans le parcours joueur.
-
-Le parcours normal ne doit plus afficher les commandes de changement manuel du Brouhaha, spawn forcé, navigation directe, modification de PV ou phase terminale forcée.
-
-## Diagnostics et tests
-
-Les tests actuels observent :
-
-- canvas unique ;
-- listeners ;
-- objets stables et transitoires ;
-- génération et quantité de cues ;
-- cache et état audio ;
-- mouvement réduit ;
-- journal borné.
-
-Le Sprint 4 ajoutera :
-
-- schémas et sauvegarde d'expédition dès 4.1 ;
-- population initiale par `SpawnRequest` ;
-- état et salle courante d'expédition ;
-- complétion de la troisième salle sans transition ;
-- transitions ;
-- persistance des héros ;
-- reprise dans chaque salle ;
-- absence de commandes techniques en mode joueur ;
-- explications des décisions ennemies.
+Les effets visuels et audio transitoires ne sont jamais sauvegardés.
 
 ## Frontières
 
 - moteur sans DOM, PixiJS ou IndexedDB ;
-- présentation sans décision métier ;
-- renderer sans instanciation tactique ni transition d'expédition ;
-- audio sans appel réseau tiers ;
-- sauvegarde indépendante des effets transitoires ;
-- `ExpeditionState` sans duplication des règles de salle ;
-- moteur de spawn comme frontière unique d'instanciation des créatures ;
-- Gargottex en lecture seule ;
-- PWA jouable hors ligne après le premier chargement ;
-- aucune génération procédurale au Sprint 4.
+- contenu validé avant le build et au chargement ;
+- renderer sans décision métier ;
+- présentation dérivée uniquement des événements et des changements d’état ;
+- audio sans autorité tactique ;
+- sauvegarde versionnée et validée avant restauration ;
+- Gargottex consulté uniquement en lecture seule ;
+- aucun secret ou appel OpenAI dans la PWA.
+
+## Hors ligne
+
+`vite-plugin-pwa` génère le service worker et précharge les ressources de production. IndexedDB conserve la progression. Après un premier chargement connecté, les sessions peuvent fonctionner hors ligne.
+
+## Préparation du Sprint 4.1
+
+Le futur `ExpeditionState` sera ajouté au-dessus des états de salle. Il ne doit pas modifier les contrats stabilisés de résolution tactique, de présentation ou de persistance d’une salle.
