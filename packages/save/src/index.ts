@@ -1,5 +1,9 @@
 import { openDB, type DBSchema, type IDBPDatabase } from "idb";
 import type { GameState, RoomState } from "@gargotte/engine";
+import {
+  parseSavedExpeditionPayload,
+  type SavedExpeditionPayload,
+} from "./expedition-schema";
 import { parseSavedGameState, parseSavedRoomPayload } from "./schema";
 
 interface SaveRecord {
@@ -60,6 +64,32 @@ export async function clearGameState(): Promise<void> {
   await database.delete("saves", "autosave");
 }
 
+export async function saveExpeditionState(
+  payload: SavedExpeditionPayload,
+): Promise<void> {
+  const database = await getDatabase();
+  const transaction = database.transaction("saves", "readwrite");
+  await transaction.store.put(saveRecord("expedition-autosave", payload));
+  await transaction.store.delete("room-autosave");
+  await transaction.done;
+}
+
+export async function loadExpeditionState(): Promise<SavedExpeditionPayload | null> {
+  try {
+    const database = await getDatabase();
+    const save = await database.get("saves", "expedition-autosave");
+    return parseSavedExpeditionPayload(save?.state);
+  } catch (error) {
+    console.error("[save] lecture de l’expédition échouée", error);
+    return null;
+  }
+}
+
+export async function clearExpeditionState(): Promise<void> {
+  const database = await getDatabase();
+  await database.delete("saves", "expedition-autosave");
+}
+
 export interface SavedRoomPayload {
   kind: "tactical-room";
   version: 6;
@@ -94,6 +124,12 @@ export async function clearRoomState(): Promise<void> {
   await database.delete("saves", "room-autosave");
 }
 
+export {
+  expeditionStateSchema,
+  parseSavedExpeditionPayload,
+  savedExpeditionPayloadSchema,
+} from "./expedition-schema";
+export type { SavedExpeditionPayload } from "./expedition-schema";
 export {
   gameStateSchema,
   roomStateSchema,
