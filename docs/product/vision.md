@@ -2,111 +2,61 @@
 
 ## Promesse
 
-**Gargotte Adventure** est un jeu de plateau numérique coopératif, tactique et volontairement absurde, où des héros en slip nettoient des donjons qui semblent avoir été conçus par un architecte ivre mais méthodique.
+**Gargotte Adventure** est un jeu de plateau numérique coopératif, tactique et volontairement absurde, où le joueur comprend pourquoi chaque événement se produit et peut anticiper les conséquences de ses actions.
 
-Le joueur doit comprendre pourquoi chaque événement se produit, anticiper les conséquences de ses actions et rire lorsque le décor décide de participer.
+Le premier vertical slice est consacré au **Château de Bastognac**.
 
 ## Public visé
 
 - joueurs appréciant les jeux tactiques accessibles ;
-- familles et groupes jouant autour d'une tablette ;
+- familles et groupes jouant autour d’une tablette ;
 - amateurs de dungeon crawlers sans lourdeur comptable ;
 - joueurs attirés par un humour fantasy brassicole et une forte identité visuelle.
 
-## Piliers d'expérience
+## Piliers d’expérience
 
-### 1. Tactique lisible
+### Tactique lisible
 
-Trois actions par héros, dégâts et portée compréhensibles, IA déterministe et explicable, priorité à l'anticipation plutôt qu'au hasard caché.
+Trois actions par héros, dégâts et portée compréhensibles, IA déterministe et priorité à l’anticipation plutôt qu’au hasard caché.
 
-### 2. Brouhaha vivant
+### Brouhaha vivant
 
-Le bruit est une ressource, un risque et un moteur narratif. Les Sprints 3.1 à 3.6 ont livré la jauge 0 à 12, les effets, les renforts et leur présentation visuelle, sonore et textuelle.
+Le Brouhaha 0 à 12, ses effets, son historique, ses renforts et sa présentation sont livrés. Il reste local à chaque salle et toutes ses variations passent par des demandes explicites au moteur.
 
-Le Sprint 4 doit en faire une donnée réellement utilisée par les héros et créatures. Les variations restent des demandes explicites au moteur de Brouhaha et les influences sur les comportements restent déclaratives.
+### Décor acteur
 
-### 3. Décor acteur
+Tables, tonneaux, grilles, torches et piliers créent des choix tactiques, des poussées, des changements d’état et des réactions en chaîne.
 
-Tables, tonneaux, grilles, torches et piliers créent des choix tactiques, des réactions en chaîne et des catastrophes comiques.
+### Personnages immédiatement identifiables
 
-Le Sprint 4 doit permettre aux héros et créatures d'utiliser, protéger, déplacer, détruire ou éviter ce décor par des intentions résolues par les moteurs existants.
+Le Sprint 4 doit finaliser les quatre héros, les seize créatures de Bastognac, leurs compétences, leurs interactions avec le décor, leurs relations avec le Brouhaha et leurs profils d’IA expliqués.
 
-### 4. Personnages immédiatement identifiables
-
-Chaque héros et créature possède une silhouette, un rôle, un comportement et une personnalité lisibles en quelques secondes.
-
-Le Sprint 4 doit finaliser :
-
-- les quatre héros ;
-- les seize créatures de Bastognac ;
-- leurs compétences et capacités ;
-- leurs interactions avec le décor ;
-- leurs relations avec le Brouhaha ;
-- des profils d'IA déterministes et expliqués.
-
-Il ne s'agit pas d'un simple lot de statistiques, fiches et sprites.
-
-### 5. Partie fluide sur écran tactile
+### Partie fluide sur écran tactile
 
 - commandes à un doigt ;
-- informations essentielles visibles sans sous-menu permanent ;
 - grandes zones tactiles ;
 - fonctionnement en paysage ;
-- reprise rapide ;
 - clavier et souris conservés ;
-- mouvement réduit et mode muet disponibles ;
-- commandes techniques absentes du parcours joueur normal ;
+- reprise rapide ;
+- mouvement réduit et mode muet ;
+- commandes techniques absentes du parcours normal ;
 - mode diagnostic séparé.
 
-### 6. Expédition compréhensible
+### Expédition compréhensible
 
-Le Sprint 4 doit valider une expédition fixe de trois salles adjacentes : préparation, progression, objectifs locaux, transfert des héros, victoire ou défaite globale.
+Le Sprint 4.1 a livré une expédition fixe de trois salles adjacentes : préparation, progression, objectifs locaux, transfert des héros, victoire ou défaite globale et reprise cohérente.
 
-Le Sprint 5 générera ensuite les cinq étages, la topologie, la géométrie et les rencontres. Chaque salle possède son propre budget de menace et son propre Brouhaha.
-
-## Premier vertical slice
-
-Le **Château de Bastognac** doit finalement valider :
-
-- la boucle préparation → salles → résultat → progression ;
-- les quatre héros de départ ;
-- seize créatures ;
-- le Brouhaha 0 à 12 ;
-- les objets interactifs et réactions ;
-- les renforts et instances multiples ;
-- plusieurs comportements IA ;
-- cinq étages générés ;
-- les rencontres par budget de salle ;
-- le Baron Pas-Très-Terrifiant ;
-- la sauvegarde locale ;
-- l'installation sur l'écran d'accueil.
-
-Le Sprint 4 valide une tranche intermédiaire proche du résultat final sur trois salles fixes. Le Sprint 5 complète la génération, le loot, la progression, la campagne et le boss.
+Le Sprint 5 générera ensuite cinq étages, leur topologie, leur géométrie et leurs rencontres. Chaque salle conserve son propre budget de menace et son propre Brouhaha.
 
 ## Cible du Sprint 4
 
 ```text
-Préparation de l'expédition
+Préparation de l’expédition
 → Salle 1 : prise en main tactique
 → Salle 2 : décor, réactions et Brouhaha
 → Salle 3 : confrontation complète
 → Résultat du micro-donjon
 ```
-
-Le joueur doit pouvoir :
-
-- sélectionner de un à quatre héros ;
-- comprendre leurs rôles et compétences ;
-- conserver leur état entre les salles ;
-- affronter plusieurs profils de créatures ;
-- comprendre les décisions ennemies ;
-- utiliser ou subir le décor ;
-- influencer et subir le Brouhaha ;
-- gérer des renforts complets, partiels ou refusés ;
-- remplir un objectif local et ouvrir la sortie ;
-- atteindre une victoire ou une défaite globale ;
-- reprendre l'expédition après fermeture ;
-- terminer sans commande technique.
 
 ## Avancement du vertical slice
 
@@ -115,46 +65,40 @@ Le joueur doit pouvoir :
 - PWA installable et offline-first ;
 - architecture moteur, présentation, rendu, UI et sauvegarde ;
 - quatre héros pilotes sélectionnables ;
-- salle tactique 8 × 4 ;
 - déplacement, portée, ligne de vue et combat ;
 - IA déterministe pilote ;
-- victoire et défaite de salle ;
-- sauvegarde et reprise versionnée ;
+- victoire et défaite tactiques ;
 - plateau isométrique et caméra ;
-- pipeline d'assets et fallbacks ;
+- pipeline d’assets et fallbacks ;
 - spawn déterministe et instances multiples ;
 - Brouhaha 0 à 12, historique et effets ;
-- objets interactifs ;
-- poussées et réactions en chaîne ;
-- renforts explicables, limités et persistants ;
-- roster ennemi figé avec fallback direct ;
-- routeur pur de présentation ;
-- cues visuels transitoires ;
-- audio local avec volume, mute et autoplay ;
-- journal causal groupé et borné ;
-- reprise sans replay ;
-- mouvement réduit ;
-- diagnostics de stabilité ;
+- objets interactifs, poussées et réactions ;
+- renforts explicables et persistants ;
+- routeur de présentation, cues visuels, audio local et journal causal ;
+- reprise sans replay et mouvement réduit ;
+- micro-donjon manuel de trois salles ;
+- `ExpeditionState` version 1 ;
+- sauvegarde d’expédition et migration ;
+- PV des héros persistants entre les salles ;
+- transitions explicites ;
+- victoire ou défaite globale ;
+- résultat et rejeu ;
+- mode diagnostic distinct ;
 - tests desktop et mobile paysage.
-
-### Réserve de stabilisation
-
-Sept P2 post-fusion doivent être traités avant l'ouverture fonctionnelle du Sprint 4 : cues terminaux, validation des préférences audio, priorité des cues, redémarrage des tonalités, garantie documentaire, ordre runtime et validation de frontière du package `presentation`.
 
 ### Sprint 4 restant
 
-- état minimal d'expédition ;
-- trois salles adjacentes fixes ;
-- objectifs, portes et transitions ;
+- contrats détaillés des héros et créatures ;
+- compétences et capacités ;
 - quatre héros définitifs ;
 - seize créatures ;
-- compétences et capacités ;
-- profils d'IA différenciés ;
+- profils d’IA différenciés ;
 - interactions ennemies avec le décor ;
 - influences du Brouhaha sur les comportements ;
-- parcours joueur débarrassé des commandes techniques ;
-- mode diagnostic distinct ;
-- résultat global et reprise sur les trois salles.
+- enrichissement des trois salles ;
+- équilibrage et tutoriel final du micro-donjon.
+
+Le Sprint 4.2 est la prochaine phase active.
 
 ### Sprint 5 restant
 
@@ -164,11 +108,32 @@ Sept P2 post-fusion doivent être traités avant l'ouverture fonctionnelle du Sp
 - loot et progression ;
 - campagne ;
 - boss final ;
-- reprise d'une expédition générée ;
+- reprise d’une expédition générée ;
 - médias, animations et audio définitifs ;
 - validation utilisateur sur appareils réels.
 
-## Ce que le projet n'est pas
+## Critères de réussite du micro-donjon Sprint 4
+
+Déjà validés par le Sprint 4.1 :
+
+- trois salles fixes connectées ;
+- état des héros conservé ;
+- Brouhaha local ;
+- victoire ou défaite globale ;
+- sauvegarde survivant à la fermeture ;
+- parcours normal sans commandes techniques ;
+- fonctionnement desktop et mobile paysage ;
+- aucune génération du Sprint 5.
+
+Restent à valider dans les lots 4.2 à 4.7 :
+
+- rôles et compétences définitifs ;
+- plusieurs profils d’IA combinés ;
+- objets utilisés par les héros et créatures ;
+- comportements influencés par le Brouhaha ;
+- équilibrage et lisibilité du parcours complet.
+
+## Ce que le projet n’est pas
 
 - un portage numérique strict du plateau physique ;
 - un jeu de hasard déguisé ;
@@ -178,25 +143,6 @@ Sept P2 post-fusion doivent être traités avant l'ouverture fonctionnelle du Sp
 - une vitrine technique sans intérêt joueur ;
 - un parcours dépendant de commandes de diagnostic.
 
-## Critères de réussite du micro-donjon Sprint 4
+## Frontières
 
-- trois salles fixes connectées et jouables ;
-- état des héros conservé entre les salles ;
-- Brouhaha local à chaque salle ;
-- décisions ennemies, réactions et apparitions explicables ;
-- plusieurs profils d'IA combinés ;
-- objets utilisés par les héros et créatures ;
-- victoire ou défaite globale ;
-- sauvegarde survivant à la fermeture ;
-- parcours complet sans commandes techniques ;
-- fonctionnement desktop, tablette et mobile paysage ;
-- aucune génération du Sprint 5 ;
-- aucune clé API nécessaire.
-
-## Critères de réussite du prototype Bastognac final
-
-- expédition de cinq étages générés ;
-- budget de menace respecté par salle ;
-- ajout d'une créature sans modification du moteur ;
-- loot, progression, campagne et boss final ;
-- humour et rythme de Gargotte & Va-Nu-Pieds conservés.
+Le Sprint 4 construit ses trois salles à la main. Le Sprint 5 porte la génération. Gargottex reste une source éditoriale externe strictement consultée en lecture seule.

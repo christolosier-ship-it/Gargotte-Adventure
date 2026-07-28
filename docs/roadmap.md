@@ -4,16 +4,17 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d’avancement
 
-| Sprint                                              | Statut          | Résultat principal                                                         |
-| --------------------------------------------------- | --------------- | -------------------------------------------------------------------------- |
-| Sprint 0 : Fondations                               | ✅ Terminé      | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac     |
-| Sprint 1 : Boucle de salle                          | ✅ Terminé      | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise               |
-| Sprint 2 : Plateau isométrique                      | ✅ Terminé      | Salle jouable en 2D isométrique avec pipeline graphique réutilisable       |
-| Sprint 3 : Brouhaha, spawn, décor et présentation   | ✅ Stabilisé    | Systèmes tactiques et présentation définitivement validés                  |
-| Sprint 4.0 : Stabilisation finale du Sprint 3.6     | ✅ Terminé      | Sept P2 corrigés, revue résolue et nouvelle base stable                    |
-| Sprint 4.1 : Micro-donjon et état d’expédition      | Prochaine phase | Trois salles fixes, connexions, transitions et persistance inter-salles    |
-| Sprint 4.2 à 4.7 : Acteurs et intégration Bastognac | Cadré           | Héros, créatures, IA, trois salles complètes et résultat du micro-donjon   |
-| Sprint 5 : Donjon complet généré                    | À venir         | Cinq étages générés, rencontres par salle, loot, progression et boss final |
+| Sprint                                             | Statut          | Résultat principal                                                         |
+| -------------------------------------------------- | --------------- | -------------------------------------------------------------------------- |
+| Sprint 0 : Fondations                              | ✅ Terminé      | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac     |
+| Sprint 1 : Boucle de salle                         | ✅ Terminé      | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise               |
+| Sprint 2 : Plateau isométrique                     | ✅ Terminé      | Salle jouable en 2D isométrique avec pipeline graphique réutilisable       |
+| Sprint 3 : Brouhaha, spawn, décor et présentation  | ✅ Stabilisé    | Systèmes tactiques et présentation définitivement validés                  |
+| Sprint 4.0 : Stabilisation finale du Sprint 3.6    | ✅ Terminé      | Sept P2 corrigés, revue résolue et nouvelle base stable                    |
+| Sprint 4.1 : Micro-donjon et état d’expédition     | ✅ Terminé      | Trois salles fixes, connexions, transitions et persistance inter-salles    |
+| Sprint 4.2 : Contrats des acteurs et comportements | Prochaine phase | Héros, créatures, compétences et comportements déclaratifs                 |
+| Sprint 4.3 à 4.7 : Intégration Bastognac           | Cadré           | Quatre héros, seize créatures, IA et micro-donjon proche du résultat final |
+| Sprint 5 : Donjon complet généré                   | À venir         | Cinq étages générés, rencontres par salle, loot, progression et boss final |
 
 ## Sprints 0 à 2
 
@@ -52,18 +53,27 @@ Références :
 
 Livré par la PR #64 au commit `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf`.
 
+Voir [Audit du Sprint 4.0](audits/sprint-4-0-stabilization.md).
+
+## Sprint 4.1 : micro-donjon et état d’expédition ✅
+
+Livré par la PR #67 au commit `18acb7947fc9625d606213c6db02e7947e5e9f44`.
+
 Résultats :
 
-- cues terminaux dérivés des transitions réelles victoire et défaite ;
-- préférences audio persistées validées défensivement ;
-- cues prioritaires conservés sous les plafonds puis remis dans leur ordre causal ;
-- tonalités répétées redémarrées sans superposition ;
-- ordre runtime figé et testé : rendu stable, présentation, persistance asynchrone ;
-- `packages/presentation` intégré au validateur des frontières ;
-- tests unitaires et Playwright bureau/mobile verts ;
-- sept fils de revue historiques résolus.
+- trois salles fixes de Bastognac et deux connexions déclarées ;
+- `ExpeditionDefinition` et `ExpeditionState` versionnés ;
+- sauvegarde d’expédition version 1 et migration de l’ancienne salle unique ;
+- populations initiales exécutées uniquement par `SpawnRequest` ;
+- PV et état vivant des héros conservés entre les salles ;
+- Brouhaha, ennemis, objets et historiques locaux à chaque salle ;
+- complétion idempotente avant transition ;
+- victoire ou défaite globale et écran de résultat ;
+- reprise sans replay ;
+- mode diagnostic séparé du parcours joueur ;
+- Playwright complet vert sur bureau et mobile paysage.
 
-Voir [Audit du Sprint 4.0](audits/sprint-4-0-stabilization.md).
+Voir [Audit du Sprint 4.1](audits/sprint-4-1-micro-dungeon-expedition.md).
 
 ## Sprint 4 : micro-donjon, héros, créatures et comportements
 
@@ -81,12 +91,12 @@ Préparation
 → Résultat du micro-donjon
 ```
 
-Les salles, connexions, objectifs, placements, objets, réactions, points de spawn, renforts et conditions de sortie sont écrits à la main.
+Le socle d’expédition, la navigation, la persistance et le résultat global sont livrés. Les prochains lots enrichissent les acteurs et les comportements sans réimplémenter cet orchestrateur.
 
 ### Lots
 
-- **4.1** : micro-donjon, phases de jeu et état d’expédition ;
-- **4.2** : contrats des héros, créatures, compétences et comportements ;
+- **4.1** : micro-donjon, phases de jeu et état d’expédition, terminé ;
+- **4.2** : contrats des héros, créatures, compétences et comportements, prochaine phase ;
 - **4.3** : quatre héros ;
 - **4.4** : bestiaire de seize créatures ;
 - **4.5** : IA, objets et Brouhaha ;
