@@ -11,7 +11,7 @@
 
 ## Objectif
 
-Le moteur de spawn ajoute des créatures à une salle déjà créée, pendant son initialisation ou en cours de partie, sans confondre la définition éditoriale d'une créature avec son état runtime.
+Le moteur de spawn ajoute des créatures à une salle pendant son initialisation ou en cours de partie, sans confondre la définition éditoriale d'une créature avec son état runtime.
 
 Il reste la frontière unique d'instanciation des créatures au Sprint 4 et au Sprint 5.
 
@@ -20,7 +20,10 @@ Il reste la frontière unique d'instanciation des créatures au Sprint 4 et au S
 ```text
 CreatureDefinition
       │
-placement initial ou SpawnRequest
+placement éditorial
+      │
+      ▼
+SpawnRequest initiale ou runtime
       │
       ▼
 moteur de spawn
@@ -65,6 +68,8 @@ Demande sérialisable contenant :
 - points candidats ordonnés ;
 - mode `all-or-nothing` ou `partial`.
 
+Les demandes initiales utilisent une source dédiée et des identifiants dérivés de la salle et du placement éditorial. Elles sont soumises une seule fois lors de la première création de la salle.
+
 ### `SpawnResult`
 
 Résultat pur comprenant nouvel état, instances créées, refus structurés et événements tactiques.
@@ -95,11 +100,21 @@ Un refus total peut consommer l'activation de renfort sans modifier les champs d
 
 ## Utilisation par le Sprint 4
 
-### Placements initiaux
+### Populations initiales
 
-Les trois salles sont écrites à la main. Leurs populations initiales sont explicitement déclarées et validées.
+Les trois salles sont écrites à la main. Le contenu déclare explicitement leurs populations initiales et leurs points candidats ordonnés.
 
-L'implémentation peut représenter ces placements par un état initial validé ou par des demandes initiales, mais toute création runtime supplémentaire doit passer par le moteur de spawn. Le choix exact sera fixé au Sprint 4.2 avec la stratégie de contenu et de migration.
+Lors de la première création d'une salle :
+
+1. l'état tactique est construit sans `CreatureInstance` ennemie directe ;
+2. les placements éditoriaux sont traduits en `SpawnRequest` initiales déterministes ;
+3. ces demandes sont exécutées dans un ordre stable par le moteur de spawn ;
+4. demandes traitées, séquence, instances et événements produits sont conservés dans `RoomState` ;
+5. une reprise restaure cet état sans rejouer les demandes initiales.
+
+Aucune couche de contenu, d'expédition, d'IA ou d'application ne construit directement une `CreatureInstance`, y compris pendant l'initialisation.
+
+Le Sprint 4.1 définit le contrat des demandes initiales avec les schémas d'expédition et de salle. Le Sprint 4.2 enrichit les `CreatureDefinition` sans modifier cette frontière.
 
 ### Renforts
 
@@ -134,7 +149,8 @@ Les héros sont transférés par le contrat d'expédition, pas par le moteur de 
 7. Les coordonnées restent logiques et indépendantes de la caméra.
 8. Le moteur ne dépend ni du DOM, ni de PixiJS, ni d'IndexedDB.
 9. Le renderer ne décide jamais de l'apparition.
-10. Aucun acteur ou profil d'IA ne construit directement une `CreatureInstance`.
+10. Toute créature initiale ou runtime est créée par une `SpawnRequest` exécutée par le moteur de spawn.
+11. Aucun acteur, profil d'IA ou orchestrateur d'expédition ne construit directement une `CreatureInstance`.
 
 ## Événements
 
@@ -145,11 +161,13 @@ Les héros sont transférés par le contrat d'expédition, pas par le moteur de 
 
 La politique de renfort encadre ces événements avec `reinforcement-triggered` et `reinforcement-resolved`.
 
+Les demandes initiales produisent les événements ordinaires du spawn. La présentation de la salle peut les résumer sans les rejouer lors d'une reprise.
+
 ## Budget de menace
 
 Le budget de menace appartient à chaque salle. Le moteur de spawn ne le lit ni ne le dépense.
 
-Au Sprint 4, les compositions sont écrites à la main. Au Sprint 5, le générateur de rencontre utilisera le budget propre à la salle pour produire un plan ou des demandes initiales.
+Au Sprint 4, les compositions sont écrites à la main et traduites en demandes initiales. Au Sprint 5, le générateur de rencontre utilisera le budget propre à la salle pour produire des `SpawnRequest` initiales.
 
 ## Sauvegarde et tests
 
@@ -157,6 +175,9 @@ La sauvegarde version 6 conserve les champs actuels de spawn et l'historique sé
 
 Le Sprint 4 ajoutera des tests pour :
 
+- populations initiales créées uniquement par `SpawnRequest` ;
+- ordre stable des demandes initiales ;
+- absence de replay après reprise ;
 - toutes les catégories du bestiaire ;
 - placements et renforts des trois salles ;
 - succès total, partiel et refus ;
