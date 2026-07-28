@@ -2,8 +2,10 @@ import {
   parseBrouhahaEffectCatalog,
   parseCreatureCatalog,
   parseDungeon,
+  parseExpeditionDefinition,
   parseInteractableCatalog,
   parseTacticalRoom,
+  type TacticalRoomDefinition,
 } from "@gargotte/content-schema";
 import type {
   BrouhahaEffectDefinition,
@@ -14,16 +16,28 @@ import type { TabletopAssetCatalog } from "@gargotte/renderer";
 import brouhahaEffectData from "../../../content/bastognac/brouhaha-effects.json";
 import creatureData from "../../../content/bastognac/creatures.json";
 import dungeonData from "../../../content/bastognac/dungeon.json";
+import expeditionData from "../../../content/bastognac/expedition.json";
 import interactableData from "../../../content/bastognac/interactables.json";
-import roomData from "../../../content/bastognac/sprint-1-room.json";
+import room1Data from "../../../content/bastognac/room-1.json";
+import room2Data from "../../../content/bastognac/room-2.json";
+import room3Data from "../../../content/bastognac/room-3.json";
 
 export const bastognacDungeon = parseDungeon(dungeonData);
+export const bastognacExpedition = parseExpeditionDefinition(expeditionData);
 export const bastognacCreatureCatalog = parseCreatureCatalog(creatureData);
 export const bastognacBrouhahaEffectCatalog =
   parseBrouhahaEffectCatalog(brouhahaEffectData);
 export const bastognacInteractableCatalog =
   parseInteractableCatalog(interactableData);
-export const bastognacRoom = parseTacticalRoom(roomData);
+export const bastognacRoomDefinitions: TacticalRoomDefinition[] = [
+  parseTacticalRoom(room1Data),
+  parseTacticalRoom(room2Data),
+  parseTacticalRoom(room3Data),
+];
+export const bastognacRoom = bastognacRoomDefinitions[0]!;
+export const bastognacRoomsById = new Map(
+  bastognacRoomDefinitions.map((room) => [room.id, room]),
+);
 export const bastognacCreatureDefinitions: CreatureDefinition[] =
   bastognacCreatureCatalog.creatures.map((creature) => ({
     id: creature.id,
@@ -41,7 +55,7 @@ export const bastognacInteractableDefinitions: InteractableDefinition[] =
 
 export const bastognacAssetCatalog: TabletopAssetCatalog = {
   canvasLabel: "Plateau tactique PixiJS de Bastognac",
-  roomTitle: "BASTOGNAC · SALLE TACTIQUE",
+  roomTitle: "BASTOGNAC · MICRO-DONJON",
   floorAssetIds: ["tile.bastognac-floor-a", "tile.bastognac-floor-b"],
   wallAssetId: "wall.bastognac",
   obstacleAssetId: "prop.bastognac-barrel",
