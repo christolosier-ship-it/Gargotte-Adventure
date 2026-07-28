@@ -51,8 +51,6 @@ export function buildTacticalRoomWithEvents(
     creatureDefinitions: [...creatureDefinitions],
     enemies: [],
   });
-  if (persistentHeroes.length > 0)
-    state = applyPersistentHeroesToRoom(state, persistentHeroes);
 
   const events: TacticalEvent[] = [];
   for (const initial of definition.initialSpawns) {
@@ -71,6 +69,9 @@ export function buildTacticalRoomWithEvents(
     state = result.state;
     events.push(...result.events);
   }
+
+  if (persistentHeroes.length > 0)
+    state = applyPersistentHeroesToRoom(state, persistentHeroes);
 
   return { state, events };
 }
