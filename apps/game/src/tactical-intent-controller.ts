@@ -96,8 +96,7 @@ export class TacticalIntentController {
       room,
       this.options.interactableDefinitions,
     ).find((candidate) => candidate.interactableInstanceId === instanceId);
-    if (action)
-      this.handleInteractableAction(instanceId, action.interactionId);
+    if (action) this.handleInteractableAction(instanceId, action.interactionId);
   };
 
   private readonly handleInteractableAction = (
@@ -131,11 +130,7 @@ export class TacticalIntentController {
       ?.scriptedSpawns.find((candidate) => candidate.id === spawnId);
     if (room && scripted)
       this.options.applyStatefulResult(
-        executeScriptedSpawn(
-          room,
-          this.options.creatureDefinitions,
-          scripted,
-        ),
+        executeScriptedSpawn(room, this.options.creatureDefinitions, scripted),
         "Apparition refusée",
       );
   };
