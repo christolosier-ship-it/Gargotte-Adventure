@@ -3,6 +3,7 @@ import "./styles.css";
 import "./theme.css";
 import "./layout.css";
 import "./presentation.css";
+import "./expedition.css";
 import { bootstrapGame } from "./bootstrap";
 
 const root = document.querySelector<HTMLElement>("#app");
