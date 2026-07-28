@@ -4,15 +4,15 @@ La roadmap décrit des résultats vérifiables, pas un calendrier contractuel. C
 
 ## État d'avancement
 
-| Sprint                                                   | Statut                  | Résultat principal                                                         |
-| -------------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------- |
-| Sprint 0 : Fondations                                    | ✅ Terminé              | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac     |
-| Sprint 1 : Boucle de salle                               | ✅ Terminé              | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise               |
-| Sprint 2 : Plateau isométrique                           | ✅ Terminé              | Salle jouable en 2D isométrique avec pipeline graphique réutilisable       |
-| Sprint 3 : Brouhaha, spawn, décor et présentation        | 🟠 Livré sous réserve   | Fonctionnellement fusionné, sept P2 post-fusion à stabiliser                |
-| Sprint 4.0 : Stabilisation finale du Sprint 3.6          | Prérequis               | Résolution des P2, non-régression et nouvelle base stable                   |
-| Sprint 4 : Héros, créatures et comportements de Bastognac | Cadré, non implémenté | Micro-donjon manuel de trois salles proche de l'expérience finale           |
-| Sprint 5 : Donjon complet généré                         | À venir                 | Cinq étages générés, rencontres par salle, loot, progression et boss final |
+| Sprint                                                    | Statut                | Résultat principal                                                         |
+| --------------------------------------------------------- | --------------------- | -------------------------------------------------------------------------- |
+| Sprint 0 : Fondations                                     | ✅ Terminé            | PWA installable, architecture modulaire, CI, Pages et paquet Bastognac     |
+| Sprint 1 : Boucle de salle                                | ✅ Terminé            | Salle tactique 8 × 4, IA déterministe, sauvegarde et reprise               |
+| Sprint 2 : Plateau isométrique                            | ✅ Terminé            | Salle jouable en 2D isométrique avec pipeline graphique réutilisable       |
+| Sprint 3 : Brouhaha, spawn, décor et présentation         | 🟠 Livré sous réserve | Fonctionnellement fusionné, sept P2 post-fusion à stabiliser               |
+| Sprint 4.0 : Stabilisation finale du Sprint 3.6           | Prérequis             | Résolution des P2, non-régression et nouvelle base stable                  |
+| Sprint 4 : Héros, créatures et comportements de Bastognac | Cadré, non implémenté | Micro-donjon manuel de trois salles proche de l'expérience finale          |
+| Sprint 5 : Donjon complet généré                          | À venir               | Cinq étages générés, rencontres par salle, loot, progression et boss final |
 
 ## Sprints 0 à 2
 
