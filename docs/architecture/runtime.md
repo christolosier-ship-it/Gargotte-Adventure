@@ -12,7 +12,7 @@ Le Sprint 3 est fonctionnellement livré. Sept P2 post-fusion restent à traiter
 2. `packages/renderer` initialise PixiJS.
 3. `packages/save` restaure l'autosauvegarde versionnée.
 4. `packages/engine` reçoit une intention et produit `RoomState` final plus des événements ordonnés.
-5. Les réactions, Brouhaha, renforts et phase terminale sont entièrement résolus.
+5. Les effets directs, Brouhaha, renforts, réactions et phase terminale sont entièrement résolus selon le type d'intention.
 6. L'état stable est rendu.
 7. `packages/presentation` transforme les événements en cues visuels, audio et journal.
 8. Les adaptateurs jouent ces cues sans modifier l'état.
@@ -35,17 +35,37 @@ L'application ne réimplémente aucune règle métier.
 
 ## Résolution tactique actuelle
 
+### Action sans interaction d'objet bruyante
+
 ```text
 intention
-→ transition, déplacement ou dégâts directs
-→ réactions FIFO
-→ demandes et effets du Brouhaha
-→ renforts de seuil
+→ validation
+→ déplacement, attaque, capacité ou autre effet direct
+→ réactions éventuelles
+→ Brouhaha secondaire éventuel à sa position causale
+→ effets et renforts associés
 → phase terminale
 → RoomState final et événements
 ```
 
-L'ordre détaillé dépend de l'intention et doit rester cohérent avec les moteurs existants. Les acteurs du Sprint 4 produiront de nouvelles intentions, sans contourner cet ordre.
+### Interaction d'objet bruyante
+
+```text
+intention d'interaction
+→ validation
+→ transition ou déplacement direct de l'objet
+→ Brouhaha direct éventuel
+→ effets et renforts directs
+→ réactions FIFO
+→ Brouhaha secondaire éventuel de chaque action
+→ effets et renforts secondaires
+→ phase terminale
+→ RoomState final et événements
+```
+
+Le Brouhaha direct et ses renforts sont résolus avant la propagation. Une apparition directe peut donc modifier l'occupation ou la condition terminale avant les réactions secondaires.
+
+Les acteurs du Sprint 4 produiront de nouvelles intentions sans contourner ces ordres. Toute divergence future doit être explicitement décidée, documentée et testée.
 
 ## Présentation
 
@@ -75,7 +95,7 @@ Le Sprint 4.0 doit :
 
 ## Reprise
 
-Une reprise reconstruit l'état sauvegardé sans rejouer les événements historiques. Aucun son, overlay, impact ou renfort déjà résolu n'est reproduit.
+Une reprise reconstruit l'état sauvegardé sans rejouer les événements historiques. Aucun son, overlay, impact, spawn initial ou renfort déjà résolu n'est reproduit.
 
 Le Sprint 4 étendra ce principe à `ExpeditionState` : restaurer la salle courante, l'équipe et les salles enregistrées sans rejouer les transitions ou présentations historiques.
 
@@ -98,14 +118,18 @@ ExpeditionState + RoomState courant
         ├─ intention tactique → moteur de salle
         │
         └─ intention de transition
-               ├─ vérifie sortie et connexion
+               ├─ vérifie complétion, sortie et connexion
                ├─ extrait l'état persistant des héros
                ├─ clôt la salle source
                ├─ restaure ou crée la salle cible
                └─ met à jour la progression
 ```
 
-Une transition est refusée tant que la résolution tactique courante n'est pas entièrement terminée.
+Une salle est ajoutée à `completedRoomIds` dès que sa condition locale est remplie et toutes ses conséquences résolues. Les salles 1 et 2 autorisent ensuite une transition explicite. La salle 3 peut produire directement la victoire globale sans transition supplémentaire.
+
+Une transition est refusée tant que la résolution tactique courante n'est pas entièrement terminée ou que la salle source n'est pas enregistrée comme terminée.
+
+Lors de la première création d'une salle, les populations initiales sont traduites en `SpawnRequest` déterministes et exécutées par le moteur de spawn. Aucun orchestrateur d'expédition ne construit directement une `CreatureInstance`.
 
 ## Persistance cible
 
@@ -118,7 +142,7 @@ La sauvegarde doit distinguer :
 
 Le Brouhaha, les ennemis, objets, réactions et renforts restent propres à chaque salle.
 
-La version de schéma et la stratégie de migration seront décidées au Sprint 4.2 après définition des contrats. Ce document ne préjuge pas d'un numéro de version.
+Le Sprint 4.1 définit le schéma Zod, le format de sauvegarde, la version initiale et la stratégie de migration de l'expédition avant l'implémentation des transitions. Le Sprint 4.2 définit ensuite les contrats et migrations propres aux acteurs et comportements.
 
 ## Mode diagnostic
 
@@ -140,7 +164,10 @@ Les tests actuels observent :
 
 Le Sprint 4 ajoutera :
 
+- schémas et sauvegarde d'expédition dès 4.1 ;
+- population initiale par `SpawnRequest` ;
 - état et salle courante d'expédition ;
+- complétion de la troisième salle sans transition ;
 - transitions ;
 - persistance des héros ;
 - reprise dans chaque salle ;
@@ -155,6 +182,7 @@ Le Sprint 4 ajoutera :
 - audio sans appel réseau tiers ;
 - sauvegarde indépendante des effets transitoires ;
 - `ExpeditionState` sans duplication des règles de salle ;
+- moteur de spawn comme frontière unique d'instanciation des créatures ;
 - Gargottex en lecture seule ;
 - PWA jouable hors ligne après le premier chargement ;
 - aucune génération procédurale au Sprint 4.
