@@ -64,5 +64,5 @@ test("fait évoluer, explique et restaure le Brouhaha", async ({ page }) => {
     calmed.processedBrouhahaRequests,
   );
   expect(restored.nextBrouhahaResolutionSequence).toBe(7);
-  await expect(page.getByText("Brouhaha 8/12", { exact: true })).toBeVisible();
+  await expect(page.locator("[data-hud]")).toContainText("Brouhaha: 8/12");
 });
