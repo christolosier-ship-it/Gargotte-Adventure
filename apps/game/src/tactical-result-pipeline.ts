@@ -1,5 +1,10 @@
 import type { RoomState, TacticalEvent } from "@gargotte/engine";
 
+export interface StatefulTacticalResult {
+  state: RoomState;
+  events: TacticalEvent[];
+}
+
 interface TacticalResultPipelineOptions {
   previousRoom: RoomState | null;
   nextRoom: RoomState;
