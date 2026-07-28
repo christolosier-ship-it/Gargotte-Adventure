@@ -48,8 +48,7 @@ Ce dossier rassemble la documentation technique et produit versionnée avec le c
 - [Sprint 3.6 : présentation et finition](audits/sprint-3-6-presentation-finishing.md)
 - [Addenda P2 clôturés du Sprint 3.6](audits/sprint-3-6-post-fusion-p2-addendum.md)
 - [Sprint 4.0 : stabilisation finale](audits/sprint-4-0-stabilization.md)
-
-Les audits historiques restent inchangés. L’addenda post-fusion est clôturé par l’audit du Sprint 4.0.
+- [Sprint 4.1 : micro-donjon et état d’expédition](audits/sprint-4-1-micro-dungeon-expedition.md)
 
 ## ADR du Sprint 4
 
@@ -82,12 +81,12 @@ Gargottex n’est pas une dépendance runtime et reste strictement en lecture se
 
 - le Sprint 3 est définitivement stabilisé ;
 - le Sprint 4.0 est livré par la PR #64 au commit `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf` ;
-- les sept P2 post-fusion et leurs fils de revue sont clos ;
-- l’ordre runtime rendu, présentation, persistance est figé ;
-- `packages/presentation` est couvert par le validateur de frontières ;
-- le Sprint 4.1 est la prochaine phase fonctionnelle ;
+- le Sprint 4.1 est livré par la PR #67 au commit `18acb7947fc9625d606213c6db02e7947e5e9f44` ;
+- l’expédition version 1, les trois salles et la reprise inter-salles sont opérationnelles ;
+- la validation complète est verte sur Chromium bureau et mobile paysage ;
+- le Sprint 4.2 est la prochaine phase fonctionnelle ;
 - le Sprint 5 conserve la génération complète, le loot, la progression, la campagne et le boss final.
 
 ## Porte de démarrage
 
-Le développement fonctionnel du Sprint 4.1 est autorisé sur la base stable issue du Sprint 4.0. Toute nouvelle fonctionnalité doit préserver les contrats tactiques, de présentation et de sauvegarde déjà stabilisés.
+Le développement du Sprint 4.2 est autorisé sur la base fonctionnelle du Sprint 4.1. Toute évolution des acteurs doit réutiliser `ExpeditionState`, `RoomState`, le moteur de spawn et les frontières de sauvegarde existantes sans réimplémenter l’orchestration.
