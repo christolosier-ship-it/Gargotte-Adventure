@@ -68,10 +68,7 @@ export async function restoreSession(
       storedRoom.room,
       selectedHeroIds,
     );
-    const firstRoom = options.buildFirstRoom(
-      selectedHeroIds,
-      persistentHeroes,
-    );
+    const firstRoom = options.buildFirstRoom(selectedHeroIds, persistentHeroes);
     const prepared = createExpeditionState({
       id: `${options.definitionId}-migration-1`,
       definitionId: options.definitionId,
