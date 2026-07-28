@@ -50,7 +50,9 @@ export class ExpeditionSession {
     this.interactableDefinitions = options.interactableDefinitions;
     this.state = options.restored;
     if (this.state?.definitionId !== this.definition.id)
-      throw new Error("La sauvegarde ne correspond pas au micro-donjon chargé.");
+      throw new Error(
+        "La sauvegarde ne correspond pas au micro-donjon chargé.",
+      );
   }
 
   get expedition(): ExpeditionState | null {
@@ -89,7 +91,10 @@ export class ExpeditionSession {
     return this.state ? isTransitionAvailable(this.state) : false;
   }
 
-  start(expeditionId: string, selectedHeroIds: readonly string[]): ExpeditionRoomBuild {
+  start(
+    expeditionId: string,
+    selectedHeroIds: readonly string[],
+  ): ExpeditionRoomBuild {
     const firstRoomId = this.definition.entryRoomId;
     const built = this.buildRoom(firstRoomId, selectedHeroIds, []);
     const prepared = createExpeditionState({
@@ -97,10 +102,7 @@ export class ExpeditionSession {
       definitionId: this.definition.id,
       selectedHeroIds,
       orderedRoomIds: this.definition.roomIds,
-      persistentHeroes: persistentHeroesFromRoom(
-        built.state,
-        selectedHeroIds,
-      ),
+      persistentHeroes: persistentHeroesFromRoom(built.state, selectedHeroIds),
     });
     this.state = startExpedition(prepared, firstRoomId, built.state);
     return { room: built.state, events: built.events, restored: false };
