@@ -51,7 +51,7 @@ describe("construction d’une salle d’expédition", () => {
     ]);
   });
 
-  it("injecte les PV persistants sans transférer le Brouhaha", () => {
+  it("injecte les PV persistants après les spawns sans transférer le Brouhaha", () => {
     const built = buildTacticalRoomWithEvents(
       bastognacRoomDefinitions[1]!,
       bastognacCreatureDefinitions,
@@ -67,6 +67,12 @@ describe("construction d’une salle d’expédition", () => {
     expect(built.heroes.find((hero) => hero.id === "aelion")?.alive).toBe(
       false,
     );
+    expect(built.enemies).toHaveLength(2);
+    expect(built.processedSpawnRequestIds).toEqual([
+      "population-galerie-bricoleur",
+      "population-galerie-lance-tout",
+    ]);
+    expect(built.phase).toBe("heroes-turn");
     expect(built.brouhaha.level).toBe(0);
     expect(built.turn).toBe(1);
   });
