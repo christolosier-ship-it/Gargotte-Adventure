@@ -14,7 +14,11 @@ test("fait évoluer, explique et restaure le Brouhaha", async ({ page }) => {
   expect(initial.nextBrouhahaResolutionSequence).toBe(1);
   await expect(page.getByText("Brouhaha 0/12", { exact: true })).toBeVisible();
 
+  await page
+    .getByRole("button", { name: "Activer le mode diagnostic" })
+    .click();
   const explosion = page.getByRole("button", { name: explosionButtonName });
+  await expect(explosion).toBeVisible();
   for (const expectedLevel of [2, 4, 6, 8, 10]) {
     await explosion.click();
     await expect
