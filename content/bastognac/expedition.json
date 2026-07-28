@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 1,
+  "id": "micro-donjon-bastognac",
+  "name": "Le chemin de ronde de Bastognac",
+  "introduction": "Trois salles gardent l’accès aux profondeurs du château. Les Va-Nu-Pieds devront conserver leurs forces, leur dignité étant déjà hors budget.",
+  "roomIds": [
+    "bastognac-salle-1",
+    "bastognac-salle-2",
+    "bastognac-salle-3"
+  ],
+  "entryRoomId": "bastognac-salle-1",
+  "rooms": [
+    {
+      "id": "bastognac-salle-1",
+      "name": "Le vestibule des maladroits",
+      "objective": "Neutraliser les gardes et sécuriser la porte de la galerie.",
+      "roomContentId": "bastognac-salle-1",
+      "entryId": "entree-ouest",
+      "exitId": "sortie-est",
+      "nextRoomId": "bastognac-salle-2",
+      "introduction": "Deux gardes surveillent une porte beaucoup trop fière d’elle-même."
+    },
+    {
+      "id": "bastognac-salle-2",
+      "name": "La galerie des tonneaux susceptibles",
+      "objective": "Nettoyer la galerie et ouvrir le passage vers le dernier verrou.",
+      "roomContentId": "bastognac-salle-2",
+      "entryId": "entree-ouest",
+      "exitId": "sortie-est",
+      "nextRoomId": "bastognac-salle-3",
+      "introduction": "Tables, piliers et tonneaux semblent attendre une mauvaise décision."
+    },
+    {
+      "id": "bastognac-salle-3",
+      "name": "La salle du dernier verrou",
+      "objective": "Vaincre les derniers défenseurs du chemin de ronde.",
+      "roomContentId": "bastognac-salle-3",
+      "entryId": "entree-ouest",
+      "exitId": null,
+      "nextRoomId": null,
+      "introduction": "Le dernier verrou claque. Cette fois, personne ne fera semblant de ne pas avoir entendu."
+    }
+  ],
+  "connections": [
+    {
+      "id": "passage-vestibule-galerie",
+      "fromRoomId": "bastognac-salle-1",
+      "exitId": "sortie-est",
+      "toRoomId": "bastognac-salle-2",
+      "targetEntryId": "entree-ouest",
+      "label": "Entrer dans la galerie"
+    },
+    {
+      "id": "passage-galerie-verrou",
+      "fromRoomId": "bastognac-salle-2",
+      "exitId": "sortie-est",
+      "toRoomId": "bastognac-salle-3",
+      "targetEntryId": "entree-ouest",
+      "label": "Franchir le dernier verrou"
+    }
+  ],
+  "victoryText": "Le chemin de ronde est nettoyé. Bastognac tremble légèrement, ou c’est peut-être encore un tonneau.",
+  "defeatText": "Les Va-Nu-Pieds battent en retraite vers la Chope Qui Colle, avec une version très arrangée des événements."
+}
