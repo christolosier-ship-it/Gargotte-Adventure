@@ -1,43 +1,105 @@
-import type { GameState, RoomState } from "@gargotte/engine";
 import {
+  createExpeditionState,
+  persistentHeroesFromRoom,
+  startExpedition,
+  type ExpeditionState,
+  type GameState,
+  type PersistentHeroState,
+  type RoomState,
+} from "@gargotte/engine";
+import {
+  loadExpeditionState,
   loadGameState,
   loadRoomState,
+  saveExpeditionState,
   saveGameState,
-  saveRoomState,
 } from "@gargotte/save";
 
 export interface RestoredSession {
   gameState: GameState | null;
-  room: RoomState | null;
+  expedition: ExpeditionState | null;
   selectedHeroIds: string[];
-  roomWasRestored: boolean;
+  expeditionWasRestored: boolean;
+  migratedLegacyRoom: boolean;
+  diagnosticMode: boolean;
+}
+
+interface RestoreSessionOptions {
+  validHeroIds: ReadonlySet<string>;
+  defaultHeroId: string;
+  definitionId: string;
+  orderedRoomIds: readonly [string, string, string];
+  buildFirstRoom(
+    selectedHeroIds: readonly string[],
+    persistentHeroes: readonly PersistentHeroState[],
+  ): RoomState;
 }
 
 export async function restoreSession(
-  validHeroIds: ReadonlySet<string>,
-  defaultHeroId: string,
+  options: RestoreSessionOptions,
 ): Promise<RestoredSession> {
-  const [gameState, storedRoom] = await Promise.all([
+  const [gameState, storedExpedition] = await Promise.all([
     loadGameState(),
-    loadRoomState(),
+    loadExpeditionState(),
   ]);
-  if (!storedRoom || storedRoom === "legacy")
+  if (storedExpedition) {
+    const selected = storedExpedition.expedition.selectedHeroIds.filter((id) =>
+      options.validHeroIds.has(id),
+    );
+    if (selected.length === storedExpedition.expedition.selectedHeroIds.length)
+      return {
+        gameState,
+        expedition: storedExpedition.expedition,
+        selectedHeroIds: selected,
+        expeditionWasRestored: true,
+        migratedLegacyRoom: false,
+        diagnosticMode: storedExpedition.diagnosticMode,
+      };
+  }
+
+  const storedRoom = await loadRoomState();
+  if (storedRoom && storedRoom !== "legacy") {
+    const selected = storedRoom.selectedHeroIds.filter((id) =>
+      options.validHeroIds.has(id),
+    );
+    const selectedHeroIds =
+      selected.length > 0 ? selected : [options.defaultHeroId];
+    const persistentHeroes = persistentHeroesFromRoom(
+      storedRoom.room,
+      selectedHeroIds,
+    );
+    const firstRoom = options.buildFirstRoom(
+      selectedHeroIds,
+      persistentHeroes,
+    );
+    const prepared = createExpeditionState({
+      id: `${options.definitionId}-migration-1`,
+      definitionId: options.definitionId,
+      selectedHeroIds,
+      orderedRoomIds: options.orderedRoomIds,
+      persistentHeroes,
+    });
     return {
       gameState,
-      room: null,
-      selectedHeroIds: [defaultHeroId],
-      roomWasRestored: false,
+      expedition: startExpedition(
+        prepared,
+        options.orderedRoomIds[0],
+        firstRoom,
+      ),
+      selectedHeroIds,
+      expeditionWasRestored: true,
+      migratedLegacyRoom: true,
+      diagnosticMode: false,
     };
+  }
 
-  const selectedHeroIds = storedRoom.selectedHeroIds.filter((id) =>
-    validHeroIds.has(id),
-  );
   return {
     gameState,
-    room: storedRoom.room,
-    selectedHeroIds:
-      selectedHeroIds.length > 0 ? selectedHeroIds : [defaultHeroId],
-    roomWasRestored: true,
+    expedition: null,
+    selectedHeroIds: [options.defaultHeroId],
+    expeditionWasRestored: false,
+    migratedLegacyRoom: false,
+    diagnosticMode: false,
   };
 }
 
@@ -46,19 +108,18 @@ export class PersistenceController {
 
   save(
     state: GameState,
-    room: RoomState | null,
-    selectedHeroIds: string[],
+    expedition: ExpeditionState | null,
+    diagnosticMode: boolean,
   ): Promise<void> {
-    const selected = [...selectedHeroIds];
     this.pending = this.pending
       .catch(() => undefined)
       .then(async () => {
-        if (room)
-          await saveRoomState({
-            kind: "tactical-room",
-            version: 6,
-            room,
-            selectedHeroIds: selected,
+        if (expedition)
+          await saveExpeditionState({
+            kind: "expedition",
+            version: 1,
+            expedition,
+            diagnosticMode,
           });
         await saveGameState(state);
       });
