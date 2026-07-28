@@ -9,6 +9,12 @@ import {
   tapOrClick,
 } from "./helpers/canvas";
 
+test.beforeEach(async ({ page }) => {
+  page.on("pageerror", (error) =>
+    console.error(`[pageerror] ${error.stack ?? error.message}`),
+  );
+});
+
 const getExpeditionSave = async (page: Page) =>
   page.evaluate(async () => {
     const request = indexedDB.open("gargotte-adventure");
@@ -110,6 +116,7 @@ const prepareCurrentRoomForVictory = async (
           ...candidate,
           hp: 0,
           alive: false,
+          blocksMovement: false,
         })),
         activeHeroId: null,
         enemyTurnRoster: [],
@@ -272,7 +279,9 @@ test("termine la troisième salle, affiche le résultat et permet le rejeu", asy
   await prepareCurrentRoomForVictory(page, "bastognac-salle-3");
 
   await page.reload();
-  await page.getByRole("button", { name: "Reprendre l’expédition" }).click();
+  const resume = page.getByRole("button", { name: "Reprendre l’expédition" });
+  await expect(resume).toBeEnabled();
+  await resume.click();
   await activateBrunhilda(page);
   await page
     .getByRole("button", { name: "Attaquer Gobelin Bricoleur" })
