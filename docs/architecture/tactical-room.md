@@ -4,14 +4,14 @@
 
 La salle tactique sépare :
 
-1. **Contenu** : géométrie logique, placements, points de spawn, objets, réactions, renforts, objectif local et sortie.
+1. **Contenu** : géométrie logique, populations initiales, points de spawn, objets, réactions, renforts, objectif local et sortie.
 2. **Moteur** : grille, déplacements, ligne de vue, combat, tours, IA, Brouhaha, objets, réactions, renforts et spawn.
 3. **Présentation pure** : cues et journal dérivés de l'état final et des événements.
 4. **Renderer PixiJS** : projection isométrique, assets, picking et diagnostics.
 5. **UI DOM** : sélection, HUD, commandes accessibles et journal.
 6. **Sauvegarde** : persistance IndexedDB, schémas versionnés et migrations.
 
-`apps/game` assemble ces responsabilités. Il traduit les intentions, mais ne décide pas si une action, réaction, sortie ou transition est valide.
+`apps/game` assemble ces responsabilités. Il traduit les intentions, mais ne décide pas si une action, réaction, complétion, sortie ou transition est valide.
 
 ## Contenu de salle actuel
 
@@ -26,6 +26,8 @@ La salle Bastognac pilote contient :
 - dimensions et notes.
 
 Les statistiques de créatures et les états d'objets restent dans leurs catalogues. Le validateur contrôle identifiants, références, positions, collisions, états, déclencheurs, cibles, créatures de renfort et points candidats.
+
+Pour les nouvelles salles du Sprint 4, les populations initiales déclarées sont traduites en `SpawnRequest` et ne deviennent jamais directement des `CreatureInstance` par le chargeur de contenu.
 
 ## `RoomState` version 6
 
@@ -56,16 +58,20 @@ Une interaction produit une intention validée par le moteur d'objets. Une réus
 
 Le Sprint 4 étendra les acteurs autorisés aux créatures selon leur définition et leur profil. Les créatures ne changent jamais directement l'état d'un objet.
 
+Le Brouhaha direct d'une interaction et ses renforts sont résolus avant les réactions secondaires.
+
 Voir [Architecture des objets interactifs](interactable-objects.md).
 
 ## Réactions en chaîne
 
 Le graphe de salle utilise des déclencheurs déclarés. Le moteur :
 
+- reçoit les déclencheurs après le Brouhaha direct éventuel ;
 - traite les déclencheurs dans une file FIFO ;
 - trie les définitions applicables ;
 - exécute les actions dans l'ordre déclaré ;
-- applique transitions, déplacements, dégâts et Brouhaha ;
+- applique transitions, déplacements, dégâts et Brouhaha secondaire ;
+- résout chaque Brouhaha secondaire et ses renforts à sa position causale ;
 - conserve la causalité ;
 - interrompt cycles et propagations excessives.
 
@@ -81,9 +87,10 @@ Les identifiants reposent sur une séquence persistée. Le moteur de spawn ne li
 
 Au Sprint 4 :
 
-- les placements des trois salles restent écrits à la main ;
+- les populations des trois salles restent écrites à la main ;
+- leurs placements sont traduits en demandes initiales déterministes ;
 - les renforts utilisent les règles de salle ;
-- toute nouvelle créature est instanciée par le moteur de spawn ;
+- toute créature initiale ou ajoutée est instanciée par le moteur de spawn ;
 - aucune composition automatique de rencontre n'est introduite.
 
 ## Brouhaha et renforts
@@ -104,19 +111,35 @@ Les profils du Sprint 4 peuvent consulter le Brouhaha et modifier leurs intentio
 
 ## Ordre de résolution tactique
 
+### Action sans interaction d'objet bruyante
+
 ```text
 intention
 → validation
-→ transition, déplacement ou dégâts directs
-→ interaction éventuelle avec un objet
-→ réactions en chaîne
-→ demandes et effets du Brouhaha
-→ renforts de seuil
+→ effet tactique direct
+→ réactions éventuelles
+→ Brouhaha secondaire éventuel à sa position causale
+→ effets et renforts associés
 → phase terminale locale
 → état final et événements
 ```
 
-La victoire locale n'est calculée qu'après les renforts de la résolution courante. Une salle terminale refuse toute nouvelle action, demande de Brouhaha ou apparition.
+### Interaction d'objet bruyante
+
+```text
+intention d'interaction
+→ validation
+→ transition ou déplacement direct de l'objet
+→ Brouhaha direct éventuel
+→ effets et renforts directs
+→ réactions en chaîne FIFO
+→ Brouhaha secondaire éventuel de chaque action
+→ effets et renforts secondaires
+→ phase terminale locale
+→ état final et événements
+```
+
+La victoire locale n'est calculée qu'après toutes les apparitions de la résolution courante. Une salle terminale refuse toute nouvelle action, demande de Brouhaha ou apparition.
 
 Le Sprint 4.0 doit stabiliser les cues terminaux et l'ordre runtime de présentation et persistance. Il ne change pas cet ordre métier sans décision explicite.
 
@@ -128,18 +151,22 @@ Le Sprint 4 ajoute des profils de comportement génériques. Chaque créature g�
 
 Un bouton unique de résolution du tour ennemi reste acceptable pendant le Sprint 4.
 
-## Objectif et sortie de salle
+## Objectif, complétion et sortie de salle
 
 Chaque salle du Sprint 4 doit déclarer :
 
 - objectif local ;
 - état de progression de l'objectif ;
+- condition de complétion ;
 - condition d'ouverture de la sortie ;
-- porte ou passage cible ;
+- porte ou passage cible lorsqu'une salle suivante existe ;
 - point d'entrée de la salle suivante ;
 - texte de présentation utile.
 
-Atteindre l'objectif ne transfère pas automatiquement l'équipe. La sortie devient disponible après résolution complète, puis le joueur produit une intention explicite de transition.
+Après résolution complète, une salle dont la condition est remplie est ajoutée idempotemment à `completedRoomIds`.
+
+- Pour les salles 1 et 2, la sortie devient ensuite disponible et le joueur produit une intention explicite de transition.
+- Pour la salle 3, la complétion déclenche le calcul du résultat global sans transition vers une salle inexistante.
 
 La victoire locale reste distincte du résultat global de l'expédition.
 
@@ -155,7 +182,7 @@ Les trois salles peuvent avoir des géométries fixes différentes, à condition
 
 Le renderer distingue espace logique, espace de vue et espace écran. Les rotations ne modifient jamais l'état sauvegardé.
 
-Le canvas remonte seulement les intentions. Il ne décide pas qu'un objectif est atteint, qu'une sortie est ouverte ou qu'une transition est valide.
+Le canvas remonte seulement les intentions. Il ne décide pas qu'un objectif est atteint, qu'une salle est terminée, qu'une sortie est ouverte ou qu'une transition est valide.
 
 ## Articulation avec `ExpeditionState`
 
@@ -169,29 +196,34 @@ Le canvas remonte seulement les intentions. Il ne décide pas qu'un objectif est
 - états de salles ;
 - statut et résultat global.
 
-La transition extrait uniquement les propriétés persistantes des héros, clôt la salle source et restaure ou crée la salle cible.
+La complétion est enregistrée avant une transition. La transition extrait uniquement les propriétés persistantes des héros, clôt la salle source et restaure ou crée la salle cible.
 
 Voir [Micro-donjon et état d'expédition](micro-dungeon-and-expedition.md).
 
 ## Sauvegarde et migrations
 
-La sauvegarde tactique actuelle reste en version 6. Le Sprint 4 devra ajouter une enveloppe d'expédition et définir sa stratégie de migration au lot 4.2.
+La sauvegarde tactique actuelle reste en version 6.
+
+Le Sprint 4.1 doit ajouter et valider l'enveloppe d'expédition, son format de sauvegarde, sa version initiale et sa stratégie de migration avant les transitions. Le Sprint 4.2 ajoute ensuite les schémas et migrations propres aux acteurs et comportements.
 
 Une migration ne doit :
 
 - exécuter aucune réaction ;
 - changer aucun niveau de Brouhaha ;
-- créer aucun renfort ;
+- créer aucun spawn initial ou renfort ;
 - inventer aucune compétence ou ressource persistante ;
 - rejouer aucune transition.
 
 ## Tests cibles du Sprint 4
 
+- populations initiales par `SpawnRequest` ;
 - actions, compétences et profils de héros ;
 - décisions ennemies déterministes et expliquées ;
 - interactions des créatures avec les objets ;
+- Brouhaha direct avant réactions ;
 - influences du Brouhaha ;
-- objectif et sortie de chaque salle ;
+- objectif et complétion de chaque salle ;
+- troisième salle terminée sans transition supplémentaire ;
 - transition refusée avant résolution complète ;
 - transfert des héros ;
 - Brouhaha local ;
