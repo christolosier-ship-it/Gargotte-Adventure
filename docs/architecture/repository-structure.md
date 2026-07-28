@@ -2,9 +2,9 @@
 
 ## Règle générale
 
-La structure suit les responsabilités réellement implémentées. Aucun dossier vide n'est créé uniquement pour anticiper une fonctionnalité future.
+La structure suit les responsabilités réellement implémentées. Aucun dossier vide n’est créé uniquement pour anticiper une fonctionnalité future.
 
-Cette page décrit l'état livré après le Sprint 3.6 et les emplacements conceptuels à décider lors des lots 4.1 et 4.2.
+Cette page décrit la base stabilisée par le Sprint 4.0 au commit `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf`.
 
 ## Arborescence active
 
@@ -15,24 +15,31 @@ Gargotte-Adventure/
 │   └── src/
 │       ├── bootstrap.ts
 │       ├── game-controller.ts
-│       ├── game-view.ts
+│       ├── tactical-result-pipeline.ts
 │       ├── presentation-controller.ts
+│       ├── audio-settings.ts
+│       ├── game-view.ts
+│       ├── room-builder.ts
+│       ├── brouhaha-controller.ts
+│       ├── interactable-controller.ts
+│       ├── scripted-spawn-controller.ts
 │       ├── event-messages.ts
-│       ├── persistence-controller.ts
-│       ├── presentation.css
-│       └── contrôleurs tactiques
+│       └── persistence-controller.ts
 ├── packages/
+│   ├── audio/
 │   ├── common/
 │   ├── content-schema/
 │   ├── engine/
 │   ├── presentation/
 │   ├── renderer/
-│   ├── audio/
-│   ├── ui/
-│   └── save/
+│   ├── save/
+│   └── ui/
 ├── content/bastognac/
 ├── design/isometric/
-├── tools/validators/
+├── tools/
+│   ├── validators/
+│   ├── validate_repository.py
+│   └── validate-repository-boundaries.test.ts
 ├── tests/e2e/
 ├── docs/
 └── .github/
@@ -40,131 +47,123 @@ Gargotte-Adventure/
 
 La racine publique de Vite est `apps/game/public`.
 
-## Responsabilités actives
+## Responsabilités
 
 ### `apps/game`
 
 Point de composition de la PWA.
 
-- transmet les intentions au moteur ;
-- orchestre état stable, présentation et persistance ;
-- prépare la vue accessible ;
-- traduit les événements ;
-- adapte Brouhaha, objets et spawns.
+- `bootstrap.ts` assemble les dépendances ;
+- `game-controller.ts` traite les intentions et conserve l’état courant ;
+- `tactical-result-pipeline.ts` dérive la transition terminale de présentation et impose l’ordre rendu, présentation, persistance ;
+- `presentation-controller.ts` relie routeur, renderer, audio et journal ;
+- `audio-settings.ts` valide les préférences persistées ;
+- `room-builder.ts` construit la salle pilote ;
+- les contrôleurs spécialisés adaptent Brouhaha, objets et spawns ;
+- `persistence-controller.ts` restaure et écrit les sauvegardes.
 
-Cette couche ne réimplémente aucune règle tactique.
+Cette couche orchestre, mais ne décide aucune règle tactique.
 
 ### `packages/engine`
 
-Logique pure : état, déplacement, combat, tours, IA pilote, spawn, Brouhaha, objets, réactions, renforts, événements et erreurs.
+Logique pure : état, grille, déplacement, ligne de vue, combat, tours, IA, spawn, Brouhaha, objets, réactions, renforts, événements et erreurs.
 
-Le moteur n'importe ni PixiJS, ni API navigateur, ni UI, ni IndexedDB.
+Le moteur ne dépend ni de PixiJS, ni du DOM, ni d’IndexedDB.
 
 ### `packages/presentation`
 
-Routeur pur des événements vers cues visuels, cues audio et journal groupé. Il dépend du moteur pour les types d'événements, mais d'aucun adaptateur de sortie.
+Routeur pur des événements tactiques vers :
+
+- cues visuels ;
+- cues audio ;
+- journal groupé.
+
+Il sélectionne les cues prioritaires sous plafond, puis restaure leur ordre causal. Il ne dépend que de `packages/engine`.
 
 ### `packages/renderer`
 
-Projection isométrique, caméra, picking, scène, assets, couche transitoire et diagnostics. Il ne décide aucune règle ou transition d'expédition.
+Projection isométrique, caméra, picking, profondeur, environnement, combattants, objets, couches transitoires, assets et diagnostics.
+
+Il affiche l’état et les cues reçus sans recalculer de règle.
 
 ### `packages/audio`
 
-Lecture locale Web Audio, volume, mute, autoplay, cache et fallback.
+Réglages, cache des lecteurs, autoplay, lecture locale, tonalités pilotes et fallbacks.
+
+Une clé répétée arrête son lecteur actif avant redémarrage.
 
 ### `packages/ui`
 
-Coque DOM accessible, HUD, contrôles audio, journal groupé et futures vues d'expédition. Le mode diagnostic doit rester séparé du parcours joueur.
+Composants DOM accessibles : sélection, HUD, commandes, journal, réglages audio et statuts.
 
 ### `packages/save`
 
-Persistance IndexedDB, sauvegarde tactique version 6, migrations et validation profonde. Les effets transitoires et préférences audio n'y sont pas stockés.
+Persistance IndexedDB, validation profonde, migrations et sauvegarde tactique version 6.
+
+Les cues visuels ou audio ne sont pas persistés.
 
 ### `packages/content-schema`
 
-Validation Zod des catalogues, salles, objets, réactions, Brouhaha, spawn et renforts.
-
-Le Sprint 4.1 doit y définir, avant les transitions :
-
-- `ExpeditionDefinition` ;
-- définitions des trois salles et connexions ;
-- `ExpeditionState` ;
-- demandes de spawn initiales ;
-- validation des objectifs, sorties et références croisées ;
-- format de sauvegarde d'expédition, version initiale et migration depuis l'absence d'expédition.
-
-Le Sprint 4.2 doit ensuite y définir les contrats propres aux héros, créatures, compétences, profils et influences du Brouhaha, avec leurs migrations de contenu.
+Schémas Zod du contenu : donjon, créatures, effets de Brouhaha, objets, réactions, salle tactique, points, spawns et règles de renfort.
 
 ### `packages/common`
 
-Label de build et utilitaires génériques. Les séquences métier restent dans les états qui les gouvernent.
+Label de build et utilitaires génériques sans règle métier.
 
-## Dépendances documentées
+### `content/bastognac`
+
+Contenu versionné du vertical slice. Il contient des définitions et placements éditoriaux, jamais l’état mutable d’une partie.
+
+### `tools/validate_repository.py`
+
+Contrôle notamment :
+
+- fichiers requis et UTF-8 ;
+- secrets potentiels ;
+- assets runtime ;
+- dépendances autorisées ;
+- cycles de packages ;
+- limites de taille ;
+- neutralité du renderer ;
+- index documentaire.
+
+Le chemin racine peut être remplacé par `GARGOTTE_VALIDATION_ROOT` pour tester le validateur sur un dépôt temporaire.
+
+### `tools/validate-repository-boundaries.test.ts`
+
+Vérifie explicitement :
+
+- `presentation → engine` autorisé ;
+- `presentation → renderer` interdit.
+
+### `tests/e2e`
+
+Parcours Playwright sur le build de production, Chromium bureau et mobile paysage.
+
+## Dépendances autorisées
 
 ```text
 apps/game
-  ├─► common
-  ├─► content-schema
-  ├─► engine
-  ├─► presentation
-  ├─► renderer
-  ├─► audio
-  ├─► ui
-  └─► save
+  ├─ common
+  ├─ content-schema
+  ├─ engine
+  ├─ presentation
+  ├─ renderer
+  ├─ audio
+  ├─ ui
+  └─ save
 
 presentation ─► engine
 renderer     ─► engine + common
-audio        ─► aucun package Gargotte
 ui           ─► engine
 save         ─► engine
 engine       ─► common
+audio        ─► aucun package Gargotte
+content-schema ─► aucun package Gargotte
+common       ─► aucun package Gargotte
 ```
 
-Les ports structurels évitent les dépendances inverses entre `presentation` et ses adaptateurs. Aucun cycle n'est autorisé.
-
-## Réserve du validateur
-
-`tools/validate_repository.py` contrôle actuellement des frontières, cycles, tailles de modules, fichiers requis, secrets, UTF-8 et racine publique.
-
-Cependant, le package `presentation` n'est pas encore couvert par la table automatisée des dépendances autorisées. La documentation ne doit donc pas prétendre que ce package est déjà protégé par le validateur.
-
-Le Sprint 4.0 doit :
-
-- ajouter `presentation` à la politique automatisée ;
-- autoriser uniquement sa dépendance attendue vers `engine` ;
-- vérifier les dépendances interdites vers renderer, audio, UI ou save ;
-- couvrir les cycles impliquant ce package ;
-- ajouter les tests du validateur ;
-- résoudre le fil P2 de la PR #60.
-
-## Extension cible du Sprint 4
-
-Le cadrage introduit conceptuellement :
-
-- `ExpeditionDefinition` et `ExpeditionState` ;
-- définitions et états de héros ;
-- compétences ;
-- profils de comportement ;
-- influences du Brouhaha ;
-- trois définitions de salles reliées ;
-- objectifs et connexions ;
-- vues de préparation et résultat ;
-- mode diagnostic distinct.
-
-Le Sprint 4.1 choisit les emplacements des contrats d'expédition, de leur orchestration et de leur sauvegarde, puis met à jour cette documentation et le validateur. Le Sprint 4.2 choisit les emplacements des contrats d'acteurs et de comportements en respectant les mêmes frontières.
-
-Aucun dossier, package ou fichier de production n'est créé dans le lot documentaire.
-
-## Contraintes de structure du Sprint 4
-
-- ne pas créer un package de génération ;
-- ne pas placer les règles d'expédition dans le renderer ou l'UI ;
-- ne pas dupliquer les moteurs tactiques dans `apps/game` ;
-- ne pas coder les profils par nom de créature dans des contrôleurs dispersés ;
-- conserver la validation de contenu dans `content-schema` ou une frontière équivalente explicitement documentée ;
-- conserver la persistance dans `save` ;
-- conserver les adaptateurs sans autorité tactique ;
-- maintenir le fonctionnement offline-first.
+Aucun cycle n’est autorisé. `packages/presentation` est réellement couvert par le validateur automatisé.
 
 ## Limites de taille
 
@@ -172,24 +171,15 @@ Aucun dossier, package ou fichier de production n'est créé dans le lot documen
 - `packages/renderer/src/index.ts` : 120 lignes maximum ;
 - autre module TypeScript de production : 350 lignes maximum.
 
-Une limite dépassée conduit à extraire une responsabilité stable, pas à créer un fourre-tout d'expédition ou d'IA.
-
-## Tests et validation futurs
-
-Le validateur devra couvrir toute nouvelle frontière réellement créée. Les tests du Sprint 4 vérifieront notamment :
-
-- absence de cycles ;
-- neutralité du renderer, de l'audio et de l'UI ;
-- absence d'import de génération ;
-- séparation entre définition, instance et placement ;
-- absence de conditions nominatives dispersées pour l'IA ;
-- sauvegarde et schémas dans leurs packages dédiés ;
-- mode diagnostic séparé du parcours normal.
+Une limite dépassée conduit à extraire une responsabilité stable. La pipeline de résultats tactiques a ainsi été isolée au Sprint 4.0 au lieu d’alourdir le contrôleur principal.
 
 ## Frontières externes
 
-Gargottex reste une source éditoriale consultée en lecture seule. Google Drive porte les règles humaines et comptes rendus, sans être chargé par la PWA.
+- Gargottex est une source éditoriale consultée en lecture seule ;
+- Google Drive porte les décisions humaines et comptes rendus ;
+- Figma et FigJam portent les références visuelles ;
+- aucun de ces outils n’est une dépendance runtime de la PWA.
 
-## Sprint 5
+## Extension au Sprint 4.1
 
-Le Sprint 5 pourra ajouter une responsabilité de génération produisant topologie, géométrie et rencontres. Chaque salle conservera son propre budget de menace. Cette extension ne doit pas être simulée au Sprint 4.
+L’état d’expédition, les connexions des trois salles et la persistance inter-salles seront ajoutés seulement lorsque leurs responsabilités auront été définies. Ils devront s’appuyer sur les packages actuels sans contourner le moteur de spawn ou la pipeline de présentation.
