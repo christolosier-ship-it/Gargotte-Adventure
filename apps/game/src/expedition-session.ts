@@ -49,7 +49,7 @@ export class ExpeditionSession {
     this.creatureDefinitions = options.creatureDefinitions;
     this.interactableDefinitions = options.interactableDefinitions;
     this.state = options.restored;
-    if (this.state?.definitionId !== this.definition.id)
+    if (this.state && this.state.definitionId !== this.definition.id)
       throw new Error(
         "La sauvegarde ne correspond pas au micro-donjon chargé.",
       );
