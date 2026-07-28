@@ -44,12 +44,9 @@ export function createGameShell(
   const continueButton = query<HTMLButtonElement>("[data-continue]");
   const nextRoomButton = query<HTMLButtonElement>("[data-next-room]");
   const replayButton = query<HTMLButtonElement>("[data-replay]");
-  const diagnosticToggleButton =
-    query<HTMLButtonElement>("[data-diagnostic]");
+  const diagnosticToggleButton = query<HTMLButtonElement>("[data-diagnostic]");
   const rotateCameraButton = query<HTMLButtonElement>("[data-rotate-camera]");
-  const endActivationButton = query<HTMLButtonElement>(
-    "[data-end-activation]",
-  );
+  const endActivationButton = query<HTMLButtonElement>("[data-end-activation]");
   const endHeroesTurnButton = query<HTMLButtonElement>(
     "[data-end-heroes-turn]",
   );
@@ -193,12 +190,7 @@ export function createGameShell(
 
 function statusText(
   phase: "boot" | "menu" | "expedition",
-  expeditionStatus:
-    | "preparation"
-    | "in-progress"
-    | "victory"
-    | "defeat"
-    | null,
+  expeditionStatus: "preparation" | "in-progress" | "victory" | "defeat" | null,
   tacticalPhase: "heroes-turn" | "enemy-turn" | "victory" | "defeat" | null,
 ): string {
   if (expeditionStatus === "victory") return "Victoire";
