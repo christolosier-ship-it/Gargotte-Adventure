@@ -1,212 +1,186 @@
-# Présentation et finition du Sprint 3.6
+# Présentation et finition tactique
 
 ## Statut
 
-- Sprint fonctionnel : 3.6, livré
-- Clôture définitive : sous réserve du Sprint 4.0
-- Issue fonctionnelle : #57
-- Pull Request fonctionnelle : #59
-- Commit fonctionnel : `7b8cd5adaece665ec2fb817a6f4b613e8c71cdc4`
-- Documentation de clôture initiale : PR #60
-- Addenda : [P2 post-fusion](../audits/sprint-3-6-post-fusion-p2-addendum.md)
+- Sprint fonctionnel initial : 3.6
+- Stabilisation finale : Sprint 4.0
+- PR initiale : #59
+- PR corrective : #64
+- Commit stable correctif : `8c31f1adc26cc1ad56008ef5328d8f27b3ddd0bf`
+- Audit : [Sprint 4.0](../audits/sprint-4-0-stabilization.md)
 
-## Objectif
+La couche de présentation est définitivement stabilisée. Elle dérive exclusivement des événements tactiques et de la transition entre l’ancien et le nouvel état moteur.
 
-Rendre les conséquences tactiques lisibles, audibles et confortables sans déplacer aucune règle vers le renderer, l'UI, l'audio ou le journal.
+## Flux
 
 ```text
-intention
-    │
-    ▼
-packages/engine
-    ├─ RoomState final
-    └─ TacticalEvent[] ordonnés
-            │
-            ▼
-packages/presentation
-    ┌───────┼────────┐
-    ▼       ▼        ▼
-cues visuels audio   journal groupé
-    │       │        │
-    ▼       ▼        ▼
-renderer   audio      UI
+intention joueur
+      │
+      ▼
+moteur tactique
+      │
+      ├─ RoomState final
+      └─ événements ordonnés
+              │
+              ▼
+pipeline applicative
+      │
+      ├─ dérivation terminale éventuelle
+      ├─ rendu stable
+      ├─ routeur de présentation
+      │    ├─ cues visuels
+      │    ├─ cues audio
+      │    └─ journal groupé
+      └─ persistance asynchrone
 ```
 
-## Routeur pur
+## Source de vérité
 
-`routeTacticalPresentation` reçoit les événements résolus et une fonction de traduction. Il retourne des cues visuels, des cues audio et une entrée de journal.
+Le moteur décide :
 
-Garanties livrées :
+- succès ou refus d’une action ;
+- dégâts et déplacements ;
+- changements d’état des objets ;
+- Brouhaha, effets et renforts ;
+- victoire ou défaite.
 
-- aucune mutation des événements ou de `RoomState` ;
-- aucune cible, règle ou conséquence recalculée ;
-- regroupement par action racine ;
-- sorties bornées ;
-- ordre causal des sorties retenues ;
-- conservation prioritaire des conséquences importantes dans le journal borné.
+La présentation ne recalcule aucune cible, occupation, condition de seuil, phase ou règle tactique.
 
-Réserve importante : la version fusionnée applique encore les plafonds de dix cues visuels et six cues audio par troncature. Elle ne garantit pas la conservation de tous les cues visuels ou audio prioritaires tardifs.
+## Transition terminale
 
-Le Sprint 4.0 doit sélectionner les cues prioritaires, puis restaurer leur ordre causal.
+Les chemins métier peuvent terminer une résolution avec un `RoomState` en `victory` ou `defeat` sans produire eux-mêmes un événement de présentation.
 
-## Cues terminaux
+La pipeline compare donc l’ancien et le nouvel état. Lors d’une transition réelle vers une phase terminale, elle ajoute un unique événement `phase-changed` si cet événement n’existe pas déjà.
 
-Le routeur sait produire des cues de victoire et défaite lorsqu'il reçoit l'information terminale attendue.
+Cette dérivation :
 
-L'audit post-fusion a constaté que les chemins ordinaires de combat peuvent mettre `RoomState.phase` à `victory` ou `defeat` sans produire l'événement requis. Le résultat terminal peut donc rester sans overlay, son ou message dédié.
+- ne modifie pas `RoomState` ;
+- ne change pas l’ordre métier ;
+- ne rejoue rien lors d’une reprise ;
+- permet au renderer, à l’audio et au journal de recevoir la même phase terminale.
 
-Le Sprint 4.0 doit :
+## Routeur
 
-- détecter une transition réelle entre l'état précédent et l'état suivant ou produire un événement moteur explicite ;
-- couvrir victoire et défaite ordinaires ;
-- éviter que la présentation recalcule elle-même la règle terminale ;
-- tester les longues chaînes se terminant par une phase terminale.
+`packages/presentation` transforme une liste ordonnée de `TacticalEvent` en :
 
-## Ports de sortie
+- `VisualPresentationCue[]` ;
+- `AudioPresentationCue[]` ;
+- une entrée de journal groupée.
 
-Renderer, audio et UI exposent leurs propres interfaces structurelles compatibles avec les sorties du routeur. Ils ne dépendent pas du package `presentation`.
+Chaque cue contient une séquence, une priorité, une catégorie et les informations logiques nécessaires à l’adaptateur concerné.
 
-Cette organisation vise un graphe unidirectionnel. Toutefois, `packages/presentation` n'est pas encore couvert par le validateur automatisé des dépendances autorisées. Cette couverture appartient au Sprint 4.0.
+## Plafonds et priorités
+
+Les sorties restent bornées pour éviter une croissance excessive pendant une longue chaîne.
+
+Lorsque le nombre de cues dépasse le plafond :
+
+1. les cues de priorité la plus élevée sont sélectionnés ;
+2. les égalités sont départagées par séquence causale puis ordre d’origine ;
+3. les cues retenus sont replacés dans leur ordre causal avant lecture.
+
+La garantie de priorité s’applique aux cues visuels, aux cues audio et au résumé du journal. Un renfort ou une phase terminale tardive ne peut plus être évincé par une série de retours mineurs arrivés plus tôt.
 
 ## Renderer
 
-Une couche PixiJS transitoire affiche après le rendu stable :
+`packages/renderer` affiche d’abord l’état stable, puis joue les cues transitoires dans une couche dédiée.
 
-- activation du héros ;
-- déplacement et poussée ;
-- impact et dégâts ;
-- variation du Brouhaha ;
-- seuil et renfort ;
-- victoire et défaite lorsque la transition terminale est fournie.
+Les effets :
 
-La couche n'accepte aucun événement de pointeur. Ses timers et objets sont détruits lors d'une nouvelle lecture, d'un rendu, d'une rotation, d'une reprise ou de la destruction du renderer.
+- n’interceptent aucun clic ou focus ;
+- sont annulés lors d’un nouveau rendu, d’une rotation, d’une reprise ou d’une destruction ;
+- respectent `prefers-reduced-motion` ;
+- reviennent à zéro dans les diagnostics après leur lecture.
 
-Au Sprint 4, elle pourra présenter :
-
-- préparation d'expédition ;
-- objectif et règle spéciale de salle ;
-- sortie disponible ;
-- transition entre salles ;
-- résultat global.
-
-Ces présentations restent dérivées et ne décident jamais de la progression.
+Le renderer ne connaît aucune règle de seuil, d’occupation, de victoire ou d’apparition.
 
 ## Audio
 
-`AudioDirector` joue sept tonalités pilotes locales Web Audio : interaction, impact, dégâts, Brouhaha, renfort, victoire et défaite.
+`packages/audio` reçoit uniquement des clés de cues.
 
-Garanties attendues :
+`AudioDirector` :
 
-- déverrouillage par interaction utilisateur ;
-- volume et mute ;
-- cache ;
-- échec toléré ;
-- aucun appel réseau ;
-- remplacement futur possible par des fichiers locaux.
+- attend une interaction utilisateur avant lecture ;
+- respecte volume général et mode muet ;
+- conserve les lecteurs en cache ;
+- tolère l’absence d’asset ou le refus du navigateur ;
+- ne contacte aucun service tiers ;
+- arrête le lecteur actif d’une clé répétée avant de la relancer.
 
-Réserves post-fusion :
-
-- un champ persisté invalide peut écraser une valeur par défaut avec `undefined` ;
-- rejouer rapidement une même tonalité peut superposer des oscillateurs.
-
-Le Sprint 4.0 doit valider les champs avant configuration et implémenter un redémarrage réel des sons répétés.
+Les réglages persistés sont filtrés champ par champ. Une valeur invalide ou absente ne remplace jamais un réglage par défaut par `undefined`.
 
 ## Journal
 
-Le journal conserve six actions racines au maximum et un nombre borné de conséquences par entrée.
+Le journal regroupe une action racine et ses conséquences importantes dans leur ordre.
 
-Une chaîne doit expliquer les résultats de renfort total, partiel ou refusé. Les historiques moteur restent la preuve persistante complète.
+Il distingue notamment :
 
-Au Sprint 4, le journal doit aussi expliquer :
+- changement de niveau du Brouhaha ;
+- renfort total, partiel ou refusé ;
+- dégâts de chaîne ;
+- défaite d’un combattant ;
+- victoire ou défaite de la salle.
 
-- sélection d'une compétence ;
-- décision ennemie et profil dominant ;
-- interaction d'un ennemi avec le décor ;
-- influence du Brouhaha ;
-- objectif atteint ;
-- sortie disponible ;
-- transition et résultat global.
-
-Il ne doit pas reconstruire ces raisons à partir de l'affichage.
+La liste DOM reste bornée. Les historiques persistants du moteur restent la preuve complète.
 
 ## Reprise
 
-Une reprise restaure l'état stable et ne rejoue aucun son, overlay, impact ou renfort historique. Elle ajoute seulement une information de restauration.
+Une reprise reconstruit immédiatement l’état stable depuis la sauvegarde.
 
-Dans le micro-donjon, ce principe s'applique également aux présentations de salle, transitions et résultat : seul l'état courant est reconstruit.
+Elle ne rejoue pas :
+
+- sons historiques ;
+- impacts ;
+- mouvements transitoires ;
+- apparitions déjà résolues ;
+- écrans terminaux déjà présentés.
+
+Les préférences audio restent des réglages applicatifs et ne font pas partie de la sauvegarde tactique version 6.
 
 ## Ordre runtime
 
-L'orchestration livrée observée suit :
+Pour un résultat accepté :
 
 ```text
-résolution moteur
+nouvel état moteur
 → rendu stable
-→ présentation
-→ demande de persistance asynchrone
+→ présentation des événements et de la transition terminale éventuelle
+→ déclenchement de la persistance asynchrone
 ```
 
-La formulation antérieure plaçait la persistance avant la présentation. Le Sprint 4.0 doit confirmer cet ordre comme contrat ou modifier le code, puis verrouiller la décision par des tests.
+La lecture des cues ne dépend pas du succès préalable de l’écriture IndexedDB.
 
-## Accessibilité
+## Frontières de packages
 
-- mouvement réduit ;
-- mute et volume accessibles ;
-- information disponible dans le DOM ;
-- aucune information essentielle uniquement sonore ou colorée ;
-- overlays sans capture du focus, du clic ou du toucher ;
-- état accessible du contrôle mute même après préférences persistées invalides.
+`packages/presentation` peut dépendre uniquement de `packages/engine` parmi les packages Gargotte.
 
-## Diagnostics
+Le validateur automatisé refuse notamment les dépendances directes vers :
 
-Le système expose canvas, objets stables et transitoires, génération de cues, listeners, cache audio et statut du mouvement réduit.
+- renderer ;
+- audio ;
+- UI ;
+- save.
 
-Au Sprint 4, ces données appartiennent au mode diagnostic distinct. Elles ne doivent pas encombrer le parcours joueur normal.
+`apps/game` assemble le routeur et ses adaptateurs.
 
-## Sprint 4.0
+## Validation
 
-Critères de stabilisation :
+Le contrat est couvert par :
 
-- cues terminaux sur les transitions réelles ;
-- plafonds visuels et audio respectant les priorités ;
-- préférences invalides conservant les défauts ;
-- tonalités répétées sans superposition ;
-- ordre runtime aligné ;
-- package `presentation` couvert par le validateur ;
-- tests unitaires et Playwright de non-régression ;
-- sept fils P2 résolus ;
-- documentation GitHub et Drive alignée.
+- tests unitaires événement vers cue ;
+- tests de non-mutation ;
+- tests de priorité sous plafond ;
+- tests de transition réelle victoire et défaite ;
+- tests audio et préférences invalides ;
+- test d’ordre rendu, présentation, persistance ;
+- tests des frontières ;
+- Playwright bureau et mobile paysage.
 
-## Articulation avec le Sprint 4
+## Hors périmètre
 
-Les lots 4.1 à 4.7 réutilisent la couche de présentation pour expliquer l'expédition, les compétences, les décisions ennemies, les influences du Brouhaha, les sorties de salle et le résultat global.
-
-La présentation ne doit jamais :
-
-- modifier `ExpeditionState` ou `RoomState` ;
-- ouvrir une porte ;
-- transférer un héros ;
-- choisir une action ennemie ;
-- déclencher un renfort ;
-- décider d'une victoire ou défaite.
-
-## Validation historique
-
-Le HEAD final de la PR #59 a validé les contrôles disponibles lors de la fusion : formatage, contenu, TypeScript strict, 131 tests unitaires, build, validation structurelle existante et Playwright bureau/mobile.
-
-Cette CI verte ne résout pas les sept P2 découverts après fusion.
-
-## Frontières
-
-- aucune règle tactique dans la présentation ;
-- aucune nouvelle version de sauvegarde pour les effets transitoires ;
-- aucun appel réseau tiers ou secret ;
-- aucun hasard métier ;
-- aucune véritable 3D ou WebAssembly ;
-- Gargottex strictement en lecture seule.
-
-## Suite
-
-Le Sprint 3 est fonctionnellement livré. Sa clôture définitive dépend du Sprint 4.0.
-
-Après cette stabilisation, le Sprint 4 construira le micro-donjon manuel de trois salles, les héros, créatures et comportements de Bastognac.
+- musique adaptative ;
+- doublages ;
+- spatialisation avancée ;
+- animations définitives de tous les acteurs ;
+- règles tactiques ;
+- génération procédurale.
