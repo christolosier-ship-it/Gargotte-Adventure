@@ -3,64 +3,66 @@
 ## Statut
 
 - Cible initiale : Sprint 3.4
-- État : livré, raccordé aux renforts du Sprint 3.5
+- État : livré et raccordé au Brouhaha et aux renforts
 - Issue initiale : #44, clôturée
 - Pull Request initiale : #45, fusionnée
-- Commit initial : `17ad00c0cb5abb9e66da6e320903f56606a8e8d5`
+- Extension cible : interactions des acteurs et trois salles du Sprint 4
 
 ## Objet
 
 Le moteur propage de façon déterministe les conséquences d'une interaction : déplacement d'objet, transition, dégâts et demandes de Brouhaha.
 
-Le renderer affiche l'état reçu. L'interface propose uniquement les commandes calculées par le moteur.
+Le renderer affiche l'état reçu. L'interface et les profils d'acteurs proposent uniquement des intentions que les moteurs peuvent valider.
 
 ## Modèle de contenu
 
-Une salle tactique `schemaVersion: 5` peut déclarer une liste `chainReactions`.
+Une salle peut déclarer une liste `chainReactions`.
 
-Chaque réaction possède un identifiant stable, un déclencheur `state-entered` ou `moved`, et une ou plusieurs actions exécutées dans l'ordre déclaré.
+Chaque réaction possède :
 
-Actions disponibles :
+- identifiant stable ;
+- déclencheur déclaré ;
+- objet ou état source ;
+- actions exécutées dans l'ordre ;
+- éventuelles conditions ;
+- détails explicatifs.
 
-- `transition` ;
-- `move` ;
-- `damage` ;
-- `brouhaha`.
+Actions actuelles :
+
+- transition ;
+- mouvement ;
+- dégâts ;
+- Brouhaha.
 
 Les références aux instances, interactions et positions sont contrôlées avant le build.
 
 ## Poussée directe
 
-Une interaction peut déclarer :
+Une interaction peut déclarer un mouvement de poussée. La direction est calculée logiquement depuis l'acteur vers l'objet.
 
-```json
-{
-  "movement": { "type": "push", "distance": 1 }
-}
-```
+La poussée est refusée sans mutation si la destination sort du plateau ou contient un obstacle, un combattant ou un autre objet.
 
-La direction est calculée du héros vers l'objet. La poussée est refusée sans mutation si la destination sort du plateau ou contient un obstacle, un combattant ou un autre objet.
-
-Le refus ne consomme aucune action et ne marque pas la demande comme traitée.
+Au Sprint 4, héros et créatures peuvent produire cette intention si leur définition, compétence ou profil l'autorise. Le moteur de réaction reste identique.
 
 ## Ordre de résolution
 
 La propagation utilise une file FIFO locale à la demande racine :
 
-1. interaction héroïque validée et appliquée ;
-2. Brouhaha direct éventuel et ses renforts ;
-3. déclencheurs racines `state-entered`, puis `moved` ;
-4. définitions correspondantes triées par identifiant ;
-5. actions exécutées dans l'ordre du contenu ;
-6. Brouhaha secondaire et renforts résolus immédiatement ;
-7. nouveaux déclencheurs ajoutés à la fin de la file ;
-8. phase terminale calculée après épuisement de la file.
+1. intention validée et conséquence directe ;
+2. déclencheurs racines ;
+3. définitions correspondantes triées ;
+4. actions exécutées dans l'ordre du contenu ;
+5. demandes de Brouhaha et renforts résolus selon le contrat moteur ;
+6. nouveaux déclencheurs ajoutés à la fin de la file ;
+7. phase terminale calculée après épuisement de la file.
 
 À entrées identiques, état final, événements, historiques et séquences sont identiques.
 
+Une sortie de salle ne peut pas interrompre une propagation. L'objectif local et l'ouverture de la sortie ne sont évalués qu'après résolution complète.
+
 ## Causalité
 
-Chaque action propagée reçoit un identifiant monotone `reaction-N` et conserve :
+Chaque action propagée conserve :
 
 - demande racine ;
 - définition de réaction ;
@@ -68,56 +70,88 @@ Chaque action propagée reçoit un identifiant monotone `reaction-N` et conserve
 - réaction parente ;
 - index et type de l'action ;
 - cible ;
-- résultat `applied`, `skipped` ou `guarded` ;
+- résultat appliqué, ignoré ou interrompu ;
 - détails explicatifs.
 
-Les événements distinguent une cause `hero-interaction` d'une cause `chain-reaction`.
+La cause racine peut provenir d'un héros, d'une créature, d'une compétence ou d'une interaction de diagnostic. Elle reste typée et traçable.
 
 Une demande de Brouhaha issue d'une réaction conserve son identifiant causal. Les événements de renfort conservent ensuite cette demande comme racine.
 
 ## Garde-fous
 
-Une définition ne peut être exécutée qu'une fois dans une propagation racine. Une nouvelle rencontre enregistre `cycle-detected` sans rejouer ses actions.
+Une définition ne peut être exécutée qu'une fois dans une propagation racine. Une nouvelle rencontre enregistre un cycle sans rejouer les actions.
 
-La propagation est limitée à 32 définitions. Le dépassement produit `max-steps` et arrête explicitement la chaîne.
+La propagation conserve une limite explicite et persistée selon le contrat livré. Les interruptions ne reposent ni sur le temps système, ni sur un UUID, ni sur du hasard.
 
-Ces interruptions sont persistées et ne reposent ni sur le temps système, ni sur un UUID, ni sur du hasard.
+## Acteurs et profils du Sprint 4
 
-## Phase terminale et renforts
+Un profil peut évaluer une réaction connue avant de proposer une intention :
 
-Depuis le Sprint 3.5, les dégâts de réaction ne calculent plus immédiatement la victoire.
+- déclencher une réaction utile ;
+- éviter une zone dangereuse ;
+- protéger un objet nécessaire à une réaction ;
+- déplacer un objet pour ouvrir ou fermer une ligne ;
+- empêcher un héros de provoquer une chaîne ;
+- accepter un risque selon une priorité déclarée.
 
-La phase terminale est évaluée après toutes les actions, demandes de Brouhaha et apparitions de la résolution racine. Si le dernier ennemi initial est vaincu mais qu'un seuil fait entrer un renfort, la salle reste active.
+Le profil ne simule pas une seconde version de la réaction. Il utilise des informations déclarées et stables pour classer l'intention, puis le moteur applique la conséquence réelle.
 
-Les réactions ne choisissent aucun seuil, aucune créature et aucun point. Elles produisent uniquement une demande de Brouhaha ordinaire.
+La décision doit expliquer pourquoi l'acteur déclenche ou évite la réaction.
+
+## Brouhaha et renforts
+
+Les réactions ne choisissent aucun effet, seuil, archétype ou point de spawn. Elles produisent uniquement des demandes de Brouhaha explicites.
+
+La phase terminale est évaluée après toutes les actions, demandes de Brouhaha et apparitions de la résolution racine.
+
+Si un renfort empêche une victoire locale, la sortie ne devient pas disponible.
 
 Voir [Renforts déclenchés par le Brouhaha](brouhaha-reinforcements.md).
 
+## Portée par salle
+
+Les définitions et historiques de réaction sont locaux à chaque salle.
+
+- la salle 1 utilise des chaînes courtes ;
+- la salle 2 fait des réactions un mécanisme principal ;
+- la salle 3 combine réactions, profils d'IA, Brouhaha et renforts.
+
+Une transition vers la salle suivante ne propage aucun déclencheur restant et ne transfère aucun historique de réaction.
+
+Une salle restaurée reprend son état stable sans rejouer ses réactions historiques.
+
+## Présentation
+
+Les événements de réaction alimentent le routeur de présentation. Le Sprint 4.0 doit garantir que les conséquences prioritaires tardives, notamment renfort et phase terminale, ne sont pas supprimées par les plafonds de cues.
+
+Le journal visible reste borné. L'historique moteur conserve la preuve complète.
+
 ## Sauvegarde
 
-La version 5 a introduit :
+La sauvegarde tactique version 6 conserve la séquence et l'historique causal des réactions.
 
-- `nextChainReactionSequence` ;
-- `chainReactionHistory`.
+Dans `ExpeditionState`, chaque salle conserve son propre `RoomState`. Une migration ne doit inventer aucune réaction ni déclencher de file historique.
 
-La sauvegarde courante est la version 6. Elle conserve ces champs sans modification et ajoute séparément l'historique des renforts.
+## Tests cibles
 
-Les versions 1 à 5 migrent sans inventer de réactions ni déclencher d'apparitions rétroactives.
+- racines héroïques et ennemies ;
+- intention de déclenchement volontaire ;
+- intention d'évitement ;
+- protection d'un objet ;
+- chaînes courtes de salle 1 ;
+- chaînes principales de salle 2 ;
+- chaînes combinées de salle 3 ;
+- renfort empêchant une sortie ;
+- résolution complète avant transition ;
+- reprise sans replay ;
+- même décision et même historique à entrées identiques.
 
-## Validation livrée
+## Hors périmètre
 
-Le scénario table → pilier → grille démontre :
+- génération de graphes de réaction ;
+- transfert d'une réaction entre salles ;
+- simulation probabiliste par l'IA ;
+- loot ou progression ;
+- application d'une conséquence par le renderer ou l'UI.
 
-- poussée ;
-- transition secondaire ;
-- dégâts de zone ;
-- ouverture d'un passage ;
-- deux demandes de Brouhaha ;
-- renfort total puis partiel ;
-- phase terminale calculée à la fin ;
-- reprise exacte ;
-- même résultat sur Chrome bureau et mobile paysage.
-
-Cycles, profondeur maximale, destinations bloquées et scénario où un renfort empêche une victoire prématurée sont également testés.
-
-Gargottex reste une source de contenu en lecture seule et n'est pas modifié par cette mécanique.
+Gargottex reste une source de contenu en lecture seule.
