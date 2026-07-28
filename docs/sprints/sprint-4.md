@@ -62,11 +62,13 @@ Les salles sont adjacentes et reliées par des portes ou passages explicitement 
 - leur ordre et leurs connexions ;
 - leur géométrie, portes et passages ;
 - leurs objectifs et conditions de sortie ;
-- leurs placements initiaux ;
+- leurs populations et placements initiaux ;
 - leurs objets, réactions et points de spawn ;
 - leurs règles de renfort ;
 - leurs conditions de victoire et de défaite ;
 - la transition de l'équipe entre les salles.
+
+Les populations initiales écrites à la main sont traduites en `SpawnRequest` déterministes lors de la première création de chaque salle. Aucune `CreatureInstance` n'est construite directement par le contenu ou l'orchestrateur d'expédition.
 
 ### Sprint 5 générera
 
@@ -149,27 +151,36 @@ Le véritable boss final reste réservé au Sprint 5.
 - sortie ou porte suivante ;
 - démarrage du premier tour.
 
+Lors de la première entrée, les ennemis présents sont instanciés par des demandes initiales ordonnées au moteur de spawn. Une reprise restaure les instances sauvegardées sans rejouer ces demandes.
+
 ### Tour des héros
 
 Le joueur peut sélectionner un héros, consulter ses actions, se déplacer, attaquer, utiliser une compétence, interagir avec un objet, consulter les cibles disponibles, terminer l'activation et terminer le tour des héros.
 
 ### Résolution des conséquences
 
-L'ordre cible est :
+L'ordre dépend du type d'intention.
+
+Pour une interaction d'objet bruyante :
 
 ```text
 intention de l'acteur
 → validation de l'action
-→ effet tactique direct
-→ interaction éventuelle avec un objet
-→ réactions en chaîne
-→ demandes et effets du Brouhaha
-→ renforts éventuels
+→ transition ou déplacement direct de l'objet
+→ Brouhaha direct éventuel
+→ effets et renforts directs
+→ réactions en chaîne FIFO
+→ Brouhaha secondaire éventuel à sa position causale
+→ effets et renforts secondaires
 → phase terminale éventuelle
 → état et rendu stables
 → présentation visuelle, sonore et textuelle
 → persistance
 ```
+
+Pour une action sans Brouhaha direct d'objet, la conséquence directe est suivie des réactions éventuelles, puis de chaque demande de Brouhaha secondaire à sa position causale.
+
+Le Brouhaha direct et ses renforts sont résolus avant la propagation. Une apparition directe peut donc modifier l'occupation ou empêcher une phase terminale avant les réactions secondaires.
 
 L'ordre exact doit suivre l'orchestration stabilisée et être documenté sans ambiguïté. Le Sprint 4.0 corrige d'abord les divergences actuellement relevées entre code et documentation.
 
@@ -190,7 +201,12 @@ Le journal explique les candidats utiles, la priorité retenue et le départage 
 
 ### Fin de salle
 
-Toutes les conséquences en cours sont résolues avant l'ouverture de la sortie. Le joueur choisit de quitter la salle, l'état local est clôturé et l'état persistant des héros est transféré vers la salle suivante.
+Toutes les conséquences en cours sont résolues avant la complétion locale.
+
+La salle est ajoutée idempotemment à `completedRoomIds` dès que son objectif est atteint et son état stabilisé.
+
+- Pour les salles 1 et 2, la sortie devient ensuite disponible. Le joueur choisit de quitter la salle, l'état local est clôturé et l'état persistant des héros est transféré vers la salle suivante.
+- Pour la salle 3, la complétion produit le résultat global sans exiger une transition vers une quatrième salle.
 
 ### Fin du micro-donjon
 
@@ -204,6 +220,8 @@ L'écran final affiche :
 - conséquences principales ;
 - bouton de rejeu ;
 - mention du loot, de la progression et de la génération prévus au Sprint 5.
+
+Une victoire globale exige que la salle 3 figure dans `completedRoomIds`.
 
 ## État minimal d'expédition
 
@@ -224,6 +242,8 @@ Persistent entre les salles : équipe, PV actuels, ressources et effets explicit
 Restent propres à chaque salle : Brouhaha et historique, tour, phase tactique, ennemis, renforts, objets, réactions résolues, points de spawn, objectif et condition de sortie.
 
 Le Brouhaha reste local à chaque salle, sauf décision produit ultérieure explicitement validée.
+
+Le Sprint 4.1 définit le schéma Zod de l'expédition, son format de sauvegarde, sa version initiale et sa stratégie de migration avant les transitions.
 
 ## Héros
 
@@ -249,7 +269,8 @@ Les seize créatures utilisent la séparation suivante :
 ```text
 CreatureDefinition
 + profil de comportement
-+ placement initial ou SpawnRequest
++ placement initial éditorial
+→ SpawnRequest initiale ou runtime
 → moteur de spawn
 → CreatureInstance
 ```
@@ -292,7 +313,7 @@ Aucune architecture principale ne repose sur des conditions dispersées par nom 
 
 ## Objets interactifs
 
-Les héros et créatures produisent des intentions. Le moteur d'objets résout les transitions, puis les réactions, demandes de Brouhaha et renforts.
+Les héros et créatures produisent des intentions. Le moteur d'objets résout la transition directe, le Brouhaha direct éventuel et ses renforts, puis les réactions et leurs conséquences secondaires dans l'ordre causal.
 
 Les créatures peuvent ignorer, contourner, utiliser, pousser, détruire, protéger ou rejoindre un objet, empêcher un héros de l'utiliser, déclencher volontairement une réaction ou éviter une réaction dangereuse.
 
@@ -328,11 +349,16 @@ Correction des sept P2 post-fusion, non-régression, résolution des fils de rev
 
 ### Sprint 4.1 : micro-donjon et phases de jeu
 
-État minimal d'expédition, trois salles fixes, objectifs, portes, transitions, persistance inter-salles, résultat et mode diagnostic.
+- schémas `ExpeditionDefinition`, `ExpeditionState`, salles et connexions ;
+- format de sauvegarde, version initiale et migration d'expédition ;
+- demandes de spawn initiales ;
+- trois salles fixes, objectifs, portes et complétion ;
+- transitions et persistance inter-salles ;
+- résultat global et mode diagnostic.
 
 ### Sprint 4.2 : contrats des acteurs et comportements
 
-`HeroDefinition`, évolution de `CreatureDefinition`, compétences, profils d'IA, objets, influences du Brouhaha, validation Zod et stratégie de migration.
+`HeroDefinition`, évolution de `CreatureDefinition`, compétences, profils d'IA, objets, influences du Brouhaha, validation Zod et migrations propres aux acteurs et contenus associés.
 
 ### Sprint 4.3 : quatre héros
 
@@ -352,7 +378,7 @@ Prise en main, décor, réactions, Brouhaha, renforts, objectifs et transitions.
 
 ### Sprint 4.7 : salle 3 et intégration globale
 
-Confrontation complète, résultat du micro-donjon, équilibrage, tutoriel, présentation, tests desktop, tablette et mobile paysage, puis audit de sortie.
+Confrontation complète, complétion de la troisième salle, résultat du micro-donjon, équilibrage, tutoriel, présentation, tests desktop, tablette et mobile paysage, puis audit de sortie.
 
 ## Matrice de couverture minimale
 
@@ -378,12 +404,14 @@ Résultat d'expédition             non           non                  victoire 
 
 - micro-donjon manuel de trois salles adjacentes ;
 - `ExpeditionState` minimal au-dessus des états de salle ;
+- schémas et sauvegarde d'expédition définis au Sprint 4.1 ;
 - Brouhaha local à la salle ;
 - profils de comportement génériques et déterministes ;
 - acteurs producteurs d'intentions ;
 - mode diagnostic séparé ;
 - aucun faux générateur ;
-- spawn comme frontière unique d'instanciation ;
+- toute créature initiale ou runtime instanciée par le moteur de spawn ;
+- complétion de la salle 3 enregistrée sans transition supplémentaire ;
 - budget de menace par salle ;
 - fonctionnement offline-first ;
 - Gargottex strictement en lecture seule.
@@ -405,7 +433,9 @@ Résultat d'expédition             non           non                  victoire 
 - déterminisme et explication des décisions ennemies ;
 - reprise cohérente dans les trois salles ;
 - Brouhaha local et historique par salle ;
-- aucune instanciation hors moteur de spawn ;
+- populations initiales et renforts uniquement par le moteur de spawn ;
+- Brouhaha direct résolu avant les réactions d'objet ;
+- salle 3 présente dans `completedRoomIds` lors de la victoire ;
 - aucune conséquence d'objet appliquée directement par un acteur ;
 - aucun générateur du Sprint 5 ;
 - tests unitaires, contenu, sauvegarde et Playwright ;
