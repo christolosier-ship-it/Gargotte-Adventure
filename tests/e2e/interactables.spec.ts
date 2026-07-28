@@ -123,7 +123,9 @@ test("pousse une table et résout le domino avec deux seuils", async ({
 }) => {
   await page.goto("./");
   await page.getByRole("checkbox", { name: "Magdalena Coquinelle" }).check();
-  await page.getByRole("button", { name: "Entrer dans la salle" }).click();
+  await page
+    .getByRole("button", { name: "Entrer dans le micro-donjon" })
+    .click();
   await page
     .getByRole("button", { name: "Activer Magdalena Coquinelle" })
     .click();
