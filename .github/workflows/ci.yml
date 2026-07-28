@@ -53,18 +53,7 @@ jobs:
         run: npm run typecheck
 
       - name: Unit tests
-        id: unit-tests
-        run: |
-          set -o pipefail
-          npm run test 2>&1 | tee unit-tests.log
-
-      - name: Upload unit test diagnostics
-        if: failure() && steps.unit-tests.outcome == 'failure'
-        uses: actions/upload-artifact@v7
-        with:
-          name: unit-test-diagnostics
-          path: unit-tests.log
-          if-no-files-found: error
+        run: npm run test
 
       - name: Production build
         run: npm run build
@@ -76,10 +65,7 @@ jobs:
         run: npx playwright install --with-deps chromium
 
       - name: Browser smoke tests
-        id: browser-smoke
-        run: |
-          set -o pipefail
-          npx playwright test tests/e2e/app.spec.ts --project=chromium --retries=0 --workers=4 --reporter=line 2>&1 | tee playwright-smoke.log
+        run: npm run test:e2e
 
       - name: Upload Playwright diagnostics
         if: failure()
@@ -87,7 +73,6 @@ jobs:
         with:
           name: playwright-diagnostics
           path: |
-            playwright-smoke.log
             test-results
             playwright-report
           if-no-files-found: warn
