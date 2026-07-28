@@ -1,8 +1,4 @@
-import type {
-  ExpeditionStatus,
-  GamePhase,
-  RoomPhase,
-} from "@gargotte/engine";
+import type { ExpeditionStatus, GamePhase, RoomPhase } from "@gargotte/engine";
 
 export type PresentationTone = "info" | "warning" | "success" | "danger";
 
