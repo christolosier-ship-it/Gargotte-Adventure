@@ -20,6 +20,7 @@ import {
   type GridPosition,
   type InteractableDefinition,
   type RoomState,
+  type TacticalResult,
 } from "@gargotte/engine";
 import type { TabletopRenderer } from "@gargotte/renderer";
 import type { GameShell } from "@gargotte/ui";
@@ -326,15 +327,7 @@ export class GameController {
     });
   }
 
-  private applyResult(
-    result:
-      | ReturnType<typeof selectHero>
-      | ReturnType<typeof moveCombatant>
-      | ReturnType<typeof attackTarget>
-      | ReturnType<typeof endHeroActivation>
-      | ReturnType<typeof endHeroesTurn>
-      | ReturnType<typeof finishEnemyTurn>,
-  ): void {
+  private applyResult(result: TacticalResult<StatefulTacticalResult>): void {
     if (!result.ok) {
       this.shell.appendEvent(result.error.message);
       return;
