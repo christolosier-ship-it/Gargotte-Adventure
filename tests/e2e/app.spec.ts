@@ -157,8 +157,11 @@ test("atteint une victoire reproductible", async ({ page }) => {
   await expect
     .poll(async () => (await readCanvasState(page)).phase)
     .toBe("victory");
-  await expect(page.getByText("Victoire")).toBeVisible();
+  await expect(page.getByText("Victoire", { exact: true })).toBeVisible();
   await expect(page.getByText("Salle nettoyée !")).toBeVisible();
+  await expect(
+    page.getByText("Victoire : la salle est nettoyée."),
+  ).toBeVisible();
 });
 
 test("déplace Brünhilda par picking réel du canvas", async ({
