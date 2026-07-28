@@ -117,6 +117,52 @@ describe("routeur de présentation", () => {
     ]);
   });
 
+  it("conserve les cues les plus prioritaires puis restaure leur ordre causal", () => {
+    const events: TacticalEvent[] = [
+      { type: "hero-selected", heroId: "brunhilda" },
+      {
+        type: "combatant-attacked",
+        attackerId: "brunhilda",
+        targetId: "gobelin-1",
+        damage: 2,
+        remainingHp: 0,
+      },
+      {
+        type: "reinforcement-resolved",
+        reinforcementId: "renfort-1",
+        reinforcementDefinitionId: "seuil-1",
+        brouhahaRequestId: "bruit-long",
+        threshold: 1,
+        activation: 1,
+        spawnRequestId: "spawn-1",
+        result: "succeeded",
+        createdInstanceIds: ["gobelin-2"],
+        details: [],
+      },
+      { type: "phase-changed", phase: "victory", turn: 2 },
+    ];
+
+    const batch = routeTacticalPresentation(events, describeEvent, {
+      maxVisualCues: 2,
+      maxAudioCues: 2,
+    });
+
+    expect(batch.visualCues.map((cue) => cue.kind)).toEqual([
+      "reinforcement",
+      "terminal",
+    ]);
+    expect(batch.audioCues.map((cue) => cue.key)).toEqual([
+      "reinforcement",
+      "victory",
+    ]);
+    expect(batch.visualCues[0]!.sequence).toBeLessThan(
+      batch.visualCues[1]!.sequence,
+    );
+    expect(batch.audioCues[0]!.sequence).toBeLessThan(
+      batch.audioCues[1]!.sequence,
+    );
+  });
+
   it("réduit fortement la durée des cues en mouvement réduit", () => {
     const events: TacticalEvent[] = [
       { type: "hero-selected", heroId: "brunhilda" },
