@@ -123,7 +123,7 @@ Une transition dont la variation est non nulle produit une `BrouhahaRequest` dé
 
 Le moteur d'objets ne choisit aucun effet, seuil, créature ou point. Il délègue au Brouhaha, qui résout ensuite les règles franchies.
 
-Ordre général :
+L'ordre livré distingue le Brouhaha direct de l'interaction et le Brouhaha secondaire produit par les réactions :
 
 ```text
 intention d'interaction
@@ -131,13 +131,19 @@ intention d'interaction
 → déplacement éventuel
 → changement d'état
 → consommation de ressource
-→ réactions en chaîne
-→ demandes de Brouhaha
-→ renforts
+→ Brouhaha direct éventuel
+→ effets et renforts du Brouhaha direct
+→ réactions en chaîne FIFO
+→ Brouhaha secondaire éventuel de chaque action de réaction
+→ effets et renforts secondaires dans l'ordre causal
 → phase terminale
 ```
 
-L'ordre exact des demandes directes et secondaires doit rester cohérent avec le moteur livré et être couvert par les tests.
+Le Brouhaha direct et ses renforts sont entièrement résolus avant la propagation des réactions. Une apparition directe peut donc occuper une case ou modifier la condition terminale avant les actions secondaires.
+
+Chaque action de réaction peut ensuite produire sa propre demande de Brouhaha. Cette demande et ses renforts sont résolus à leur position dans la file causale avant de poursuivre selon le contrat du moteur.
+
+Le Sprint 4 doit réutiliser cet ordre sans déplacer toutes les demandes de Brouhaha après la chaîne.
 
 ## Déplacement, spawn et ligne de vue
 
@@ -180,14 +186,16 @@ Une salle restaurée retrouve ses objets exactement dans leur état sauvegardé.
 
 1. Les acteurs produisent des intentions.
 2. Le moteur d'objets applique les transitions.
-3. Les réactions restent déclarées par salle.
-4. Toutes les variations passent par le moteur de Brouhaha.
-5. Les renforts passent par la politique de seuil et le spawn.
-6. Les autorisations sont déclaratives.
-7. Les décisions d'IA sont déterministes et expliquées.
-8. Un refus n'applique aucune conséquence implicite.
-9. Le renderer et l'UI ne décident aucune interaction.
-10. Le loot reste hors de cette responsabilité.
+3. Le Brouhaha direct est résolu avant les réactions en chaîne.
+4. Les réactions restent déclarées par salle.
+5. Le Brouhaha secondaire est résolu à sa position causale dans la file.
+6. Toutes les variations passent par le moteur de Brouhaha.
+7. Les renforts passent par la politique de seuil et le spawn.
+8. Les autorisations sont déclaratives.
+9. Les décisions d'IA sont déterministes et expliquées.
+10. Un refus n'applique aucune conséquence implicite.
+11. Le renderer et l'UI ne décident aucune interaction.
+12. Le loot reste hors de cette responsabilité.
 
 ## Tests cibles
 
@@ -196,7 +204,9 @@ Une salle restaurée retrouve ses objets exactement dans leur état sauvegardé.
 - portée et destination ;
 - choix déterministe d'un objet par l'IA ;
 - utilisation, protection, destruction et évitement ;
-- réactions et Brouhaha ;
+- Brouhaha direct et renfort avant réaction ;
+- Brouhaha secondaire dans l'ordre causal ;
+- renfort direct modifiant l'occupation avant la chaîne ;
 - renforts complets, partiels et refusés ;
 - reprise dans chaque salle ;
 - absence de commandes diagnostic en mode joueur.
